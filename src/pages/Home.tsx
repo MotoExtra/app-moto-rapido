@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Clock, MapPin, Package, Star, AlertCircle, Search, Filter } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, Search } from "lucide-react";
 
 // Mock data - depois vem do backend
 const mockOffers = [
@@ -51,9 +51,10 @@ const Home = () => {
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-primary">Oportunidades</h1>
-            <Button variant="ghost" size="icon">
-              <Filter className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Star className="w-5 h-5 fill-primary text-primary" />
+              <span className="text-lg font-bold text-foreground">100</span>
+            </div>
           </div>
           
           <div className="relative">
