@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,36 @@ const mockOffers = [
 
 const Home = () => {
   const navigate = useNavigate();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Atualiza a cada minuto
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const getTimeUntilStart = (timeStart: string) => {
+    const now = new Date();
+    const [hours, minutes] = timeStart.split(':').map(Number);
+    const startTime = new Date();
+    startTime.setHours(hours, minutes, 0, 0);
+
+    // Se o horário já passou hoje, considera para amanhã
+    if (startTime < now) {
+      startTime.setDate(startTime.getDate() + 1);
+    }
+
+    const diffMs = startTime.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    
+    return {
+      hours: Math.floor(diffHours),
+      minutes: Math.floor((diffHours % 1) * 60),
+      isUrgent: diffHours < 2
+    };
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,26 +98,32 @@ const Home = () => {
 
       {/* Offers List */}
       <div className="p-4 space-y-4 pb-20">
-        {mockOffers.map((offer) => (
-          <Card key={offer.id} className="overflow-hidden">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CardTitle className="text-lg">{offer.restaurant}</CardTitle>
-                    {offer.urgent && (
-                      <Badge className="bg-urgent text-urgent-foreground">
+        {mockOffers.map((offer) => {
+          const timeInfo = getTimeUntilStart(offer.timeStart);
+          return (
+            <Card key={offer.id} className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <CardTitle className="text-lg">{offer.restaurant}</CardTitle>
+                      <Badge className={timeInfo.isUrgent ? "bg-destructive text-destructive-foreground" : "bg-urgent text-urgent-foreground"}>
                         <AlertCircle className="w-3 h-3 mr-1" />
                         EXTRA
                       </Badge>
-                    )}
+                    </div>
+                    <CardDescription className="font-medium">
+                      {offer.description}
+                    </CardDescription>
+                    <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      <span className={timeInfo.isUrgent ? "text-destructive font-semibold" : ""}>
+                        Começa em {timeInfo.hours}h {timeInfo.minutes}min
+                      </span>
+                    </div>
                   </div>
-                  <CardDescription className="font-medium">
-                    {offer.description}
-                  </CardDescription>
                 </div>
-              </div>
-            </CardHeader>
+              </CardHeader>
             
             <CardContent className="space-y-3">
               <div className="flex items-center text-sm text-muted-foreground">
@@ -142,7 +178,8 @@ const Home = () => {
               )}
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* Bottom Navigation */}
