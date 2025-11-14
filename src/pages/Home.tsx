@@ -148,15 +148,19 @@ const Home = () => {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-background border-t">
         <div className="flex items-center justify-around p-2">
-          <Button variant="ghost" className="flex-col h-auto py-2">
-            <Package className="w-5 h-5 mb-1" />
+          <Button variant="default" className="flex-col h-auto py-2">
+            <Package className="w-5 h-5 mb-1 fill-current" />
             <span className="text-xs">Ofertas</span>
           </Button>
           <Button variant="ghost" className="flex-col h-auto py-2">
             <Clock className="w-5 h-5 mb-1" />
             <span className="text-xs">Meus Turnos</span>
           </Button>
-          <Button variant="ghost" className="flex-col h-auto py-2">
+          <Button
+            variant="ghost"
+            className="flex-col h-auto py-2"
+            onClick={() => navigate("/ranking")}
+          >
             <Star className="w-5 h-5 mb-1" />
             <span className="text-xs">Ranking</span>
           </Button>
