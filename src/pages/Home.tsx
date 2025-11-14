@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Clock, MapPin, Package, Star, AlertCircle, Search } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, TrendingUp } from "lucide-react";
 
 // Mock data - depois vem do backend
 const mockOffers = [
@@ -42,29 +41,27 @@ const mockOffers = [
 
 const Home = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background border-b">
-        <div className="p-4 space-y-4">
+      <header className="sticky top-0 z-10 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-b shadow-sm">
+        <div className="p-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-primary">Oportunidades</h1>
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 fill-primary text-primary" />
-              <span className="text-lg font-bold text-foreground">100</span>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-1">Oportunidades</h1>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="w-4 h-4" />
+                Encontre o melhor match
+              </p>
             </div>
-          </div>
-          
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por bairro ou rua..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+            <div className="flex flex-col items-end gap-1 bg-background/50 backdrop-blur-sm px-4 py-3 rounded-xl border shadow-sm">
+              <div className="flex items-center gap-2">
+                <Star className="w-6 h-6 fill-primary text-primary" />
+                <span className="text-2xl font-bold text-primary">100</span>
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">Seu Score</span>
+            </div>
           </div>
         </div>
       </header>
