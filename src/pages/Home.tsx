@@ -107,7 +107,7 @@ const Home = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <CardTitle className="text-lg">{offer.restaurant}</CardTitle>
-                      <Badge className={timeInfo.isUrgent ? "bg-destructive text-destructive-foreground" : "bg-urgent text-urgent-foreground"}>
+                      <Badge className={timeInfo.isUrgent ? "bg-destructive text-destructive-foreground" : "bg-green-600 text-white"}>
                         <AlertCircle className="w-3 h-3 mr-1" />
                         EXTRA
                       </Badge>
