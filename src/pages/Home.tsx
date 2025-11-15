@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Package, Star, AlertCircle, TrendingUp } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data - depois vem do backend
 const mockOffers = [
@@ -41,6 +42,7 @@ const mockOffers = [
 
 const Home = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -70,6 +72,14 @@ const Home = () => {
       minutes: Math.floor((diffHours % 1) * 60),
       isUrgent: diffHours < 2
     };
+  };
+
+  const handleAccept = (offer: typeof mockOffers[0]) => {
+    toast({
+      title: "Oferta aceita!",
+      description: `Você aceitou trabalhar em ${offer.restaurant} das ${offer.timeStart} às ${offer.timeEnd}.`,
+    });
+    // Aqui depois vai criar o match no backend
   };
 
   return (
@@ -164,7 +174,7 @@ const Home = () => {
                   </Button>
                   <Button 
                     size="sm"
-                    onClick={() => navigate(`/oferta/${offer.id}`)}
+                    onClick={() => handleAccept(offer)}
                   >
                     Aceitar
                   </Button>
