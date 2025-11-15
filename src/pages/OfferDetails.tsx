@@ -1,11 +1,8 @@
-import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Clock, MapPin, Package, Star, AlertCircle, ArrowLeft, Phone, Navigation } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 // Mock data - depois vem do backend
 const mockOffers = [
@@ -56,8 +53,6 @@ const mockOffers = [
 const OfferDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const offer = mockOffers.find((o) => o.id === Number(id));
 
@@ -77,15 +72,6 @@ const OfferDetails = () => {
     );
   }
 
-  const handleAccept = () => {
-    setShowConfirmDialog(false);
-    toast({
-      title: "Oferta aceita!",
-      description: "O restaurante foi notificado. Você receberá os detalhes em breve.",
-    });
-    // Aqui depois vai criar o match no backend
-    setTimeout(() => navigate("/home"), 2000);
-  };
 
   // URL do mapa estático (usando OpenStreetMap via StaticMap API)
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${offer.lng - 0.01},${offer.lat - 0.01},${offer.lng + 0.01},${offer.lat + 0.01}&layer=mapnik&marker=${offer.lat},${offer.lng}`;
@@ -239,35 +225,7 @@ const OfferDetails = () => {
           </CardContent>
         </Card>
 
-        {/* Botão de Aceitar */}
-        <Button 
-          size="lg" 
-          className="w-full text-lg h-14"
-          onClick={() => setShowConfirmDialog(true)}
-        >
-          Aceitar Oferta
-        </Button>
       </div>
-
-      {/* Dialog de Confirmação */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar aceite da oferta?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Você está aceitando trabalhar no turno de <strong>{offer.timeStart} até {offer.timeEnd}</strong> em <strong>{offer.restaurant}</strong>.
-              <br /><br />
-              Lembre-se: o cancelamento só é permitido até 3 horas antes do início.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Voltar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleAccept}>
-              Confirmar aceite
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
