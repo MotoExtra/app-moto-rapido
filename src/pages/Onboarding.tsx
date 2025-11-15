@@ -34,7 +34,7 @@ const Onboarding = () => {
                 </div>
                 <div>
                   <CardTitle>Sou Motoboy</CardTitle>
-                  <CardDescription>Encontre oportunidades de entrega</CardDescription>
+                  <CardDescription>Encontre oportunidades de extras</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -51,7 +51,7 @@ const Onboarding = () => {
                 </div>
                 <div>
                   <CardTitle>Sou Restaurante</CardTitle>
-                  <CardDescription>Publique vagas para motoboys</CardDescription>
+                  <CardDescription>Publique extras para motoboys</CardDescription>
                 </div>
               </div>
             </CardHeader>
