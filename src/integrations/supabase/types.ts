@@ -14,7 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accepted_offers: {
+        Row: {
+          accepted_at: string
+          created_at: string
+          id: string
+          offer_id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          created_at?: string
+          id?: string
+          offer_id: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          created_at?: string
+          id?: string
+          offer_id?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accepted_offers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offers: {
+        Row: {
+          accepted_by: string | null
+          address: string
+          created_at: string
+          delivery_range: string
+          description: string
+          experience: string | null
+          id: string
+          is_accepted: boolean | null
+          lat: number | null
+          lng: number | null
+          needs_bag: boolean | null
+          observations: string | null
+          payment: string | null
+          phone: string | null
+          radius: number
+          rating: number | null
+          restaurant_name: string
+          review_count: number | null
+          time_end: string
+          time_start: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_by?: string | null
+          address: string
+          created_at?: string
+          delivery_range: string
+          description: string
+          experience?: string | null
+          id?: string
+          is_accepted?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          needs_bag?: boolean | null
+          observations?: string | null
+          payment?: string | null
+          phone?: string | null
+          radius: number
+          rating?: number | null
+          restaurant_name: string
+          review_count?: number | null
+          time_end: string
+          time_start: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_by?: string | null
+          address?: string
+          created_at?: string
+          delivery_range?: string
+          description?: string
+          experience?: string | null
+          id?: string
+          is_accepted?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          needs_bag?: boolean | null
+          observations?: string | null
+          payment?: string | null
+          phone?: string | null
+          radius?: number
+          rating?: number | null
+          restaurant_name?: string
+          review_count?: number | null
+          time_end?: string
+          time_start?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
