@@ -5,45 +5,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Package, Star, AlertCircle, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock data - depois vem do backend
-const mockOffers = [
-  {
-    id: 1,
-    restaurant: "Restaurante de marmita no Cristóvão Colombo",
-    urgent: true,
-    description: "70+3+marmita",
-    address: "Rua Sampaio, 789",
-    timeStart: "11:00",
-    timeEnd: "16:00",
-    radius: 5,
-    needsBag: true,
-    deliveryRange: "15-30 entregas",
-    experience: "Motoboy com experiência",
-    rating: 4.5,
-    reviewCount: 24,
-  },
-  {
-    id: 2,
-    restaurant: "Pizzaria do Centro",
-    urgent: false,
-    description: "Entregas noturnas",
-    address: "Av. Principal, 123",
-    timeStart: "18:00",
-    timeEnd: "23:00",
-    radius: 3,
-    needsBag: true,
-    deliveryRange: "10-20 entregas",
-    experience: "Iniciante aceito",
-    rating: 4.8,
-    reviewCount: 45,
-  },
-];
+interface Offer {
+  id: string;
+  restaurant_name: string;
+  description: string;
+  address: string;
+  time_start: string;
+  time_end: string;
+  radius: number;
+  needs_bag: boolean;
+  delivery_range: string;
+  experience: string | null;
+  rating: number;
+  review_count: number;
+  is_accepted: boolean;
+}
 
 const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [offers, setOffers] = useState<Offer[]>([]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -52,6 +36,55 @@ const Home = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    fetchOffers();
+
+    // Setup realtime subscription
+    const channel = supabase
+      .channel('offers-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'offers',
+        },
+        (payload) => {
+          console.log('Offer updated:', payload);
+          // Remove offer from list if it was accepted
+          if (payload.new.is_accepted) {
+            setOffers((current) => current.filter((o) => o.id !== payload.new.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchOffers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("offers")
+        .select("*")
+        .eq("is_accepted", false)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setOffers(data || []);
+    } catch (error) {
+      console.error("Erro ao buscar ofertas:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as ofertas.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getTimeUntilStart = (timeStart: string) => {
     const now = new Date();
@@ -74,12 +107,54 @@ const Home = () => {
     };
   };
 
-  const handleAccept = (offer: typeof mockOffers[0]) => {
-    toast({
-      title: "Oferta aceita!",
-      description: `Você aceitou trabalhar em ${offer.restaurant} das ${offer.timeStart} às ${offer.timeEnd}.`,
-    });
-    // Aqui depois vai criar o match no backend
+  const handleAccept = async (offer: Offer) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Erro",
+          description: "Você precisa estar logado para aceitar extras.",
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+
+      // Update offer as accepted
+      const { error: updateError } = await supabase
+        .from("offers")
+        .update({ is_accepted: true, accepted_by: user.id })
+        .eq("id", offer.id);
+
+      if (updateError) throw updateError;
+
+      // Create accepted_offers record
+      const { error: insertError } = await supabase
+        .from("accepted_offers")
+        .insert({
+          user_id: user.id,
+          offer_id: offer.id,
+          status: "pending",
+        });
+
+      if (insertError) throw insertError;
+
+      // Remove from local state immediately
+      setOffers((current) => current.filter((o) => o.id !== offer.id));
+
+      toast({
+        title: "Extra aceito!",
+        description: `Você aceitou trabalhar em ${offer.restaurant_name} das ${offer.time_start} às ${offer.time_end}.`,
+      });
+    } catch (error) {
+      console.error("Erro ao aceitar extra:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível aceitar o extra. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -108,88 +183,96 @@ const Home = () => {
 
       {/* Offers List */}
       <div className="p-4 space-y-4 pb-20">
-        {mockOffers.map((offer) => {
-          const timeInfo = getTimeUntilStart(offer.timeStart);
-          return (
-            <Card key={offer.id} className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CardTitle className="text-lg">{offer.restaurant}</CardTitle>
-                      <Badge className={timeInfo.isUrgent ? "bg-destructive text-destructive-foreground" : "bg-green-600 text-white"}>
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        EXTRA
-                      </Badge>
-                    </div>
-                    <CardDescription className="font-medium">
-                      {offer.description}
-                    </CardDescription>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      <span className={timeInfo.isUrgent ? "text-destructive font-semibold" : ""}>
-                        Começa em {timeInfo.hours}h {timeInfo.minutes}min
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-            
-            <CardContent className="space-y-3">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>{offer.address}</span>
-              </div>
-
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>{offer.timeStart} até {offer.timeEnd} • Raio de {offer.radius} km</span>
-              </div>
-
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Package className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>Faz {offer.deliveryRange}</span>
-              </div>
-
-              {offer.needsBag && (
-                <Badge variant="outline" className="text-xs">
-                  Precisa de bag
-                </Badge>
-              )}
-
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div className="flex items-center text-sm">
-                  <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
-                  <span className="font-medium">{offer.rating}</span>
-                  <span className="text-muted-foreground ml-1">({offer.reviewCount})</span>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => navigate(`/oferta/${offer.id}`)}
-                  >
-                    Ver detalhes
-                  </Button>
-                  <Button 
-                    size="sm"
-                    onClick={() => handleAccept(offer)}
-                  >
-                    Aceitar
-                  </Button>
-                </div>
-              </div>
-
-              {offer.experience && (
-                <p className="text-xs text-muted-foreground italic">
-                  Obs.: {offer.experience}
-                </p>
-              )}
+        {offers.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground">Nenhum extra disponível no momento.</p>
             </CardContent>
           </Card>
-          );
-        })}
+        ) : (
+          offers.map((offer) => {
+            const timeInfo = getTimeUntilStart(offer.time_start);
+            return (
+              <Card key={offer.id} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CardTitle className="text-lg">{offer.restaurant_name}</CardTitle>
+                        <Badge className={timeInfo.isUrgent ? "bg-destructive text-destructive-foreground" : "bg-green-600 text-white"}>
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          EXTRA
+                        </Badge>
+                      </div>
+                      <CardDescription className="font-medium">
+                        {offer.description}
+                      </CardDescription>
+                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span className={timeInfo.isUrgent ? "text-destructive font-semibold" : ""}>
+                          Começa em {timeInfo.hours}h {timeInfo.minutes}min
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+              
+                <CardContent className="space-y-3">
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>{offer.address}</span>
+                  </div>
+
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>{offer.time_start} até {offer.time_end} • Raio de {offer.radius} km</span>
+                  </div>
+
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Package className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>Faz {offer.delivery_range}</span>
+                  </div>
+
+                  {offer.needs_bag && (
+                    <Badge variant="outline" className="text-xs">
+                      Precisa de bag
+                    </Badge>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center text-sm">
+                      <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
+                      <span className="font-medium">{offer.rating}</span>
+                      <span className="text-muted-foreground ml-1">({offer.review_count})</span>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/oferta/${offer.id}`)}
+                      >
+                        Ver detalhes
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={() => handleAccept(offer)}
+                      >
+                        Aceitar
+                      </Button>
+                    </div>
+                  </div>
+
+                  {offer.experience && (
+                    <p className="text-xs text-muted-foreground italic">
+                      Obs.: {offer.experience}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
 
       {/* Bottom Navigation */}
@@ -199,9 +282,13 @@ const Home = () => {
             <Package className="w-5 h-5 mb-1 fill-current" />
             <span className="text-xs">Ofertas</span>
           </Button>
-          <Button variant="ghost" className="flex-col h-auto py-2">
+          <Button 
+            variant="ghost" 
+            className="flex-col h-auto py-2"
+            onClick={() => navigate("/extras-aceitos")}
+          >
             <Clock className="w-5 h-5 mb-1" />
-            <span className="text-xs">Meus Turnos</span>
+            <span className="text-xs">Extras Aceitos</span>
           </Button>
           <Button
             variant="ghost"
