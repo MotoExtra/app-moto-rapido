@@ -121,6 +121,51 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          city: string
+          cnh: string | null
+          created_at: string
+          experience_years: number | null
+          has_thermal_bag: boolean | null
+          id: string
+          name: string
+          phone: string
+          updated_at: string
+          user_type: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          city: string
+          cnh?: string | null
+          created_at?: string
+          experience_years?: number | null
+          has_thermal_bag?: boolean | null
+          id: string
+          name: string
+          phone: string
+          updated_at?: string
+          user_type: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          city?: string
+          cnh?: string | null
+          created_at?: string
+          experience_years?: number | null
+          has_thermal_bag?: boolean | null
+          id?: string
+          name?: string
+          phone?: string
+          updated_at?: string
+          user_type?: string
+          vehicle_plate?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

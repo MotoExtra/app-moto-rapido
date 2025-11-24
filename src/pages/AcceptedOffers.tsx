@@ -36,62 +36,71 @@ const AcceptedOffers = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAcceptedOffers();
-  }, []);
+    const fetchAcceptedOffers = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          toast({
+            title: "Erro",
+            description: "Você precisa estar logado para ver seus extras aceitos.",
+            variant: "destructive",
+          });
+          navigate("/login");
+          return;
+        }
 
-  const fetchAcceptedOffers = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
+        const { data, error } = await supabase
+          .from("accepted_offers")
+          .select(`
+            id,
+            status,
+            accepted_at,
+            offer:offers(
+              id,
+              restaurant_name,
+              description,
+              address,
+              time_start,
+              time_end,
+              radius,
+              needs_bag,
+              delivery_range,
+              experience,
+              rating,
+              review_count,
+              phone,
+              payment
+            )
+          `)
+          .order("accepted_at", { ascending: false });
+
+        if (error) throw error;
+
+        setAcceptedOffers(data as AcceptedOffer[]);
+      } catch (error) {
+        console.error("Erro ao buscar extras aceitos:", error);
         toast({
           title: "Erro",
-          description: "Você precisa estar logado para ver seus extras aceitos.",
+          description: "Não foi possível carregar seus extras aceitos.",
           variant: "destructive",
         });
-        navigate("/");
-        return;
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const { data, error } = await supabase
-        .from("accepted_offers")
-        .select(`
-          id,
-          status,
-          accepted_at,
-          offer:offers(
-            id,
-            restaurant_name,
-            description,
-            address,
-            time_start,
-            time_end,
-            radius,
-            needs_bag,
-            delivery_range,
-            experience,
-            rating,
-            review_count,
-            phone,
-            payment
-          )
-        `)
-        .order("accepted_at", { ascending: false });
+    fetchAcceptedOffers();
 
-      if (error) throw error;
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate("/login");
+      }
+    });
 
-      setAcceptedOffers(data as AcceptedOffer[]);
-    } catch (error) {
-      console.error("Erro ao buscar extras aceitos:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar seus extras aceitos.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => subscription.unsubscribe();
+  }, [toast, navigate]);
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
