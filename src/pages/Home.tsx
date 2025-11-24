@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Package, Star, AlertCircle, TrendingUp } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, TrendingUp, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 interface Offer {
   id: string;
@@ -26,6 +27,7 @@ interface Offer {
 const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [offers, setOffers] = useState<Offer[]>([]);
 
@@ -36,6 +38,36 @@ const Home = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Erro",
+          description: "Você precisa estar logado para ver as ofertas.",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
+      }
+
+      setUser(user);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate("/login");
+      }
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [toast, navigate]);
 
   useEffect(() => {
     fetchOffers();
@@ -107,20 +139,27 @@ const Home = () => {
     };
   };
 
-  const handleAccept = async (offer: Offer) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Erro",
-          description: "Você precisa estar logado para aceitar extras.",
-          variant: "destructive",
-        });
-        navigate("/");
-        return;
-      }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logout realizado",
+      description: "Até logo!",
+    });
+    navigate("/login");
+  };
 
+  const handleAccept = async (offer: Offer) => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para aceitar ofertas.",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+
+    try {
       // Update offer as accepted
       const { error: updateError } = await supabase
         .from("offers")
@@ -170,12 +209,22 @@ const Home = () => {
                 Encontre o melhor match
               </p>
             </div>
-            <div className="flex flex-col items-end gap-1 bg-background/50 backdrop-blur-sm px-4 py-3 rounded-xl border shadow-sm">
-              <div className="flex items-center gap-2">
-                <Star className="w-6 h-6 fill-primary text-primary" />
-                <span className="text-2xl font-bold text-primary">100</span>
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col items-end gap-1 bg-background/50 backdrop-blur-sm px-4 py-3 rounded-xl border shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Star className="w-6 h-6 fill-primary text-primary" />
+                  <span className="text-2xl font-bold text-primary">100</span>
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">Seu Score</span>
               </div>
-              <span className="text-xs text-muted-foreground font-medium">Seu Score</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleLogout}
+                title="Sair"
+              >
+                <LogOut className="w-5 h-5" />
+              </Button>
             </div>
           </div>
         </div>
