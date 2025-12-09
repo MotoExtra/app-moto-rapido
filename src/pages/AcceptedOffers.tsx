@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Package, Star, ArrowLeft, Phone } from "lucide-react";
+import { Clock, MapPin, Package, Star, ArrowLeft, Phone, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +34,7 @@ const AcceptedOffers = () => {
   const { toast } = useToast();
   const [acceptedOffers, setAcceptedOffers] = useState<AcceptedOffer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAcceptedOffers = async () => {
@@ -101,6 +102,45 @@ const AcceptedOffers = () => {
 
     return () => subscription.unsubscribe();
   }, [toast, navigate]);
+
+  const handleCancelOffer = async (acceptedOffer: AcceptedOffer) => {
+    setCancellingId(acceptedOffer.id);
+
+    try {
+      // Delete the accepted_offer record
+      const { error: deleteError } = await supabase
+        .from("accepted_offers")
+        .delete()
+        .eq("id", acceptedOffer.id);
+
+      if (deleteError) throw deleteError;
+
+      // Update the offer to make it available again
+      const { error: updateError } = await supabase
+        .from("offers")
+        .update({ is_accepted: false, accepted_by: null })
+        .eq("id", acceptedOffer.offer.id);
+
+      if (updateError) throw updateError;
+
+      // Remove from local state
+      setAcceptedOffers((current) => current.filter((o) => o.id !== acceptedOffer.id));
+
+      toast({
+        title: "Extra cancelado",
+        description: "O extra foi cancelado e está disponível novamente.",
+      });
+    } catch (error) {
+      console.error("Erro ao cancelar extra:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível cancelar o extra. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -203,6 +243,28 @@ const AcceptedOffers = () => {
                 <p className="text-xs text-muted-foreground">
                   Aceito em: {new Date(acceptedOffer.accepted_at).toLocaleString("pt-BR")}
                 </p>
+
+                {acceptedOffer.status === "pending" && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full mt-3"
+                    onClick={() => handleCancelOffer(acceptedOffer)}
+                    disabled={cancellingId === acceptedOffer.id}
+                  >
+                    {cancellingId === acceptedOffer.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Cancelando...
+                      </>
+                    ) : (
+                      <>
+                        <X className="w-4 h-4 mr-2" />
+                        Cancelar Extra
+                      </>
+                    )}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))
