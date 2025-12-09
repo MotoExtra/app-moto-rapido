@@ -3,6 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Clock, MapPin, Package, Star, ArrowLeft, Phone, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +45,7 @@ const AcceptedOffers = () => {
   const [acceptedOffers, setAcceptedOffers] = useState<AcceptedOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [offerToCancel, setOfferToCancel] = useState<AcceptedOffer | null>(null);
 
   useEffect(() => {
     const fetchAcceptedOffers = async () => {
@@ -103,15 +114,17 @@ const AcceptedOffers = () => {
     return () => subscription.unsubscribe();
   }, [toast, navigate]);
 
-  const handleCancelOffer = async (acceptedOffer: AcceptedOffer) => {
-    setCancellingId(acceptedOffer.id);
+  const handleConfirmCancel = async () => {
+    if (!offerToCancel) return;
+    
+    setCancellingId(offerToCancel.id);
 
     try {
       // Delete the accepted_offer record
       const { error: deleteError } = await supabase
         .from("accepted_offers")
         .delete()
-        .eq("id", acceptedOffer.id);
+        .eq("id", offerToCancel.id);
 
       if (deleteError) throw deleteError;
 
@@ -119,12 +132,12 @@ const AcceptedOffers = () => {
       const { error: updateError } = await supabase
         .from("offers")
         .update({ is_accepted: false, accepted_by: null })
-        .eq("id", acceptedOffer.offer.id);
+        .eq("id", offerToCancel.offer.id);
 
       if (updateError) throw updateError;
 
       // Remove from local state
-      setAcceptedOffers((current) => current.filter((o) => o.id !== acceptedOffer.id));
+      setAcceptedOffers((current) => current.filter((o) => o.id !== offerToCancel.id));
 
       toast({
         title: "Extra cancelado",
@@ -139,6 +152,7 @@ const AcceptedOffers = () => {
       });
     } finally {
       setCancellingId(null);
+      setOfferToCancel(null);
     }
   };
 
@@ -163,7 +177,32 @@ const AcceptedOffers = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <>
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={!!offerToCancel} onOpenChange={(open) => !open && setOfferToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar Extra</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja cancelar o extra em{" "}
+              <span className="font-semibold">{offerToCancel?.offer.restaurant_name}</span>?
+              <br /><br />
+              Esta ação fará o extra voltar a ficar disponível para outros motoboys.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não, manter</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Sim, cancelar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background border-b">
         <div className="p-4 flex items-center gap-3">
@@ -249,7 +288,7 @@ const AcceptedOffers = () => {
                     variant="destructive"
                     size="sm"
                     className="w-full mt-3"
-                    onClick={() => handleCancelOffer(acceptedOffer)}
+                    onClick={() => setOfferToCancel(acceptedOffer)}
                     disabled={cancellingId === acceptedOffer.id}
                   >
                     {cancellingId === acceptedOffer.id ? (
@@ -288,7 +327,8 @@ const AcceptedOffers = () => {
           </Button>
         </div>
       </nav>
-    </div>
+      </div>
+    </>
   );
 };
 
