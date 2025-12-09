@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Package, Star, AlertCircle, TrendingUp, LogOut } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Clock, MapPin, Package, Star, AlertCircle, TrendingUp, LogOut, User as UserIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -30,6 +31,7 @@ const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [profileData, setProfileData] = useState<{ name: string; avatar_url: string } | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -54,6 +56,17 @@ const Home = () => {
       }
 
       setUser(user);
+
+      // Fetch profile data
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name, avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile) {
+        setProfileData(profile);
+      }
     };
 
     checkAuth();
@@ -209,14 +222,26 @@ const Home = () => {
                 Encontre o melhor match
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-end gap-1 bg-background/50 backdrop-blur-sm px-4 py-3 rounded-xl border shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end gap-1 bg-background/50 backdrop-blur-sm px-3 py-2 rounded-xl border shadow-sm">
                 <div className="flex items-center gap-2">
-                  <Star className="w-6 h-6 fill-primary text-primary" />
-                  <span className="text-2xl font-bold text-primary">100</span>
+                  <Star className="w-5 h-5 fill-primary text-primary" />
+                  <span className="text-xl font-bold text-primary">100</span>
                 </div>
-                <span className="text-xs text-muted-foreground font-medium">Seu Score</span>
+                <span className="text-xs text-muted-foreground font-medium">Score</span>
               </div>
+              <button
+                onClick={() => navigate("/perfil")}
+                className="relative"
+                title="Meu Perfil"
+              >
+                <Avatar className="w-11 h-11 border-2 border-primary/30 hover:border-primary transition-colors">
+                  <AvatarImage src={profileData?.avatar_url} alt={profileData?.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                    {profileData?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || <UserIcon className="w-5 h-5" />}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
               <Button
                 variant="outline"
                 size="icon"
