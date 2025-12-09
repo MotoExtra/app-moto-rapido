@@ -1,0 +1,438 @@
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ArrowLeft, Camera, Package, Clock, Star, Save, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
+
+interface ProfileData {
+  name: string;
+  phone: string;
+  city: string;
+  experience_years: number;
+  has_thermal_bag: boolean;
+  cnh: string;
+  vehicle_plate: string;
+  avatar_url: string;
+}
+
+const Profile = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [profile, setProfile] = useState<ProfileData>({
+    name: "",
+    phone: "",
+    city: "",
+    experience_years: 0,
+    has_thermal_bag: false,
+    cnh: "",
+    vehicle_plate: "",
+    avatar_url: "",
+  });
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
+      setUser(user);
+      await fetchProfile(user.id);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate("/login");
+      }
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setProfile({
+          name: data.name || "",
+          phone: data.phone || "",
+          city: data.city || "",
+          experience_years: data.experience_years || 0,
+          has_thermal_bag: data.has_thermal_bag || false,
+          cnh: data.cnh || "",
+          vehicle_plate: data.vehicle_plate || "",
+          avatar_url: data.avatar_url || "",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao buscar perfil:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar seu perfil.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione uma imagem válida.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Erro",
+        description: "A imagem deve ter no máximo 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile((prev) => ({ ...prev, avatar_url: publicUrl }));
+
+      toast({
+        title: "Sucesso",
+        description: "Foto atualizada com sucesso!",
+      });
+    } catch (error) {
+      console.error("Erro ao fazer upload:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a foto.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+
+    // Validate required fields
+    if (!profile.name.trim() || !profile.phone.trim() || !profile.city.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome, telefone e cidade são obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          name: profile.name.trim(),
+          phone: profile.phone.trim(),
+          city: profile.city.trim(),
+          experience_years: profile.experience_years,
+          has_thermal_bag: profile.has_thermal_bag,
+          cnh: profile.cnh.trim(),
+          vehicle_plate: profile.vehicle_plate.trim().toUpperCase(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Perfil atualizado com sucesso!",
+      });
+    } catch (error) {
+      console.error("Erro ao salvar perfil:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar as alterações.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-b shadow-sm">
+        <div className="p-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/home")}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-xl font-bold text-foreground">Meu Perfil</h1>
+          </div>
+        </div>
+      </header>
+
+      <div className="p-4 space-y-6">
+        {/* Avatar Section */}
+        <div className="flex flex-col items-center">
+          <div className="relative">
+            <Avatar className="w-28 h-28 border-4 border-primary/20">
+              <AvatarImage src={profile.avatar_url} alt={profile.name} />
+              <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                {getInitials(profile.name || "M")}
+              </AvatarFallback>
+            </Avatar>
+            <button
+              onClick={handleAvatarClick}
+              disabled={uploadingAvatar}
+              className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {uploadingAvatar ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Camera className="w-5 h-5" />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Toque para alterar a foto
+          </p>
+        </div>
+
+        {/* Profile Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Informações Pessoais</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome completo *</Label>
+              <Input
+                id="name"
+                value={profile.name}
+                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                placeholder="Seu nome completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone *</Label>
+              <Input
+                id="phone"
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="city">Cidade *</Label>
+              <Input
+                id="city"
+                value={profile.city}
+                onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+                placeholder="Sua cidade"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Vehicle Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Informações do Veículo</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cnh">CNH</Label>
+              <Input
+                id="cnh"
+                value={profile.cnh}
+                onChange={(e) => setProfile({ ...profile, cnh: e.target.value })}
+                placeholder="Número da CNH"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plate">Placa do veículo</Label>
+              <Input
+                id="plate"
+                value={profile.vehicle_plate}
+                onChange={(e) => setProfile({ ...profile, vehicle_plate: e.target.value })}
+                placeholder="ABC-1234"
+                className="uppercase"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="experience">Anos de experiência</Label>
+              <Input
+                id="experience"
+                type="number"
+                min="0"
+                max="50"
+                value={profile.experience_years}
+                onChange={(e) => setProfile({ ...profile, experience_years: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <Label htmlFor="thermal-bag" className="text-base">Bag térmica</Label>
+                <p className="text-sm text-muted-foreground">Você possui bag térmica?</p>
+              </div>
+              <Switch
+                id="thermal-bag"
+                checked={profile.has_thermal_bag}
+                onCheckedChange={(checked) => setProfile({ ...profile, has_thermal_bag: checked })}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Save Button */}
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              <Save className="w-5 h-5 mr-2" />
+              Salvar alterações
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t">
+        <div className="flex items-center justify-around p-2">
+          <Button
+            variant="ghost"
+            className="flex-col h-auto py-2"
+            onClick={() => navigate("/home")}
+          >
+            <Package className="w-5 h-5 mb-1" />
+            <span className="text-xs">Ofertas</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="flex-col h-auto py-2"
+            onClick={() => navigate("/extras-aceitos")}
+          >
+            <Clock className="w-5 h-5 mb-1" />
+            <span className="text-xs">Extras Aceitos</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="flex-col h-auto py-2"
+            onClick={() => navigate("/ranking")}
+          >
+            <Star className="w-5 h-5 mb-1" />
+            <span className="text-xs">Ranking</span>
+          </Button>
+        </div>
+      </nav>
+    </div>
+  );
+};
+
+export default Profile;
