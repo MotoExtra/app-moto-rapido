@@ -219,27 +219,26 @@ const Home = () => {
             <img src={logo} alt="MotoPay" className="h-16 w-auto drop-shadow-md" />
             
             <div className="flex items-center gap-4">
-              {/* Score + Avatar Container */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-4 py-2.5 rounded-2xl border shadow-md">
-                  <Star className="w-5 h-5 fill-primary text-primary" />
-                  <span className="text-xl font-bold text-primary">100</span>
-                </div>
-                
-                <button
-                  onClick={() => navigate("/perfil")}
-                  className="relative group"
-                  title="Meu Perfil"
-                >
+              {/* Avatar + Score Container */}
+              <button
+                onClick={() => navigate("/perfil")}
+                className="relative group flex flex-col items-center gap-1.5"
+                title="Meu Perfil"
+              >
+                <div className="relative">
                   <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-primary/30 rounded-full blur opacity-60 group-hover:opacity-100 transition-opacity" />
-                  <Avatar className="relative w-14 h-14 border-3 border-background ring-2 ring-primary/40 hover:ring-primary transition-all shadow-lg">
+                  <Avatar className="relative w-14 h-14 border-3 border-background ring-2 ring-primary/40 group-hover:ring-primary transition-all shadow-lg">
                     <AvatarImage src={profileData?.avatar_url} alt={profileData?.name} className="object-cover" />
                     <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
                       {profileData?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || <UserIcon className="w-6 h-6" />}
                     </AvatarFallback>
                   </Avatar>
-                </button>
-              </div>
+                </div>
+                <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2.5 py-1 rounded-full border shadow-sm">
+                  <Star className="w-3.5 h-3.5 fill-primary text-primary" />
+                  <span className="text-sm font-bold text-primary">100</span>
+                </div>
+              </button>
               
               <Button
                 variant="outline"
