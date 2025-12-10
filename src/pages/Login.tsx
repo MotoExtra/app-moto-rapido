@@ -109,14 +109,25 @@ const Login = () => {
               {loading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Não tem uma conta? </span>
+          
+          <div className="mt-6 space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Novo por aqui?
+                </span>
+              </div>
+            </div>
+            
             <Button
-              variant="link"
-              className="p-0 h-auto font-semibold"
+              variant="outline"
+              className="w-full"
               onClick={() => navigate("/cadastro/motoboy")}
             >
-              Cadastre-se aqui
+              Criar conta de motoboy
             </Button>
           </div>
         </CardContent>
