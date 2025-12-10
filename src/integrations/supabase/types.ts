@@ -54,6 +54,7 @@ export type Database = {
           accepted_by: string | null
           address: string
           created_at: string
+          created_by: string | null
           delivery_range: string
           description: string
           experience: string | null
@@ -63,6 +64,7 @@ export type Database = {
           lng: number | null
           needs_bag: boolean | null
           observations: string | null
+          offer_type: string | null
           payment: string | null
           phone: string | null
           radius: number
@@ -77,6 +79,7 @@ export type Database = {
           accepted_by?: string | null
           address: string
           created_at?: string
+          created_by?: string | null
           delivery_range: string
           description: string
           experience?: string | null
@@ -86,6 +89,7 @@ export type Database = {
           lng?: number | null
           needs_bag?: boolean | null
           observations?: string | null
+          offer_type?: string | null
           payment?: string | null
           phone?: string | null
           radius: number
@@ -100,6 +104,7 @@ export type Database = {
           accepted_by?: string | null
           address?: string
           created_at?: string
+          created_by?: string | null
           delivery_range?: string
           description?: string
           experience?: string | null
@@ -109,6 +114,7 @@ export type Database = {
           lng?: number | null
           needs_bag?: boolean | null
           observations?: string | null
+          offer_type?: string | null
           payment?: string | null
           phone?: string | null
           radius?: number
