@@ -13,7 +13,7 @@ const Onboarding = () => {
     if (type === "motoboy") {
       navigate("/login");
     } else {
-      navigate(`/cadastro/${type}`);
+      navigate("/login/restaurante");
     }
   };
 

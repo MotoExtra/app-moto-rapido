@@ -199,6 +199,51 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurants: {
+        Row: {
+          address: string
+          city: string
+          close_time: string | null
+          cnpj: string | null
+          created_at: string
+          fantasy_name: string
+          id: string
+          logo_url: string | null
+          open_time: string | null
+          phone: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address: string
+          city: string
+          close_time?: string | null
+          cnpj?: string | null
+          created_at?: string
+          fantasy_name: string
+          id: string
+          logo_url?: string | null
+          open_time?: string | null
+          phone: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string
+          city?: string
+          close_time?: string | null
+          cnpj?: string | null
+          created_at?: string
+          fantasy_name?: string
+          id?: string
+          logo_url?: string | null
+          open_time?: string | null
+          phone?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
