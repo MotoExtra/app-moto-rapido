@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,6 +174,33 @@ const Home = () => {
     navigate("/login");
   };
 
+  const handleDeleteOffer = async (offerId: string) => {
+    if (!confirm("Tem certeza que deseja excluir este extra?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("offers")
+        .delete()
+        .eq("id", offerId);
+
+      if (error) throw error;
+
+      setOffers((current) => current.filter((o) => o.id !== offerId));
+
+      toast({
+        title: "Extra excluído",
+        description: "O extra foi removido com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao excluir extra:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o extra.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleAccept = async (offer: Offer) => {
     if (!user) {
       toast({
@@ -305,10 +332,11 @@ const Home = () => {
           offers.map((offer) => {
             const timeInfo = getTimeUntilStart(offer.time_start);
             const isMotoboyOffer = offer.offer_type === "motoboy";
+            const isOwnOffer = offer.created_by === user?.id;
             return (
               <Card 
                 key={offer.id} 
-                className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-card via-card to-muted/20"
+                className={`overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-card via-card to-muted/20 ${isOwnOffer ? 'ring-2 ring-blue-500/30' : ''}`}
               >
                 {/* Top accent bar */}
                 <div className={`h-1.5 ${timeInfo.isUrgent ? 'bg-gradient-to-r from-destructive via-destructive/80 to-destructive' : 'bg-gradient-to-r from-primary via-primary/80 to-green-500'}`} />
@@ -389,21 +417,47 @@ const Home = () => {
                     </div>
                     
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => navigate(`/oferta/${offer.id}`)}
-                        className="rounded-xl hover:bg-muted/50"
-                      >
-                        Ver detalhes
-                      </Button>
-                      <Button 
-                        size="sm"
-                        onClick={() => handleAccept(offer)}
-                        className="rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all"
-                      >
-                        Aceitar
-                      </Button>
+                      {isOwnOffer && (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="icon"
+                            onClick={() => navigate(`/editar-extra/${offer.id}`)}
+                            className="rounded-xl hover:bg-blue-500/10 hover:border-blue-500/50 hover:text-blue-600"
+                            title="Editar"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="icon"
+                            onClick={() => handleDeleteOffer(offer.id)}
+                            className="rounded-xl hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      {!isOwnOffer && (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => navigate(`/oferta/${offer.id}`)}
+                            className="rounded-xl hover:bg-muted/50"
+                          >
+                            Ver detalhes
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => handleAccept(offer)}
+                            className="rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all"
+                          >
+                            Aceitar
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
 
