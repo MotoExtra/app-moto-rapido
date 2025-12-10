@@ -2,3 +2,6 @@ project_id = "lkgvewhoqmieklsqxgjn"
 
 [functions.notify-offer-accepted]
 verify_jwt = false
+
+[functions.notify-new-offer]
+verify_jwt = false

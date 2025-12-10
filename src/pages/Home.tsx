@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import type { User } from "@supabase/supabase-js";
 
 interface Offer {
@@ -34,12 +35,14 @@ interface Offer {
 const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSupported, isSubscribed, permission, subscribe } = usePushNotifications();
   const [user, setUser] = useState<User | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [offers, setOffers] = useState<Offer[]>([]);
   const [profileData, setProfileData] = useState<{ name: string; avatar_url: string } | null>(null);
   const [hasActiveOffer, setHasActiveOffer] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationPromptShown, setNotificationPromptShown] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -98,6 +101,18 @@ const Home = () => {
 
     return () => subscription.unsubscribe();
   }, [toast, navigate]);
+
+  // Solicita permissão de notificações após login
+  useEffect(() => {
+    if (user && isSupported && !isSubscribed && permission === "default" && !notificationPromptShown) {
+      setNotificationPromptShown(true);
+      // Pequeno delay para não atrapalhar o carregamento
+      const timer = setTimeout(() => {
+        subscribe();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, isSupported, isSubscribed, permission, subscribe, notificationPromptShown]);
 
   useEffect(() => {
     fetchOffers();
@@ -319,7 +334,20 @@ const Home = () => {
           <div className="flex items-center justify-between">
             <img src={logo} alt="MotoPay" className="h-16 w-auto drop-shadow-md" />
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {/* Notification Bell */}
+              {isSupported && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={subscribe}
+                  className={`rounded-xl shadow-sm hover:shadow-md transition-shadow ${isSubscribed ? 'bg-primary/10 border-primary/30' : ''}`}
+                  title={isSubscribed ? "Notificações ativadas" : "Ativar notificações"}
+                >
+                  <Bell className={`w-5 h-5 ${isSubscribed ? 'text-primary fill-primary/20' : ''}`} />
+                </Button>
+              )}
+              
               {/* Avatar + Score */}
               <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2.5 py-1 rounded-full border shadow-sm">
                 <Star className="w-3.5 h-3.5 fill-primary text-primary" />
