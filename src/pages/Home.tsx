@@ -375,28 +375,38 @@ const Home = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t">
-        <div className="flex items-center justify-around p-2">
-          <Button variant="default" className="flex-col h-auto py-2">
-            <Package className="w-5 h-5 mb-1 fill-current" />
-            <span className="text-xs">Ofertas</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className="flex-col h-auto py-2"
+      <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-background/95 backdrop-blur-lg border-t shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center justify-around px-4 py-3 max-w-md mx-auto">
+          {/* Ofertas - Active */}
+          <button className="relative flex flex-col items-center gap-1 px-4 py-1 group">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-full" />
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+              <Package className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span className="text-xs font-semibold text-primary">Ofertas</span>
+          </button>
+          
+          {/* Extras Aceitos */}
+          <button 
             onClick={() => navigate("/extras-aceitos")}
+            className="relative flex flex-col items-center gap-1 px-4 py-1 group"
           >
-            <Clock className="w-5 h-5 mb-1" />
-            <span className="text-xs">Extras Aceitos</span>
-          </Button>
-          <Button
-            variant="ghost"
-            className="flex-col h-auto py-2"
+            <div className="w-11 h-11 rounded-2xl bg-muted/50 group-hover:bg-muted flex items-center justify-center transition-colors">
+              <Clock className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Aceitos</span>
+          </button>
+          
+          {/* Ranking */}
+          <button
             onClick={() => navigate("/ranking")}
+            className="relative flex flex-col items-center gap-1 px-4 py-1 group"
           >
-            <Star className="w-5 h-5 mb-1" />
-            <span className="text-xs">Ranking</span>
-          </Button>
+            <div className="w-11 h-11 rounded-2xl bg-muted/50 group-hover:bg-muted flex items-center justify-center transition-colors">
+              <Star className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Ranking</span>
+          </button>
         </div>
       </nav>
     </div>
