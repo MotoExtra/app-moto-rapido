@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, MapPin, Package, Star, AlertCircle, TrendingUp, LogOut, User as UserIcon } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -215,13 +216,7 @@ const Home = () => {
       <header className="sticky top-0 z-10 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-b shadow-sm">
         <div className="p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-1">Oportunidades</h1>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="w-4 h-4" />
-                Encontre o melhor match
-              </p>
-            </div>
+            <img src={logo} alt="MotoPay" className="h-12 w-auto" />
             <div className="flex items-center gap-3">
               <div className="flex flex-col items-end gap-1 bg-background/50 backdrop-blur-sm px-3 py-2 rounded-xl border shadow-sm">
                 <div className="flex items-center gap-2">
