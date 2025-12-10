@@ -204,27 +204,30 @@ export type Database = {
           comment: string | null
           created_at: string
           id: string
-          motoboy_id: string
+          motoboy_id: string | null
           offer_id: string
           rating: number
+          rating_type: string
           restaurant_id: string
         }
         Insert: {
           comment?: string | null
           created_at?: string
           id?: string
-          motoboy_id: string
+          motoboy_id?: string | null
           offer_id: string
           rating: number
+          rating_type?: string
           restaurant_id: string
         }
         Update: {
           comment?: string | null
           created_at?: string
           id?: string
-          motoboy_id?: string
+          motoboy_id?: string | null
           offer_id?: string
           rating?: number
+          rating_type?: string
           restaurant_id?: string
         }
         Relationships: [

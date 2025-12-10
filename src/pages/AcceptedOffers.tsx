@@ -16,11 +16,13 @@ import {
 import { Clock, MapPin, Package, Star, ArrowLeft, Phone, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import RateRestaurantModal from "@/components/RateRestaurantModal";
 
 interface AcceptedOffer {
   id: string;
   status: string;
   accepted_at: string;
+  user_id: string;
   offer: {
     id: string;
     restaurant_name: string;
@@ -36,7 +38,9 @@ interface AcceptedOffer {
     review_count: number;
     phone: string | null;
     payment: string | null;
+    created_by: string | null;
   };
+  has_rating?: boolean;
 }
 
 const AcceptedOffers = () => {
@@ -46,6 +50,9 @@ const AcceptedOffers = () => {
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [offerToCancel, setOfferToCancel] = useState<AcceptedOffer | null>(null);
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<AcceptedOffer | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAcceptedOffers = async () => {
@@ -62,12 +69,15 @@ const AcceptedOffers = () => {
           return;
         }
 
+        setUserId(user.id);
+
         const { data, error } = await supabase
           .from("accepted_offers")
           .select(`
             id,
             status,
             accepted_at,
+            user_id,
             offer:offers(
               id,
               restaurant_name,
@@ -82,14 +92,29 @@ const AcceptedOffers = () => {
               rating,
               review_count,
               phone,
-              payment
+              payment,
+              created_by
             )
           `)
           .order("accepted_at", { ascending: false });
 
         if (error) throw error;
 
-        setAcceptedOffers(data as AcceptedOffer[]);
+        // Check which offers already have ratings from this motoboy
+        const { data: ratingsData } = await supabase
+          .from("ratings")
+          .select("offer_id")
+          .eq("motoboy_id", user.id)
+          .eq("rating_type", "motoboy_to_restaurant");
+
+        const ratedOfferIds = new Set(ratingsData?.map(r => r.offer_id) || []);
+
+        const enrichedOffers = (data as AcceptedOffer[]).map(ao => ({
+          ...ao,
+          has_rating: ratedOfferIds.has(ao.offer.id)
+        }));
+
+        setAcceptedOffers(enrichedOffers);
       } catch (error) {
         console.error("Erro ao buscar extras aceitos:", error);
         toast({
@@ -284,25 +309,47 @@ const AcceptedOffers = () => {
                 </p>
 
                 {acceptedOffer.status === "pending" && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="w-full mt-3"
-                    onClick={() => setOfferToCancel(acceptedOffer)}
-                    disabled={cancellingId === acceptedOffer.id}
-                  >
-                    {cancellingId === acceptedOffer.id ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Cancelando...
-                      </>
-                    ) : (
-                      <>
-                        <X className="w-4 h-4 mr-2" />
-                        Cancelar Extra
-                      </>
+                  <div className="flex gap-2 mt-3">
+                    {!acceptedOffer.has_rating && acceptedOffer.offer.created_by && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          setSelectedOffer(acceptedOffer);
+                          setRatingModalOpen(true);
+                        }}
+                      >
+                        <Star className="w-4 h-4 mr-2" />
+                        Avaliar Restaurante
+                      </Button>
                     )}
-                  </Button>
+                    {acceptedOffer.has_rating && (
+                      <Badge variant="secondary" className="gap-1 flex-1 justify-center py-2">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        Avaliado
+                      </Badge>
+                    )}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setOfferToCancel(acceptedOffer)}
+                      disabled={cancellingId === acceptedOffer.id}
+                    >
+                      {cancellingId === acceptedOffer.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Cancelando...
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4 mr-2" />
+                          Cancelar
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -328,6 +375,26 @@ const AcceptedOffers = () => {
         </div>
       </nav>
       </div>
+
+      {/* Rating Modal */}
+      {selectedOffer && userId && (
+        <RateRestaurantModal
+          open={ratingModalOpen}
+          onOpenChange={setRatingModalOpen}
+          offerId={selectedOffer.offer.id}
+          restaurantId={selectedOffer.offer.created_by || ""}
+          restaurantName={selectedOffer.offer.restaurant_name}
+          motoboyId={userId}
+          onRatingComplete={() => {
+            setAcceptedOffers(current =>
+              current.map(ao =>
+                ao.id === selectedOffer.id ? { ...ao, has_rating: true } : ao
+              )
+            );
+            setSelectedOffer(null);
+          }}
+        />
+      )}
     </>
   );
 };

@@ -42,6 +42,8 @@ interface Offer {
   created_at: string;
   has_rating?: boolean;
   motoboy_name?: string;
+  motoboy_rating?: number;
+  motoboy_review_count?: number;
 }
 
 const RestaurantHome = () => {
@@ -85,28 +87,53 @@ const RestaurantHome = () => {
         .order("created_at", { ascending: false });
 
       if (offersData) {
-        // Check which offers already have ratings
+        // Check which offers already have ratings from this restaurant
         const { data: ratingsData } = await supabase
           .from("ratings")
           .select("offer_id")
-          .eq("restaurant_id", session.user.id);
+          .eq("restaurant_id", session.user.id)
+          .eq("rating_type", "restaurant_to_motoboy");
 
         const ratedOfferIds = new Set(ratingsData?.map(r => r.offer_id) || []);
 
         // Fetch motoboy names for accepted offers
-        const acceptedOfferIds = offersData.filter(o => o.is_accepted && o.accepted_by).map(o => o.accepted_by);
+        const acceptedMotoboyIds = offersData.filter(o => o.is_accepted && o.accepted_by).map(o => o.accepted_by);
         const { data: motoboyProfiles } = await supabase
           .from("profiles")
           .select("id, name")
-          .in("id", acceptedOfferIds);
+          .in("id", acceptedMotoboyIds);
 
         const motoboyNameMap = new Map(motoboyProfiles?.map(p => [p.id, p.name]) || []);
 
-        const enrichedOffers = offersData.map(offer => ({
-          ...offer,
-          has_rating: ratedOfferIds.has(offer.id),
-          motoboy_name: offer.accepted_by ? motoboyNameMap.get(offer.accepted_by) || "Motoboy" : undefined
-        }));
+        // Fetch motoboy ratings from other restaurants
+        const { data: motoboyRatingsData } = await supabase
+          .from("ratings")
+          .select("motoboy_id, rating")
+          .eq("rating_type", "restaurant_to_motoboy")
+          .in("motoboy_id", acceptedMotoboyIds);
+
+        // Calculate average ratings per motoboy
+        const ratingsByMotoboy = new Map<string, { total: number; count: number }>();
+        motoboyRatingsData?.forEach(r => {
+          if (r.motoboy_id) {
+            const existing = ratingsByMotoboy.get(r.motoboy_id) || { total: 0, count: 0 };
+            ratingsByMotoboy.set(r.motoboy_id, {
+              total: existing.total + r.rating,
+              count: existing.count + 1
+            });
+          }
+        });
+
+        const enrichedOffers = offersData.map(offer => {
+          const motoboyRating = offer.accepted_by ? ratingsByMotoboy.get(offer.accepted_by) : null;
+          return {
+            ...offer,
+            has_rating: ratedOfferIds.has(offer.id),
+            motoboy_name: offer.accepted_by ? motoboyNameMap.get(offer.accepted_by) || "Motoboy" : undefined,
+            motoboy_rating: motoboyRating ? Math.round((motoboyRating.total / motoboyRating.count) * 10) / 10 : undefined,
+            motoboy_review_count: motoboyRating?.count || 0
+          };
+        });
 
         setOffers(enrichedOffers);
       }
@@ -262,31 +289,42 @@ const RestaurantHome = () => {
                   </div>
 
                   {offer.is_accepted && (
-                    <div className="mt-3 pt-3 border-t flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-green-600">
-                        <User className="w-4 h-4" />
-                        {offer.motoboy_name || "Motoboy confirmado"}
+                    <div className="mt-3 pt-3 border-t space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-green-600">
+                          <User className="w-4 h-4" />
+                          {offer.motoboy_name || "Motoboy confirmado"}
+                        </div>
+                        {offer.motoboy_rating !== undefined && offer.motoboy_review_count && offer.motoboy_review_count > 0 && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10">
+                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                            <span className="text-xs font-bold text-amber-600">{offer.motoboy_rating}</span>
+                            <span className="text-xs text-muted-foreground">({offer.motoboy_review_count})</span>
+                          </div>
+                        )}
                       </div>
-                      {!offer.has_rating && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedOffer(offer);
-                            setRatingModalOpen(true);
-                          }}
-                          className="gap-1"
-                        >
-                          <Star className="w-4 h-4" />
-                          Avaliar
-                        </Button>
-                      )}
-                      {offer.has_rating && (
-                        <Badge variant="secondary" className="gap-1">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          Avaliado
-                        </Badge>
-                      )}
+                      <div className="flex items-center justify-end gap-2">
+                        {!offer.has_rating && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedOffer(offer);
+                              setRatingModalOpen(true);
+                            }}
+                            className="gap-1"
+                          >
+                            <Star className="w-4 h-4" />
+                            Avaliar
+                          </Button>
+                        )}
+                        {offer.has_rating && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            Avaliado
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   )}
                 </CardContent>

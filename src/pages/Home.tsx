@@ -27,6 +27,8 @@ interface Offer {
   is_accepted: boolean;
   offer_type?: string;
   created_by?: string;
+  restaurant_rating?: number;
+  restaurant_review_count?: number;
 }
 
 const Home = () => {
@@ -135,7 +137,39 @@ const Home = () => {
 
       if (error) throw error;
 
-      setOffers(data || []);
+      if (data && data.length > 0) {
+        // Fetch restaurant ratings from motoboys
+        const creatorIds = [...new Set(data.filter(o => o.created_by).map(o => o.created_by))];
+        
+        const { data: ratingsData } = await supabase
+          .from("ratings")
+          .select("restaurant_id, rating")
+          .eq("rating_type", "motoboy_to_restaurant")
+          .in("restaurant_id", creatorIds);
+
+        // Calculate average ratings per restaurant
+        const ratingsByRestaurant = new Map<string, { total: number; count: number }>();
+        ratingsData?.forEach(r => {
+          const existing = ratingsByRestaurant.get(r.restaurant_id) || { total: 0, count: 0 };
+          ratingsByRestaurant.set(r.restaurant_id, {
+            total: existing.total + r.rating,
+            count: existing.count + 1
+          });
+        });
+
+        const enrichedOffers = data.map(offer => {
+          const restaurantRating = offer.created_by ? ratingsByRestaurant.get(offer.created_by) : null;
+          return {
+            ...offer,
+            restaurant_rating: restaurantRating ? Math.round((restaurantRating.total / restaurantRating.count) * 10) / 10 : undefined,
+            restaurant_review_count: restaurantRating?.count || 0
+          };
+        });
+
+        setOffers(enrichedOffers);
+      } else {
+        setOffers([]);
+      }
     } catch (error) {
       console.error("Erro ao buscar ofertas:", error);
       toast({
@@ -482,11 +516,18 @@ const Home = () => {
                   )}
 
                   <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10">
-                      <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
-                      <span className="font-bold text-amber-600">{offer.rating}</span>
-                      <span className="text-muted-foreground text-sm">({offer.review_count})</span>
-                    </div>
+                    {offer.restaurant_rating !== undefined && offer.restaurant_review_count && offer.restaurant_review_count > 0 ? (
+                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10">
+                        <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                        <span className="font-bold text-amber-600">{offer.restaurant_rating}</span>
+                        <span className="text-muted-foreground text-sm">({offer.restaurant_review_count} avaliações)</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/50">
+                        <Star className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground text-sm">Sem avaliações</span>
+                      </div>
+                    )}
                     
                     <div className="flex gap-2">
                       {isOwnOffer && (
