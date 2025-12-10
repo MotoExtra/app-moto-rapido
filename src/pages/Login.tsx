@@ -74,7 +74,7 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto">
-            <img src={logo} alt="MotoPay" className="h-24 w-auto" />
+            <img src={logo} alt="MotoPay" className="h-32 w-auto" />
           </div>
           <CardTitle className="text-3xl">Entrar</CardTitle>
           <CardDescription>
