@@ -14,11 +14,12 @@ import {
   Settings,
   Loader2,
   CheckCircle2,
-  XCircle
+  Star
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+import RatingModal from "@/components/RatingModal";
 
 interface Restaurant {
   id: string;
@@ -39,6 +40,8 @@ interface Offer {
   is_accepted: boolean;
   accepted_by: string | null;
   created_at: string;
+  has_rating?: boolean;
+  motoboy_name?: string;
 }
 
 const RestaurantHome = () => {
@@ -47,6 +50,8 @@ const RestaurantHome = () => {
   const [loading, setLoading] = useState(true);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -80,7 +85,30 @@ const RestaurantHome = () => {
         .order("created_at", { ascending: false });
 
       if (offersData) {
-        setOffers(offersData);
+        // Check which offers already have ratings
+        const { data: ratingsData } = await supabase
+          .from("ratings")
+          .select("offer_id")
+          .eq("restaurant_id", session.user.id);
+
+        const ratedOfferIds = new Set(ratingsData?.map(r => r.offer_id) || []);
+
+        // Fetch motoboy names for accepted offers
+        const acceptedOfferIds = offersData.filter(o => o.is_accepted && o.accepted_by).map(o => o.accepted_by);
+        const { data: motoboyProfiles } = await supabase
+          .from("profiles")
+          .select("id, name")
+          .in("id", acceptedOfferIds);
+
+        const motoboyNameMap = new Map(motoboyProfiles?.map(p => [p.id, p.name]) || []);
+
+        const enrichedOffers = offersData.map(offer => ({
+          ...offer,
+          has_rating: ratedOfferIds.has(offer.id),
+          motoboy_name: offer.accepted_by ? motoboyNameMap.get(offer.accepted_by) || "Motoboy" : undefined
+        }));
+
+        setOffers(enrichedOffers);
       }
 
       setLoading(false);
@@ -234,9 +262,31 @@ const RestaurantHome = () => {
                   </div>
 
                   {offer.is_accepted && (
-                    <div className="mt-3 pt-3 border-t flex items-center gap-2 text-sm text-green-600">
-                      <User className="w-4 h-4" />
-                      Motoboy confirmado
+                    <div className="mt-3 pt-3 border-t flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <User className="w-4 h-4" />
+                        {offer.motoboy_name || "Motoboy confirmado"}
+                      </div>
+                      {!offer.has_rating && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedOffer(offer);
+                            setRatingModalOpen(true);
+                          }}
+                          className="gap-1"
+                        >
+                          <Star className="w-4 h-4" />
+                          Avaliar
+                        </Button>
+                      )}
+                      {offer.has_rating && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          Avaliado
+                        </Badge>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -268,6 +318,26 @@ const RestaurantHome = () => {
           </button>
         </div>
       </nav>
+
+      {/* Rating Modal */}
+      {selectedOffer && restaurant && (
+        <RatingModal
+          open={ratingModalOpen}
+          onOpenChange={setRatingModalOpen}
+          offerId={selectedOffer.id}
+          motoboyId={selectedOffer.accepted_by || ""}
+          motoboyName={selectedOffer.motoboy_name || "Motoboy"}
+          restaurantId={restaurant.id}
+          onRatingComplete={() => {
+            setOffers(current =>
+              current.map(o =>
+                o.id === selectedOffer.id ? { ...o, has_rating: true } : o
+              )
+            );
+            setSelectedOffer(null);
+          }}
+        />
+      )}
     </div>
   );
 };

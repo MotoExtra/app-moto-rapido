@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Camera, Package, Clock, Star, Save, Loader2, Pencil, Trash2, Plus, Bike, MapPin } from "lucide-react";
+import { ArrowLeft, Camera, Package, Clock, Star, Save, Loader2, Pencil, Trash2, Plus, Bike, MapPin, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -33,6 +33,14 @@ interface MyOffer {
   is_accepted: boolean;
 }
 
+interface Rating {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  restaurant_name?: string;
+}
+
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -43,6 +51,8 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [myOffers, setMyOffers] = useState<MyOffer[]>([]);
+  const [myRatings, setMyRatings] = useState<Rating[]>([]);
+  const [averageRating, setAverageRating] = useState<number>(0);
   const [profile, setProfile] = useState<ProfileData>({
     name: "",
     phone: "",
@@ -66,6 +76,7 @@ const Profile = () => {
       setUser(user);
       await fetchProfile(user.id);
       await fetchMyOffers(user.id);
+      await fetchMyRatings(user.id);
     };
 
     checkAuth();
@@ -111,6 +122,49 @@ const Profile = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMyRatings = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("ratings")
+        .select(`
+          id,
+          rating,
+          comment,
+          created_at,
+          restaurant_id
+        `)
+        .eq("motoboy_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Fetch restaurant names
+        const restaurantIds = [...new Set(data.map(r => r.restaurant_id))];
+        const { data: restaurants } = await supabase
+          .from("restaurants")
+          .select("id, fantasy_name")
+          .in("id", restaurantIds);
+
+        const restaurantMap = new Map(restaurants?.map(r => [r.id, r.fantasy_name]) || []);
+
+        const enrichedRatings = data.map(r => ({
+          ...r,
+          restaurant_name: restaurantMap.get(r.restaurant_id) || "Restaurante"
+        }));
+
+        setMyRatings(enrichedRatings);
+
+        // Calculate average rating
+        const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+        setAverageRating(Math.round(avg * 10) / 10);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar avaliações:", error);
     }
   };
 
@@ -537,6 +591,64 @@ const Profile = () => {
                       </Button>
                     </div>
                   </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Ratings Section */}
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-yellow-500/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-yellow-600" />
+                </div>
+                Minhas Avaliações
+              </CardTitle>
+              {myRatings.length > 0 && (
+                <Badge variant="secondary" className="gap-1 bg-yellow-500/10 text-yellow-700">
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  {averageRating.toFixed(1)}
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {myRatings.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">
+                <Star className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhuma avaliação ainda</p>
+                <p className="text-xs mt-1">Complete extras para receber avaliações!</p>
+              </div>
+            ) : (
+              myRatings.map((rating) => (
+                <div
+                  key={rating.id}
+                  className="p-3 rounded-xl bg-muted/30 border border-border/50"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="font-medium text-sm">{rating.restaurant_name}</span>
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-3.5 h-3.5 ${
+                            star <= rating.rating
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted-foreground/30"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {rating.comment && (
+                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <MessageSquare className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                      <p className="line-clamp-2">{rating.comment}</p>
+                    </div>
+                  )}
                 </div>
               ))
             )}
