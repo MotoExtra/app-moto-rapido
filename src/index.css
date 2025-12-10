@@ -17,32 +17,32 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    /* Verde vibrante para ações principais (aceitar, confirmar) */
-    --primary: 142 76% 36%;
+    /* Laranja vibrante para ações principais (aceitar, confirmar) - combina com a logo */
+    --primary: 28 95% 53%;
     --primary-foreground: 0 0% 100%;
 
     /* Cinza suave para cards e backgrounds secundários */
-    --secondary: 240 4.8% 95.9%;
+    --secondary: 30 20% 96%;
     --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 240 4.8% 95.9%;
+    --muted: 30 15% 95%;
     --muted-foreground: 240 3.8% 46.1%;
 
-    /* Azul suave para destaques e links */
-    --accent: 217 91% 60%;
+    /* Azul escuro para destaques e links - combina com "MOTO" da logo */
+    --accent: 230 65% 35%;
     --accent-foreground: 0 0% 100%;
 
     /* Vermelho para urgência e cancelamentos */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Laranja para selos de urgência */
-    --urgent: 25 95% 53%;
+    /* Laranja mais escuro para selos de urgência */
+    --urgent: 15 90% 45%;
     --urgent-foreground: 0 0% 100%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 142 76% 36%;
+    --border: 30 10% 88%;
+    --input: 30 10% 88%;
+    --ring: 28 95% 53%;
 
     --radius: 0.75rem;
 
@@ -63,36 +63,36 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 20 10% 5%;
     --foreground: 0 0% 98%;
 
-    --card: 240 10% 7%;
+    --card: 20 10% 8%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 10% 7%;
+    --popover: 20 10% 8%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 142 70% 45%;
+    --primary: 28 90% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 3.7% 15.9%;
+    --secondary: 20 5% 18%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 20 5% 18%;
+    --muted-foreground: 30 5% 65%;
 
-    --accent: 217 91% 60%;
+    --accent: 230 65% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --urgent: 25 95% 53%;
+    --urgent: 15 90% 45%;
     --urgent-foreground: 0 0% 100%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142 70% 45%;
+    --border: 20 5% 18%;
+    --input: 20 5% 18%;
+    --ring: 28 90% 50%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
