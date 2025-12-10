@@ -199,6 +199,58 @@ export type Database = {
         }
         Relationships: []
       }
+      ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          motoboy_id: string
+          offer_id: string
+          rating: number
+          restaurant_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          motoboy_id: string
+          offer_id: string
+          rating: number
+          restaurant_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          motoboy_id?: string
+          offer_id?: string
+          rating?: number
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_motoboy_id_fkey"
+            columns: ["motoboy_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: true
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           address: string
