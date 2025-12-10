@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,8 @@ interface Offer {
   rating: number;
   review_count: number;
   is_accepted: boolean;
+  offer_type?: string;
+  created_by?: string;
 }
 
 const Home = () => {
@@ -276,6 +278,19 @@ const Home = () => {
         </div>
       </header>
 
+      {/* Offer Extra Button */}
+      <div className="px-4 pt-4">
+        <Button
+          onClick={() => navigate("/ofertar-extra")}
+          className="w-full h-14 rounded-2xl bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent text-accent-foreground shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/30 transition-all flex items-center justify-center gap-3"
+        >
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <Plus className="w-5 h-5" />
+          </div>
+          <span className="text-lg font-semibold">Ofertar Extra para Motoboys</span>
+        </Button>
+      </div>
+
       {/* Offers List */}
       <div className="p-4 space-y-4 pb-20">
         {offers.length === 0 ? (
@@ -289,6 +304,7 @@ const Home = () => {
         ) : (
           offers.map((offer) => {
             const timeInfo = getTimeUntilStart(offer.time_start);
+            const isMotoboyOffer = offer.offer_type === "motoboy";
             return (
               <Card 
                 key={offer.id} 
@@ -300,8 +316,16 @@ const Home = () => {
                 <CardHeader className="pb-3 pt-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1.5">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <CardTitle className="text-lg font-bold">{offer.restaurant_name}</CardTitle>
+                        {isMotoboyOffer && (
+                          <Badge 
+                            className="bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm shadow-blue-600/30 font-semibold"
+                          >
+                            <Bike className="w-3 h-3 mr-1" />
+                            MOTOBOY
+                          </Badge>
+                        )}
                         <Badge 
                           className={`${timeInfo.isUrgent 
                             ? "bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-sm shadow-destructive/30" 
