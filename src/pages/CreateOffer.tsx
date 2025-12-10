@@ -82,7 +82,7 @@ const CreateOffer = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      const { data: newOffer, error } = await supabase
         .from("offers")
         .insert({
           restaurant_name: restaurant.fantasy_name,
@@ -99,7 +99,9 @@ const CreateOffer = () => {
           offer_type: "restaurant",
           radius: 5,
           is_accepted: false,
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         toast({
@@ -109,6 +111,20 @@ const CreateOffer = () => {
         });
         return;
       }
+
+      // Notifica motoboys sobre novo extra (não bloqueia)
+      supabase.functions.invoke("notify-new-offer", {
+        body: {
+          restaurant_name: restaurant.fantasy_name,
+          description: formData.description,
+          time_start: formData.timeStart,
+          time_end: formData.timeEnd,
+        },
+      }).then((result) => {
+        console.log("Notificações enviadas:", result);
+      }).catch((err) => {
+        console.error("Erro ao enviar notificações:", err);
+      });
 
       toast({
         title: "Extra criado!",
