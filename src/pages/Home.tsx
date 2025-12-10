@@ -33,6 +33,7 @@ const Home = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [offers, setOffers] = useState<Offer[]>([]);
   const [profileData, setProfileData] = useState<{ name: string; avatar_url: string } | null>(null);
+  const [hasActiveOffer, setHasActiveOffer] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -68,6 +69,15 @@ const Home = () => {
       if (profile) {
         setProfileData(profile);
       }
+
+      // Check if user already has an active offer
+      const { data: activeOffers } = await supabase
+        .from("accepted_offers")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "pending");
+
+      setHasActiveOffer((activeOffers?.length ?? 0) > 0);
     };
 
     checkAuth();
@@ -173,6 +183,15 @@ const Home = () => {
       return;
     }
 
+    if (hasActiveOffer) {
+      toast({
+        title: "Limite atingido",
+        description: "Você já possui um extra aceito. Finalize ou cancele antes de aceitar outro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Update offer as accepted
       const { error: updateError } = await supabase
@@ -195,6 +214,7 @@ const Home = () => {
 
       // Remove from local state immediately
       setOffers((current) => current.filter((o) => o.id !== offer.id));
+      setHasActiveOffer(true);
 
       toast({
         title: "Extra aceito!",
