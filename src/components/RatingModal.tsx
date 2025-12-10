@@ -56,6 +56,7 @@ const RatingModal = ({
         motoboy_id: motoboyId,
         rating,
         comment: comment.trim() || null,
+        rating_type: "restaurant_to_motoboy",
       });
 
       if (error) throw error;
@@ -88,6 +89,10 @@ const RatingModal = ({
           <DialogTitle>Avaliar Motoboy</DialogTitle>
           <DialogDescription>
             Como foi a experiência com {motoboyName}?
+            <br />
+            <span className="text-xs text-muted-foreground mt-1 block">
+              Esta avaliação será visível apenas para outros restaurantes
+            </span>
           </DialogDescription>
         </DialogHeader>
 
