@@ -10,8 +10,11 @@ const Onboarding = () => {
 
   const handleSelectType = (type: "motoboy" | "restaurant") => {
     setUserType(type);
-    // Por enquanto, vamos direto para o cadastro
-    navigate(`/cadastro/${type}`);
+    if (type === "motoboy") {
+      navigate("/login");
+    } else {
+      navigate(`/cadastro/${type}`);
+    }
   };
 
   return (
