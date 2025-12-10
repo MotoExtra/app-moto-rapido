@@ -258,66 +258,89 @@ const Home = () => {
       {/* Offers List */}
       <div className="p-4 space-y-4 pb-20">
         {offers.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground">Nenhum extra disponível no momento.</p>
+          <Card className="border-dashed border-2 bg-muted/20">
+            <CardContent className="pt-8 pb-8 text-center">
+              <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
+              <p className="text-muted-foreground font-medium">Nenhum extra disponível no momento.</p>
+              <p className="text-sm text-muted-foreground/70 mt-1">Novos extras aparecerão aqui</p>
             </CardContent>
           </Card>
         ) : (
           offers.map((offer) => {
             const timeInfo = getTimeUntilStart(offer.time_start);
             return (
-              <Card key={offer.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
+              <Card 
+                key={offer.id} 
+                className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-card via-card to-muted/20"
+              >
+                {/* Top accent bar */}
+                <div className={`h-1.5 ${timeInfo.isUrgent ? 'bg-gradient-to-r from-destructive via-destructive/80 to-destructive' : 'bg-gradient-to-r from-primary via-primary/80 to-green-500'}`} />
+                
+                <CardHeader className="pb-3 pt-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <CardTitle className="text-lg">{offer.restaurant_name}</CardTitle>
-                        <Badge className={timeInfo.isUrgent ? "bg-destructive text-destructive-foreground" : "bg-green-600 text-white"}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <CardTitle className="text-lg font-bold">{offer.restaurant_name}</CardTitle>
+                        <Badge 
+                          className={`${timeInfo.isUrgent 
+                            ? "bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-sm shadow-destructive/30" 
+                            : "bg-gradient-to-r from-green-600 to-green-500 text-white shadow-sm shadow-green-600/30"
+                          } font-semibold`}
+                        >
                           <AlertCircle className="w-3 h-3 mr-1" />
                           EXTRA
                         </Badge>
                       </div>
-                      <CardDescription className="font-medium">
+                      <CardDescription className="font-medium text-foreground/70">
                         {offer.description}
                       </CardDescription>
-                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span className={timeInfo.isUrgent ? "text-destructive font-semibold" : ""}>
-                          Começa em {timeInfo.hours}h {timeInfo.minutes}min
-                        </span>
+                      <div className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-xs font-medium ${
+                        timeInfo.isUrgent 
+                          ? "bg-destructive/10 text-destructive" 
+                          : "bg-primary/10 text-primary"
+                      }`}>
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Começa em {timeInfo.hours}h {timeInfo.minutes}min</span>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
               
-                <CardContent className="space-y-3">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
-                    <span>{offer.address}</span>
-                  </div>
+                <CardContent className="space-y-3 pb-4">
+                  <div className="space-y-2.5 p-3 rounded-xl bg-muted/30">
+                    <div className="flex items-center text-sm text-foreground/80">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
+                        <MapPin className="w-4 h-4 text-primary" />
+                      </div>
+                      <span>{offer.address}</span>
+                    </div>
 
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
-                    <span>{offer.time_start} até {offer.time_end} • Raio de {offer.radius} km</span>
-                  </div>
+                    <div className="flex items-center text-sm text-foreground/80">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
+                        <Clock className="w-4 h-4 text-primary" />
+                      </div>
+                      <span>{offer.time_start} até {offer.time_end} • Raio de {offer.radius} km</span>
+                    </div>
 
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Package className="w-4 h-4 mr-2 flex-shrink-0" />
-                    <span>Faz {offer.delivery_range}</span>
+                    <div className="flex items-center text-sm text-foreground/80">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
+                        <Package className="w-4 h-4 text-primary" />
+                      </div>
+                      <span>Faz {offer.delivery_range}</span>
+                    </div>
                   </div>
 
                   {offer.needs_bag && (
-                    <Badge variant="outline" className="text-xs">
-                      Precisa de bag
+                    <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
+                      🎒 Precisa de bag
                     </Badge>
                   )}
 
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex items-center text-sm">
-                      <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{offer.rating}</span>
-                      <span className="text-muted-foreground ml-1">({offer.review_count})</span>
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10">
+                      <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                      <span className="font-bold text-amber-600">{offer.rating}</span>
+                      <span className="text-muted-foreground text-sm">({offer.review_count})</span>
                     </div>
                     
                     <div className="flex gap-2">
@@ -325,12 +348,14 @@ const Home = () => {
                         variant="outline" 
                         size="sm"
                         onClick={() => navigate(`/oferta/${offer.id}`)}
+                        className="rounded-xl hover:bg-muted/50"
                       >
                         Ver detalhes
                       </Button>
                       <Button 
                         size="sm"
                         onClick={() => handleAccept(offer)}
+                        className="rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all"
                       >
                         Aceitar
                       </Button>
@@ -338,8 +363,8 @@ const Home = () => {
                   </div>
 
                   {offer.experience && (
-                    <p className="text-xs text-muted-foreground italic">
-                      Obs.: {offer.experience}
+                    <p className="text-xs text-muted-foreground italic bg-muted/30 px-3 py-2 rounded-lg">
+                      💡 Obs.: {offer.experience}
                     </p>
                   )}
                 </CardContent>
