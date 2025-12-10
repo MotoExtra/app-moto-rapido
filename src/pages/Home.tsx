@@ -220,6 +220,8 @@ const Home = () => {
         title: "Extra aceito!",
         description: `Você aceitou trabalhar em ${offer.restaurant_name} das ${offer.time_start} às ${offer.time_end}.`,
       });
+
+      navigate("/extras-aceitos");
     } catch (error) {
       console.error("Erro ao aceitar extra:", error);
       toast({
