@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Bike } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -73,8 +73,8 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-            <Bike className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto">
+            <img src={logo} alt="MotoPay" className="h-24 w-auto" />
           </div>
           <CardTitle className="text-3xl">Entrar</CardTitle>
           <CardDescription>
