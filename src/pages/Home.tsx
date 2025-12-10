@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2 } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +37,7 @@ const Home = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [profileData, setProfileData] = useState<{ name: string; avatar_url: string } | null>(null);
   const [hasActiveOffer, setHasActiveOffer] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -283,37 +285,93 @@ const Home = () => {
           <div className="flex items-center justify-between">
             <img src={logo} alt="MotoPay" className="h-16 w-auto drop-shadow-md" />
             
-            <div className="flex items-center gap-4">
-              {/* Avatar + Score Container */}
-              <button
-                onClick={() => navigate("/perfil")}
-                className="relative group flex flex-col items-center gap-1.5"
-                title="Meu Perfil"
-              >
-                <div className="relative">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-primary/30 rounded-full blur opacity-60 group-hover:opacity-100 transition-opacity" />
-                  <Avatar className="relative w-14 h-14 border-3 border-background ring-2 ring-primary/40 group-hover:ring-primary transition-all shadow-lg">
-                    <AvatarImage src={profileData?.avatar_url} alt={profileData?.name} className="object-cover" />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-                      {profileData?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || <UserIcon className="w-6 h-6" />}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2.5 py-1 rounded-full border shadow-sm">
-                  <Star className="w-3.5 h-3.5 fill-primary text-primary" />
-                  <span className="text-sm font-bold text-primary">100</span>
-                </div>
-              </button>
+            <div className="flex items-center gap-3">
+              {/* Avatar + Score */}
+              <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2.5 py-1 rounded-full border shadow-sm">
+                <Star className="w-3.5 h-3.5 fill-primary text-primary" />
+                <span className="text-sm font-bold text-primary">100</span>
+              </div>
               
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleLogout}
-                title="Sair"
-                className="rounded-xl shadow-sm hover:shadow-md transition-shadow"
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
+              {/* Menu Drawer */}
+              <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-80">
+                  <SheetHeader className="text-left pb-6">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-14 h-14 border-2 border-primary/30">
+                        <AvatarImage src={profileData?.avatar_url} alt={profileData?.name} className="object-cover" />
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
+                          {profileData?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || <UserIcon className="w-6 h-6" />}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <SheetTitle className="text-lg">{profileData?.name || "Motoboy"}</SheetTitle>
+                        <p className="text-sm text-muted-foreground">Bem-vindo de volta!</p>
+                      </div>
+                    </div>
+                  </SheetHeader>
+                  
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate("/perfil"); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors text-left"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <UserIcon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Meu Perfil</p>
+                        <p className="text-xs text-muted-foreground">Editar dados pessoais</p>
+                      </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate("/extras-aceitos"); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors text-left"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Extras Aceitos</p>
+                        <p className="text-xs text-muted-foreground">Ver seus turnos confirmados</p>
+                      </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate("/ranking"); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors text-left"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                        <Trophy className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Ranking</p>
+                        <p className="text-xs text-muted-foreground">Veja sua posição</p>
+                      </div>
+                    </button>
+                  </div>
+                  
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => { setMenuOpen(false); handleLogout(); }}
+                      className="w-full rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sair da conta
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
@@ -487,41 +545,6 @@ const Home = () => {
         )}
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-background/95 backdrop-blur-lg border-t shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="flex items-center justify-around px-4 py-3 max-w-md mx-auto">
-          {/* Ofertas - Active */}
-          <button className="relative flex flex-col items-center gap-1 px-4 py-1 group">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-full" />
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
-              <Package className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xs font-semibold text-primary">Ofertas</span>
-          </button>
-          
-          {/* Extras Aceitos */}
-          <button 
-            onClick={() => navigate("/extras-aceitos")}
-            className="relative flex flex-col items-center gap-1 px-4 py-1 group"
-          >
-            <div className="w-11 h-11 rounded-2xl bg-muted/50 group-hover:bg-muted flex items-center justify-center transition-colors">
-              <Clock className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Aceitos</span>
-          </button>
-          
-          {/* Ranking */}
-          <button
-            onClick={() => navigate("/ranking")}
-            className="relative flex flex-col items-center gap-1 px-4 py-1 group"
-          >
-            <div className="w-11 h-11 rounded-2xl bg-muted/50 group-hover:bg-muted flex items-center justify-center transition-colors">
-              <Star className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Ranking</span>
-          </button>
-        </div>
-      </nav>
     </div>
   );
 };
