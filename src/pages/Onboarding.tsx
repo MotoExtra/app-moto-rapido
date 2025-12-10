@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bike, Store } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -20,8 +20,8 @@ const Onboarding = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-primary">Moto Rápido</h1>
+        <div className="text-center space-y-3">
+          <img src={logo} alt="MotoPay" className="h-32 w-auto mx-auto" />
           <p className="text-muted-foreground">Conectando motoboys a oportunidades</p>
         </div>
 
