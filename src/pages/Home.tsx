@@ -213,35 +213,40 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-b shadow-sm">
-        <div className="p-6">
+      <header className="sticky top-0 z-10 bg-gradient-to-b from-primary/15 via-primary/5 to-background border-b shadow-lg">
+        <div className="px-4 py-5">
           <div className="flex items-center justify-between">
-            <img src={logo} alt="MotoPay" className="h-12 w-auto" />
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col items-end gap-1 bg-background/50 backdrop-blur-sm px-3 py-2 rounded-xl border shadow-sm">
-                <div className="flex items-center gap-2">
+            <img src={logo} alt="MotoPay" className="h-16 w-auto drop-shadow-md" />
+            
+            <div className="flex items-center gap-4">
+              {/* Score + Avatar Container */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-4 py-2.5 rounded-2xl border shadow-md">
                   <Star className="w-5 h-5 fill-primary text-primary" />
                   <span className="text-xl font-bold text-primary">100</span>
                 </div>
-                <span className="text-xs text-muted-foreground font-medium">Score</span>
+                
+                <button
+                  onClick={() => navigate("/perfil")}
+                  className="relative group"
+                  title="Meu Perfil"
+                >
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-primary/30 rounded-full blur opacity-60 group-hover:opacity-100 transition-opacity" />
+                  <Avatar className="relative w-14 h-14 border-3 border-background ring-2 ring-primary/40 hover:ring-primary transition-all shadow-lg">
+                    <AvatarImage src={profileData?.avatar_url} alt={profileData?.name} className="object-cover" />
+                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
+                      {profileData?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || <UserIcon className="w-6 h-6" />}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
               </div>
-              <button
-                onClick={() => navigate("/perfil")}
-                className="relative"
-                title="Meu Perfil"
-              >
-                <Avatar className="w-11 h-11 border-2 border-primary/30 hover:border-primary transition-colors">
-                  <AvatarImage src={profileData?.avatar_url} alt={profileData?.name} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                    {profileData?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || <UserIcon className="w-5 h-5" />}
-                  </AvatarFallback>
-                </Avatar>
-              </button>
+              
               <Button
                 variant="outline"
                 size="icon"
                 onClick={handleLogout}
                 title="Sair"
+                className="rounded-xl shadow-sm hover:shadow-md transition-shadow"
               >
                 <LogOut className="w-5 h-5" />
               </Button>
