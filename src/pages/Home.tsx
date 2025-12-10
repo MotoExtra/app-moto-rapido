@@ -250,6 +250,20 @@ const Home = () => {
         description: `Você aceitou trabalhar em ${offer.restaurant_name} das ${offer.time_start} às ${offer.time_end}.`,
       });
 
+      // Notify the offer creator via push notification (don't wait for it)
+      if (offer.created_by && offer.created_by !== user.id) {
+        supabase.functions.invoke("notify-offer-accepted", {
+          body: {
+            offer_id: offer.id,
+            acceptor_name: profileData?.name || "Um motoboy",
+          },
+        }).then((result) => {
+          console.log("Notification sent to creator:", result);
+        }).catch((err) => {
+          console.error("Error sending notification to creator:", err);
+        });
+      }
+
       navigate("/extras-aceitos");
     } catch (error) {
       console.error("Erro ao aceitar extra:", error);

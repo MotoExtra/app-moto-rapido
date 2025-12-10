@@ -1,1 +1,4 @@
 project_id = "lkgvewhoqmieklsqxgjn"
+
+[functions.notify-offer-accepted]
+verify_jwt = false
