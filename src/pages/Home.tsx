@@ -677,23 +677,13 @@ const Home = () => {
                         </>
                       )}
                       {!isOwnOffer && (
-                        <>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => navigate(`/oferta/${offer.id}`)}
-                            className="rounded-xl hover:bg-muted/50"
-                          >
-                            Ver detalhes
-                          </Button>
-                          <Button 
-                            size="sm"
-                            onClick={() => handleAccept(offer)}
-                            className="rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all"
-                          >
-                            Aceitar
-                          </Button>
-                        </>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleAccept(offer)}
+                          className="rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all"
+                        >
+                          Aceitar
+                        </Button>
                       )}
                     </div>
                   </div>
