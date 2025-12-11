@@ -563,11 +563,9 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {offer.needs_bag && (
-                    <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
-                      🎒 Precisa de bag
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className={`text-xs ${offer.needs_bag ? 'bg-amber-500/10 text-amber-600 border-amber-500/30' : 'bg-green-500/10 text-green-600 border-green-500/30'}`}>
+                    {offer.needs_bag ? '🎒 Precisa de bag' : '✓ Não precisa de bag'}
+                  </Badge>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border/50">
                     {offer.restaurant_rating !== undefined && offer.restaurant_review_count && offer.restaurant_review_count > 0 ? (
