@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,15 +6,31 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Package, MapPin, Clock, DollarSign, Briefcase } from "lucide-react";
+import { ArrowLeft, Package, MapPin, Clock, DollarSign, Briefcase, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+
+interface LastOffer {
+  restaurant_name: string;
+  description: string;
+  address: string;
+  time_start: string;
+  time_end: string;
+  radius: number;
+  needs_bag: boolean;
+  delivery_range: string;
+  experience: string | null;
+  payment: string | null;
+  phone: string | null;
+  observations: string | null;
+}
 
 const OfferExtra = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [lastOffer, setLastOffer] = useState<LastOffer | null>(null);
   
   const [formData, setFormData] = useState({
     restaurant_name: "",
@@ -30,6 +46,52 @@ const OfferExtra = () => {
     phone: "",
     observations: "",
   });
+
+  useEffect(() => {
+    const fetchLastOffer = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("offers")
+        .select("restaurant_name, description, address, time_start, time_end, radius, needs_bag, delivery_range, experience, payment, phone, observations")
+        .eq("created_by", user.id)
+        .eq("offer_type", "motoboy")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setLastOffer(data);
+      }
+    };
+
+    fetchLastOffer();
+  }, []);
+
+  const fillFromLastOffer = () => {
+    if (!lastOffer) return;
+    
+    setFormData({
+      restaurant_name: lastOffer.restaurant_name,
+      description: lastOffer.description,
+      address: lastOffer.address,
+      time_start: lastOffer.time_start,
+      time_end: lastOffer.time_end,
+      radius: lastOffer.radius,
+      needs_bag: lastOffer.needs_bag || false,
+      delivery_range: lastOffer.delivery_range,
+      experience: lastOffer.experience || "",
+      payment: lastOffer.payment || "",
+      phone: lastOffer.phone || "",
+      observations: lastOffer.observations || "",
+    });
+
+    toast({
+      title: "Dados preenchidos!",
+      description: "Confira os detalhes antes de publicar.",
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +158,28 @@ const OfferExtra = () => {
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="p-4 space-y-4 pb-8">
+      <div className="p-4 space-y-4 pb-8">
+        {/* Repeat Last Offer Button */}
+        {lastOffer && (
+          <Card 
+            className="border-2 border-primary/30 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all"
+            onClick={fillFromLastOffer}
+          >
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                <RotateCcw className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground">Repetir último extra</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {lastOffer.restaurant_name} • {lastOffer.time_start} - {lastOffer.time_end}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-muted/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -294,7 +377,8 @@ const OfferExtra = () => {
         >
           {isLoading ? "Publicando..." : "Publicar Extra"}
         </Button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };
