@@ -25,7 +25,6 @@ const CreateOffer = () => {
   const [loading, setLoading] = useState(false);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [formData, setFormData] = useState({
-    description: "",
     address: "",
     timeStart: "",
     timeEnd: "",
@@ -70,7 +69,7 @@ const CreateOffer = () => {
     
     if (!restaurant) return;
 
-    if (!formData.description || !formData.address || !formData.timeStart || !formData.timeEnd || !formData.deliveryRange) {
+    if (!formData.address || !formData.timeStart || !formData.timeEnd || !formData.deliveryRange) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -86,7 +85,7 @@ const CreateOffer = () => {
         .from("offers")
         .insert({
           restaurant_name: restaurant.fantasy_name,
-          description: formData.description,
+          description: `Extra de ${restaurant.fantasy_name}`,
           address: formData.address,
           time_start: formData.timeStart,
           time_end: formData.timeEnd,
@@ -116,7 +115,7 @@ const CreateOffer = () => {
       supabase.functions.invoke("notify-new-offer", {
         body: {
           restaurant_name: restaurant.fantasy_name,
-          description: formData.description,
+          description: `Extra de ${restaurant.fantasy_name}`,
           time_start: formData.timeStart,
           time_end: formData.timeEnd,
         },
@@ -182,17 +181,6 @@ const CreateOffer = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição do Extra *</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Ex: Precisamos de motoboy para entregas no período da tarde"
-                  rows={3}
-                />
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="address">Endereço de Saída *</Label>
                 <Input
