@@ -1,12 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bike, Store } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
 const Onboarding = () => {
   const navigate = useNavigate();
   const [userType, setUserType] = useState<"motoboy" | "restaurant" | null>(null);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Check if user is a restaurant
+        const { data: restaurant } = await supabase
+          .from("restaurants")
+          .select("id")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        
+        if (restaurant) {
+          navigate("/restaurante/home");
+        } else {
+          // Check if user is a motoboy
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, user_type")
+            .eq("id", session.user.id)
+            .maybeSingle();
+          
+          if (profile && profile.user_type === "motoboy") {
+            navigate("/home");
+          }
+        }
+      }
+    };
+    checkSession();
+  }, [navigate]);
 
   const handleSelectType = (type: "motoboy" | "restaurant") => {
     setUserType(type);
