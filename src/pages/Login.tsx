@@ -164,6 +164,14 @@ const Login = () => {
             >
               Criar conta de motoboy
             </Button>
+            
+            <button
+              type="button"
+              onClick={() => navigate("/restaurante/login")}
+              className="w-full text-sm text-muted-foreground hover:text-primary transition-colors underline-offset-4 hover:underline"
+            >
+              Sou restaurante
+            </button>
           </div>
         </CardContent>
       </Card>
