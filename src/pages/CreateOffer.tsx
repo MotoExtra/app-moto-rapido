@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Loader2, Package, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Package, CalendarIcon, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -25,12 +25,23 @@ interface Restaurant {
   phone: string;
 }
 
+interface LastOffer {
+  address: string;
+  time_start: string;
+  time_end: string;
+  delivery_range: string;
+  needs_bag: boolean;
+  payment: string | null;
+  observations: string | null;
+}
+
 const CreateOffer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { playSuccess, playError } = useNotificationSound();
   const [loading, setLoading] = useState(false);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [lastOffer, setLastOffer] = useState<LastOffer | null>(null);
   const [formData, setFormData] = useState({
     address: "",
     offerDate: new Date() as Date | undefined,
@@ -43,7 +54,7 @@ const CreateOffer = () => {
   });
 
   useEffect(() => {
-    const fetchRestaurant = async () => {
+    const fetchRestaurantAndLastOffer = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -67,9 +78,23 @@ const CreateOffer = () => {
         ...prev,
         address: data.address,
       }));
+
+      // Fetch last offer created by this restaurant
+      const { data: lastOfferData } = await supabase
+        .from("offers")
+        .select("address, time_start, time_end, delivery_range, needs_bag, payment, observations")
+        .eq("created_by", session.user.id)
+        .eq("offer_type", "restaurant")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastOfferData) {
+        setLastOffer(lastOfferData);
+      }
     };
 
-    fetchRestaurant();
+    fetchRestaurantAndLastOffer();
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -182,6 +207,41 @@ const CreateOffer = () => {
             <p className="text-sm text-muted-foreground">{restaurant.fantasy_name}</p>
           </div>
         </div>
+
+        {/* Repeat Last Offer Button */}
+        {lastOffer && (
+          <Card 
+            className="border-2 border-primary/30 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all"
+            onClick={() => {
+              setFormData(prev => ({
+                ...prev,
+                address: lastOffer.address,
+                timeStart: lastOffer.time_start,
+                timeEnd: lastOffer.time_end,
+                deliveryRange: lastOffer.delivery_range,
+                needsBag: lastOffer.needs_bag || false,
+                payment: lastOffer.payment || "",
+                observations: lastOffer.observations || "",
+              }));
+              toast({
+                title: "Dados preenchidos!",
+                description: "Ajuste a data e confira os detalhes.",
+              });
+            }}
+          >
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                <RotateCcw className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground">Repetir último extra</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {lastOffer.time_start} - {lastOffer.time_end} • {lastOffer.delivery_range}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
