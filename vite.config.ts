@@ -19,8 +19,8 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: "MotoPay - Extras para Motoboys",
         short_name: "MotoPay",
-        description: "Conecte-se com oportunidades de entrega",
-        theme_color: "#22c55e",
+        description: "Encontre extras de entrega e ganhe dinheiro",
+        theme_color: "#f97316",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
