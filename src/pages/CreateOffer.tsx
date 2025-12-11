@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,9 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Loader2, Package } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, Loader2, Package, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface Restaurant {
   id: string;
@@ -26,6 +31,7 @@ const CreateOffer = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [formData, setFormData] = useState({
     address: "",
+    offerDate: new Date() as Date | undefined,
     timeStart: "",
     timeEnd: "",
     deliveryRange: "",
@@ -69,7 +75,7 @@ const CreateOffer = () => {
     
     if (!restaurant) return;
 
-    if (!formData.address || !formData.timeStart || !formData.timeEnd || !formData.deliveryRange) {
+    if (!formData.address || !formData.offerDate || !formData.timeStart || !formData.timeEnd || !formData.deliveryRange) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -87,6 +93,7 @@ const CreateOffer = () => {
           restaurant_name: restaurant.fantasy_name,
           description: `Extra de ${restaurant.fantasy_name}`,
           address: formData.address,
+          offer_date: format(formData.offerDate!, "yyyy-MM-dd"),
           time_start: formData.timeStart,
           time_end: formData.timeEnd,
           delivery_range: formData.deliveryRange,
@@ -189,6 +196,39 @@ const CreateOffer = () => {
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="Endereço do restaurante"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data do Extra *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.offerDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.offerDate ? (
+                        format(formData.offerDate, "PPP", { locale: ptBR })
+                      ) : (
+                        <span>Selecione a data</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.offerDate}
+                      onSelect={(date) => setFormData({ ...formData, offerDate: date })}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
