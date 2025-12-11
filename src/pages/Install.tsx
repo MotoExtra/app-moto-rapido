@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Share, MoreVertical, Plus, Download, Smartphone, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Share, MoreVertical, Plus, Download, Smartphone, CheckCircle2, Zap, Bell, Wifi } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import logo from "@/assets/logo.png";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -17,17 +19,14 @@ const Install = () => {
   const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
-    // Detect platform
     const userAgent = navigator.userAgent.toLowerCase();
     setIsIOS(/iphone|ipad|ipod/.test(userAgent));
     setIsAndroid(/android/.test(userAgent));
 
-    // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
     }
 
-    // Listen for install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -54,25 +53,34 @@ const Install = () => {
 
   if (isInstalled) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="text-center space-y-4">
-          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-10 h-10 text-green-500" />
-          </div>
+      <div className="min-h-screen bg-gradient-to-b from-primary/20 to-background flex flex-col items-center justify-center p-6">
+        <motion.div 
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", duration: 0.5 }}
+          className="text-center space-y-4"
+        >
+          <motion.div 
+            className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+          >
+            <CheckCircle2 className="w-12 h-12 text-green-500" />
+          </motion.div>
           <h1 className="text-2xl font-bold text-foreground">App Instalado!</h1>
           <p className="text-muted-foreground">
             O MotoPay já está instalado no seu dispositivo.
           </p>
-          <Button onClick={() => navigate("/home")} className="mt-4">
+          <Button onClick={() => navigate("/home")} className="mt-4" size="lg">
             Ir para o App
           </Button>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-primary/10 via-background to-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
         <div className="flex items-center gap-3 p-4">
@@ -85,186 +93,251 @@ const Install = () => {
 
       <div className="p-4 space-y-6">
         {/* Hero Section */}
-        <div className="text-center space-y-3 py-6">
-          <div className="w-20 h-20 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-            <Smartphone className="w-10 h-10 text-primary" />
-          </div>
-          <h2 className="text-xl font-bold text-foreground">Instale o MotoPay</h2>
-          <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-            Adicione o app na sua tela inicial para acesso rápido e receber notificações de novos extras!
-          </p>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-4 py-6"
+        >
+          <motion.div 
+            className="relative w-24 h-24 mx-auto"
+            animate={{ y: [0, -8, 0] }}
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+          >
+            <div className="absolute inset-0 bg-primary/30 rounded-2xl blur-xl" />
+            <div className="relative w-24 h-24 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+              <img src={logo} alt="MotoPay" className="w-16 h-16 object-contain" />
+            </div>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h2 className="text-2xl font-bold text-foreground">Instale o MotoPay</h2>
+            <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-2">
+              Adicione o app na sua tela inicial para acesso rápido e notificações de novos extras!
+            </p>
+          </motion.div>
+        </motion.div>
 
         {/* Native Install Button (Android Chrome) */}
-        {deferredPrompt && (
-          <Card className="border-primary/50 bg-primary/5">
-            <CardContent className="p-4">
-              <Button 
-                onClick={handleInstallClick} 
-                className="w-full gap-2"
-                size="lg"
-              >
-                <Download className="w-5 h-5" />
-                Instalar Agora
-              </Button>
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Clique para adicionar à tela inicial
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        <AnimatePresence>
+          {deferredPrompt && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <Card className="border-primary bg-gradient-to-r from-primary/10 to-primary/5 overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent animate-pulse" />
+                <CardContent className="p-5 relative">
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button 
+                      onClick={handleInstallClick} 
+                      className="w-full gap-3 h-14 text-lg font-semibold shadow-lg"
+                      size="lg"
+                    >
+                      <Download className="w-6 h-6" />
+                      Instalar Agora
+                    </Button>
+                  </motion.div>
+                  <p className="text-xs text-muted-foreground text-center mt-3">
+                    ⚡ Instalação rápida em um clique
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* iOS Instructions */}
-        {(isIOS || !isAndroid) && (
-          <Card>
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">Safari</span>
+        {/* Platform-specific instructions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          {/* iOS Instructions */}
+          {isIOS && (
+            <Card className="overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🍎</span>
                 </div>
-                <h3 className="font-semibold text-foreground">No iPhone/iPad (Safari)</h3>
-              </div>
-
-              <div className="space-y-4">
-                {/* Step 1 */}
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-                    1
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Toque no botão Compartilhar</p>
-                    <div className="mt-2 flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <Share className="w-6 h-6 text-blue-500" />
-                      <span className="text-sm text-muted-foreground">
-                        O ícone de compartilhar na barra inferior do Safari
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Step 2 */}
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-                    2
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Role e toque em "Adicionar à Tela de Início"</p>
-                    <div className="mt-2 flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <div className="w-6 h-6 bg-gray-500 rounded flex items-center justify-center">
-                        <Plus className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        Adicionar à Tela de Início
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Step 3 */}
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-                    3
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Toque em "Adicionar"</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Confirme no canto superior direito da tela
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="font-semibold text-white">iPhone / iPad</h3>
+                  <p className="text-xs text-gray-300">Usando Safari</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <CardContent className="p-4 space-y-4">
+                <InstallStep 
+                  number={1}
+                  title="Toque no botão Compartilhar"
+                  icon={<Share className="w-6 h-6 text-blue-500" />}
+                  description="Ícone na barra inferior do Safari"
+                />
+                <InstallStep 
+                  number={2}
+                  title='Role e toque em "Adicionar à Tela de Início"'
+                  icon={<Plus className="w-5 h-5 text-white" />}
+                  iconBg="bg-gray-500"
+                  description="Procure na lista de opções"
+                />
+                <InstallStep 
+                  number={3}
+                  title='Toque em "Adicionar"'
+                  description="No canto superior direito"
+                  isLast
+                />
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Android Instructions */}
-        {(isAndroid || !isIOS) && (
-          <Card>
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">Chrome</span>
+          {/* Android Instructions */}
+          {isAndroid && !deferredPrompt && (
+            <Card className="overflow-hidden">
+              <div className="bg-gradient-to-r from-green-600 to-green-500 p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🤖</span>
                 </div>
-                <h3 className="font-semibold text-foreground">No Android (Chrome)</h3>
-              </div>
-
-              <div className="space-y-4">
-                {/* Step 1 */}
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-                    1
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Toque no menu (3 pontinhos)</p>
-                    <div className="mt-2 flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <MoreVertical className="w-6 h-6 text-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        No canto superior direito do Chrome
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Step 2 */}
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-                    2
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Toque em "Adicionar à tela inicial"</p>
-                    <div className="mt-2 flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <Download className="w-6 h-6 text-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        Ou "Instalar app"
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Step 3 */}
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-                    3
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Confirme a instalação</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Toque em "Adicionar" ou "Instalar"
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="font-semibold text-white">Android</h3>
+                  <p className="text-xs text-green-100">Usando Chrome</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <CardContent className="p-4 space-y-4">
+                <InstallStep 
+                  number={1}
+                  title="Toque no menu (⋮)"
+                  icon={<MoreVertical className="w-6 h-6 text-foreground" />}
+                  description="3 pontinhos no canto superior direito"
+                />
+                <InstallStep 
+                  number={2}
+                  title='Toque em "Adicionar à tela inicial"'
+                  icon={<Download className="w-5 h-5 text-foreground" />}
+                  description='Ou "Instalar app"'
+                />
+                <InstallStep 
+                  number={3}
+                  title='Confirme tocando em "Adicionar"'
+                  description="A instalação começará automaticamente"
+                  isLast
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Show both if not on mobile */}
+          {!isIOS && !isAndroid && (
+            <div className="space-y-4">
+              <Card className="overflow-hidden">
+                <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4 flex items-center gap-3">
+                  <span className="text-2xl">🍎</span>
+                  <h3 className="font-semibold text-white">No iPhone/iPad (Safari)</h3>
+                </div>
+                <CardContent className="p-4 space-y-3">
+                  <InstallStep number={1} title="Toque em Compartilhar" icon={<Share className="w-5 h-5 text-blue-500" />} />
+                  <InstallStep number={2} title='"Adicionar à Tela de Início"' icon={<Plus className="w-4 h-4 text-white" />} iconBg="bg-gray-500" />
+                  <InstallStep number={3} title="Confirme" isLast />
+                </CardContent>
+              </Card>
+              
+              <Card className="overflow-hidden">
+                <div className="bg-gradient-to-r from-green-600 to-green-500 p-4 flex items-center gap-3">
+                  <span className="text-2xl">🤖</span>
+                  <h3 className="font-semibold text-white">No Android (Chrome)</h3>
+                </div>
+                <CardContent className="p-4 space-y-3">
+                  <InstallStep number={1} title="Toque no menu (⋮)" icon={<MoreVertical className="w-5 h-5" />} />
+                  <InstallStep number={2} title='"Adicionar à tela inicial"' icon={<Download className="w-5 h-5" />} />
+                  <InstallStep number={3} title="Confirme a instalação" isLast />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </motion.div>
 
         {/* Benefits */}
-        <Card className="bg-muted/50">
-          <CardContent className="p-4">
-            <h3 className="font-semibold text-foreground mb-3">Vantagens do App</h3>
-            <ul className="space-y-2">
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                Receba notificações de novos extras
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                Acesso rápido pela tela inicial
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                Funciona offline
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                Carregamento mais rápido
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="bg-gradient-to-br from-muted/80 to-muted/40 border-muted-foreground/10">
+            <CardContent className="p-5">
+              <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-primary" />
+                Vantagens do App
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <BenefitItem icon={<Bell className="w-5 h-5" />} text="Notificações instantâneas" />
+                <BenefitItem icon={<Smartphone className="w-5 h-5" />} text="Acesso rápido" />
+                <BenefitItem icon={<Wifi className="w-5 h-5" />} text="Funciona offline" />
+                <BenefitItem icon={<Zap className="w-5 h-5" />} text="Super rápido" />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <div className="h-6" />
       </div>
     </div>
   );
 };
+
+const InstallStep = ({ 
+  number, 
+  title, 
+  description, 
+  icon, 
+  iconBg = "bg-muted",
+  isLast = false 
+}: { 
+  number: number; 
+  title: string; 
+  description?: string; 
+  icon?: React.ReactNode;
+  iconBg?: string;
+  isLast?: boolean;
+}) => (
+  <motion.div 
+    className="flex gap-3"
+    initial={{ opacity: 0, x: -10 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: number * 0.1 }}
+  >
+    <div className="flex flex-col items-center">
+      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm shadow-md">
+        {number}
+      </div>
+      {!isLast && <div className="w-0.5 h-full bg-border mt-1" />}
+    </div>
+    <div className="flex-1 pb-4">
+      <p className="font-medium text-foreground">{title}</p>
+      {icon && (
+        <div className={`mt-2 inline-flex items-center gap-2 p-2 ${iconBg} rounded-lg`}>
+          {icon}
+        </div>
+      )}
+      {description && (
+        <p className="text-sm text-muted-foreground mt-1">{description}</p>
+      )}
+    </div>
+  </motion.div>
+);
+
+const BenefitItem = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
+  <motion.div 
+    className="flex items-center gap-2 p-3 bg-background/60 rounded-xl"
+    whileHover={{ scale: 1.02 }}
+  >
+    <div className="text-primary">{icon}</div>
+    <span className="text-sm font-medium text-foreground">{text}</span>
+  </motion.div>
+);
 
 export default Install;
