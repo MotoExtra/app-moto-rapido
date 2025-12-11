@@ -27,6 +27,7 @@ interface Offer {
   needs_bag: boolean;
   delivery_range: string;
   experience: string | null;
+  observations: string | null;
   rating: number;
   review_count: number;
   is_accepted: boolean;
@@ -697,9 +698,9 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {offer.experience && (
+                  {offer.observations && (
                     <p className="text-xs text-muted-foreground italic bg-muted/30 px-3 py-2 rounded-lg">
-                      💡 Obs.: {offer.experience}
+                      💡 Obs.: {offer.observations}
                     </p>
                   )}
                 </CardContent>
