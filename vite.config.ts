@@ -15,10 +15,10 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
+      includeAssets: ["favicon.png", "apple-touch-icon.png"],
       manifest: {
-        name: "Moto Rápido - Conectando Motoboys",
-        short_name: "Moto Rápido",
+        name: "MotoPay - Extras para Motoboys",
+        short_name: "MotoPay",
         description: "Conecte-se com oportunidades de entrega",
         theme_color: "#22c55e",
         background_color: "#ffffff",
