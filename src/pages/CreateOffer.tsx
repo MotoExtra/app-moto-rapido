@@ -15,6 +15,7 @@ import { ArrowLeft, Loader2, Package, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 
 interface Restaurant {
   id: string;
@@ -27,6 +28,7 @@ interface Restaurant {
 const CreateOffer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { playSuccess, playError } = useNotificationSound();
   const [loading, setLoading] = useState(false);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [formData, setFormData] = useState({
@@ -132,12 +134,14 @@ const CreateOffer = () => {
         console.error("Erro ao enviar notificações:", err);
       });
 
+      playSuccess();
       toast({
         title: "Extra criado!",
         description: "Seu extra está disponível para motoboys.",
       });
       navigate("/restaurante/home");
     } catch (error) {
+      playError();
       toast({
         title: "Erro inesperado",
         description: "Tente novamente mais tarde.",

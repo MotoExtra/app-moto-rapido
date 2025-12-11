@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import RatingModal from "@/components/RatingModal";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 
 interface Restaurant {
   id: string;
@@ -49,6 +50,7 @@ interface Offer {
 const RestaurantHome = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { playAlert, playSuccess } = useNotificationSound();
   const [loading, setLoading] = useState(true);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -150,8 +152,62 @@ const RestaurantHome = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    // Set up realtime listener for offer updates (when motoboy accepts)
+    const offersChannel = supabase
+      .channel('restaurant-offers-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'offers'
+        },
+        async (payload) => {
+          const updatedOffer = payload.new as any;
+          
+          // Check if this offer belongs to this restaurant and was just accepted
+          if (updatedOffer.is_accepted && payload.old && !(payload.old as any).is_accepted) {
+            // Check if this offer belongs to the current restaurant
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session && updatedOffer.created_by === session.user.id) {
+              playAlert();
+              
+              // Fetch motoboy name
+              const { data: motoboyProfile } = await supabase
+                .from("profiles")
+                .select("name")
+                .eq("id", updatedOffer.accepted_by)
+                .single();
+              
+              toast({
+                title: "🎉 Extra aceito!",
+                description: `${motoboyProfile?.name || "Um motoboy"} aceitou seu extra!`,
+              });
+              
+              // Update offers list
+              setOffers(current =>
+                current.map(o =>
+                  o.id === updatedOffer.id 
+                    ? { 
+                        ...o, 
+                        is_accepted: true, 
+                        accepted_by: updatedOffer.accepted_by,
+                        motoboy_name: motoboyProfile?.name || "Motoboy"
+                      } 
+                    : o
+                )
+              );
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(offersChannel);
+    };
+  }, [navigate, playAlert, toast]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
