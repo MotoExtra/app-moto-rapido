@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +46,23 @@ const Home = () => {
   const [hasActiveOffer, setHasActiveOffer] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationPromptShown, setNotificationPromptShown] = useState(false);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  // Check if app is installed as PWA
+  useEffect(() => {
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+    setIsStandalone(isInstalled);
+    
+    // Show install banner if not installed and not dismissed recently
+    const dismissed = localStorage.getItem('installBannerDismissed');
+    const dismissedTime = dismissed ? parseInt(dismissed) : 0;
+    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+    
+    if (!isInstalled && (!dismissed || dismissedTime < oneDayAgo)) {
+      setShowInstallBanner(true);
+    }
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -454,6 +471,39 @@ const Home = () => {
           </div>
         </div>
       </header>
+
+      {/* PWA Install Banner */}
+      {showInstallBanner && !isStandalone && (
+        <div className="mx-4 mt-4 relative">
+          <Card className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-primary/20 overflow-hidden">
+            <button
+              onClick={() => {
+                setShowInstallBanner(false);
+                localStorage.setItem('installBannerDismissed', Date.now().toString());
+              }}
+              className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted/50 transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Download className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground text-sm">Instale o MotoPay</p>
+                <p className="text-xs text-muted-foreground">Acesso rápido e notificações de novos extras!</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => navigate("/install")}
+                className="flex-shrink-0 rounded-xl"
+              >
+                Instalar
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Offer Extra Button */}
       <div className="px-4 pt-4">
