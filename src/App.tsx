@@ -19,6 +19,7 @@ import AcceptedOffers from "./pages/AcceptedOffers";
 import Profile from "./pages/Profile";
 import OfferExtra from "./pages/OfferExtra";
 import EditExtra from "./pages/EditExtra";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/perfil" element={<Profile />} />
           <Route path="/ofertar-extra" element={<OfferExtra />} />
           <Route path="/editar-extra/:id" element={<EditExtra />} />
+          <Route path="/install" element={<Install />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
