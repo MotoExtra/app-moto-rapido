@@ -176,6 +176,14 @@ const LoginRestaurant = () => {
                   Cadastre-se
                 </button>
               </p>
+              
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="w-full text-sm text-muted-foreground hover:text-primary transition-colors underline-offset-4 hover:underline"
+              >
+                Sou motoboy
+              </button>
             </form>
           </CardContent>
         </Card>
