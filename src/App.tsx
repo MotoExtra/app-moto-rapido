@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SplashScreen from "./components/SplashScreen";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
@@ -31,7 +32,6 @@ const App = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Only show splash on standalone PWA mode or first visit
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const hasSeenSplash = sessionStorage.getItem('splashShown');
     
@@ -62,18 +62,22 @@ const App = () => {
               <Route path="/login/restaurante" element={<LoginRestaurant />} />
               <Route path="/cadastro/motoboy" element={<SignupMotoboy />} />
               <Route path="/cadastro/restaurante" element={<SignupRestaurant />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/restaurante/home" element={<RestaurantHome />} />
-              <Route path="/restaurante/perfil" element={<RestaurantProfile />} />
-              <Route path="/restaurante/criar-extra" element={<CreateOffer />} />
-              <Route path="/oferta/:id" element={<OfferDetails />} />
-              <Route path="/ranking" element={<Ranking />} />
-              <Route path="/extras-aceitos" element={<AcceptedOffers />} />
-              <Route path="/perfil" element={<Profile />} />
-              <Route path="/ofertar-extra" element={<OfferExtra />} />
-              <Route path="/editar-extra/:id" element={<EditExtra />} />
+              
+              {/* Rotas protegidas de motoboy */}
+              <Route path="/home" element={<ProtectedRoute allowedUserType="motoboy"><Home /></ProtectedRoute>} />
+              <Route path="/ranking" element={<ProtectedRoute allowedUserType="motoboy"><Ranking /></ProtectedRoute>} />
+              <Route path="/extras-aceitos" element={<ProtectedRoute allowedUserType="motoboy"><AcceptedOffers /></ProtectedRoute>} />
+              <Route path="/perfil" element={<ProtectedRoute allowedUserType="motoboy"><Profile /></ProtectedRoute>} />
+              <Route path="/ofertar-extra" element={<ProtectedRoute allowedUserType="motoboy"><OfferExtra /></ProtectedRoute>} />
+              <Route path="/editar-extra/:id" element={<ProtectedRoute allowedUserType="motoboy"><EditExtra /></ProtectedRoute>} />
+              <Route path="/oferta/:id" element={<ProtectedRoute allowedUserType="motoboy"><OfferDetails /></ProtectedRoute>} />
+              
+              {/* Rotas protegidas de restaurante */}
+              <Route path="/restaurante/home" element={<ProtectedRoute allowedUserType="restaurant"><RestaurantHome /></ProtectedRoute>} />
+              <Route path="/restaurante/perfil" element={<ProtectedRoute allowedUserType="restaurant"><RestaurantProfile /></ProtectedRoute>} />
+              <Route path="/restaurante/criar-extra" element={<ProtectedRoute allowedUserType="restaurant"><CreateOffer /></ProtectedRoute>} />
+              
               <Route path="/install" element={<Install />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
