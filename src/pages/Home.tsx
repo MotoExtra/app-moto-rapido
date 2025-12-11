@@ -12,6 +12,7 @@ import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 import type { User } from "@supabase/supabase-js";
 
 interface Offer {
@@ -39,6 +40,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSupported, isSubscribed, permission, subscribe } = usePushNotifications();
+  const { playSuccess, playNewOffer, playError } = useNotificationSound();
   const [user, setUser] = useState<User | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -140,6 +142,21 @@ const Home = () => {
     // Setup realtime subscription
     const channel = supabase
       .channel('offers-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'offers',
+        },
+        (payload) => {
+          console.log('New offer inserted:', payload);
+          // Play sound for new offer
+          playNewOffer();
+          // Refresh offers list
+          fetchOffers();
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -329,6 +346,9 @@ const Home = () => {
       setOffers((current) => current.filter((o) => o.id !== offer.id));
       setHasActiveOffer(true);
 
+      // Play success sound
+      playSuccess();
+
       toast({
         title: "Extra aceito!",
         description: `Você aceitou trabalhar em ${offer.restaurant_name} das ${offer.time_start} às ${offer.time_end}.`,
@@ -351,6 +371,7 @@ const Home = () => {
       navigate("/extras-aceitos");
     } catch (error) {
       console.error("Erro ao aceitar extra:", error);
+      playError();
       toast({
         title: "Erro",
         description: "Não foi possível aceitar o extra. Tente novamente.",
