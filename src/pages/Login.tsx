@@ -49,6 +49,41 @@ const Login = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Check if user is a motoboy (has profile) and NOT a restaurant
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id, user_type")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        const { data: restaurant } = await supabase
+          .from("restaurants")
+          .select("id")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        if (restaurant) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Acesso negado",
+            description: "Esta conta é de um restaurante. Use o login de restaurante.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        if (!profile) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Conta não encontrada",
+            description: "Não encontramos um perfil de motoboy para esta conta.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
         toast({
           title: "Login realizado!",
           description: "Bem-vindo de volta!",
