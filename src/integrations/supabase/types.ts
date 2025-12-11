@@ -64,6 +64,7 @@ export type Database = {
           lng: number | null
           needs_bag: boolean | null
           observations: string | null
+          offer_date: string | null
           offer_type: string | null
           payment: string | null
           phone: string | null
@@ -89,6 +90,7 @@ export type Database = {
           lng?: number | null
           needs_bag?: boolean | null
           observations?: string | null
+          offer_date?: string | null
           offer_type?: string | null
           payment?: string | null
           phone?: string | null
@@ -114,6 +116,7 @@ export type Database = {
           lng?: number | null
           needs_bag?: boolean | null
           observations?: string | null
+          offer_date?: string | null
           offer_type?: string | null
           payment?: string | null
           phone?: string | null
