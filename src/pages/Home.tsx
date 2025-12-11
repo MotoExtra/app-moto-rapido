@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { format, isToday, isTomorrow, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +19,7 @@ interface Offer {
   restaurant_name: string;
   description: string;
   address: string;
+  offer_date?: string;
   time_start: string;
   time_end: string;
   radius: number;
@@ -195,15 +198,20 @@ const Home = () => {
     }
   };
 
-  const getTimeUntilStart = (timeStart: string) => {
+  const getTimeUntilStart = (timeStart: string, offerDate?: string) => {
     const now = new Date();
     const [hours, minutes] = timeStart.split(':').map(Number);
-    const startTime = new Date();
-    startTime.setHours(hours, minutes, 0, 0);
-
-    // Se o horário já passou hoje, considera para amanhã
-    if (startTime < now) {
-      startTime.setDate(startTime.getDate() + 1);
+    
+    let startTime: Date;
+    if (offerDate) {
+      startTime = parseISO(offerDate);
+      startTime.setHours(hours, minutes, 0, 0);
+    } else {
+      startTime = new Date();
+      startTime.setHours(hours, minutes, 0, 0);
+      if (startTime < now) {
+        startTime.setDate(startTime.getDate() + 1);
+      }
     }
 
     const diffMs = startTime.getTime() - now.getTime();
@@ -214,6 +222,14 @@ const Home = () => {
       minutes: Math.floor((diffHours % 1) * 60),
       isUrgent: diffHours < 2
     };
+  };
+
+  const formatOfferDate = (dateStr?: string) => {
+    if (!dateStr) return null;
+    const date = parseISO(dateStr);
+    if (isToday(date)) return "Hoje";
+    if (isTomorrow(date)) return "Amanhã";
+    return format(date, "dd/MM (EEEE)", { locale: ptBR });
   };
 
   const handleLogout = async () => {
@@ -464,7 +480,8 @@ const Home = () => {
           </Card>
         ) : (
           offers.map((offer) => {
-            const timeInfo = getTimeUntilStart(offer.time_start);
+            const timeInfo = getTimeUntilStart(offer.time_start, offer.offer_date);
+            const offerDateLabel = formatOfferDate(offer.offer_date);
             const isMotoboyOffer = offer.offer_type === "motoboy";
             const isOwnOffer = offer.created_by === user?.id;
             return (
@@ -521,6 +538,15 @@ const Home = () => {
                       </div>
                       <span>{offer.address}</span>
                     </div>
+
+                    {offerDateLabel && (
+                      <div className="flex items-center text-sm text-foreground/80">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
+                          <CalendarDays className="w-4 h-4 text-primary" />
+                        </div>
+                        <span className="font-medium">{offerDateLabel}</span>
+                      </div>
+                    )}
 
                     <div className="flex items-center text-sm text-foreground/80">
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
