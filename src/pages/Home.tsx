@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X } from "lucide-react";
+import { RestaurantRatingsModal } from "@/components/RestaurantRatingsModal";
 import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +52,8 @@ const Home = () => {
   const [notificationPromptShown, setNotificationPromptShown] = useState(false);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [ratingsModalOpen, setRatingsModalOpen] = useState(false);
+  const [selectedRestaurantForRatings, setSelectedRestaurantForRatings] = useState<{ id: string; name: string } | null>(null);
 
   // Check if app is installed as PWA
   useEffect(() => {
@@ -641,11 +644,19 @@ const Home = () => {
 
                   <div className="flex items-center justify-between pt-3 border-t border-border/50">
                     {offer.restaurant_rating !== undefined && offer.restaurant_review_count && offer.restaurant_review_count > 0 ? (
-                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10">
+                      <button
+                        onClick={() => {
+                          if (offer.created_by) {
+                            setSelectedRestaurantForRatings({ id: offer.created_by, name: offer.restaurant_name });
+                            setRatingsModalOpen(true);
+                          }
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 transition-colors cursor-pointer"
+                      >
                         <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                         <span className="font-bold text-amber-600">{offer.restaurant_rating}</span>
-                        <span className="text-muted-foreground text-sm">({offer.restaurant_review_count} avaliações)</span>
-                      </div>
+                        <span className="text-muted-foreground text-sm">({offer.restaurant_review_count})</span>
+                      </button>
                     ) : (
                       <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/50">
                         <Star className="w-4 h-4 text-muted-foreground" />
@@ -699,6 +710,15 @@ const Home = () => {
           })
         )}
       </div>
+      {/* Ratings Modal */}
+      {selectedRestaurantForRatings && (
+        <RestaurantRatingsModal
+          open={ratingsModalOpen}
+          onOpenChange={setRatingsModalOpen}
+          restaurantId={selectedRestaurantForRatings.id}
+          restaurantName={selectedRestaurantForRatings.name}
+        />
+      )}
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-background/95 backdrop-blur-lg border-t shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
