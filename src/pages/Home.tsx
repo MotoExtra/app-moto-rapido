@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X, ChevronRight } from "lucide-react";
 import { RestaurantRatingsModal } from "@/components/RestaurantRatingsModal";
 import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
@@ -651,11 +651,13 @@ const Home = () => {
                             setRatingsModalOpen(true);
                           }
                         }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 transition-colors cursor-pointer"
+                        className="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 transition-all cursor-pointer"
+                        title="Ver todas as avaliações"
                       >
                         <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                         <span className="font-bold text-amber-600">{offer.restaurant_rating}</span>
                         <span className="text-muted-foreground text-sm">({offer.restaurant_review_count})</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-amber-500/60 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
                       </button>
                     ) : (
                       <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/50">
