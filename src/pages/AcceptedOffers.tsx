@@ -32,6 +32,8 @@ interface AcceptedOffer {
     time_end: string;
     radius: number;
     needs_bag: boolean;
+    can_become_permanent?: boolean;
+    includes_meal?: boolean;
     delivery_range: string;
     experience: string | null;
     rating: number;
@@ -87,6 +89,8 @@ const AcceptedOffers = () => {
               time_end,
               radius,
               needs_bag,
+              can_become_permanent,
+              includes_meal,
               delivery_range,
               experience,
               rating,
@@ -297,6 +301,22 @@ const AcceptedOffers = () => {
                     <p className="text-sm font-medium">Pagamento: {acceptedOffer.offer.payment}</p>
                   </div>
                 )}
+
+                <div className="flex flex-wrap gap-1.5">
+                  <Badge variant="outline" className={`text-xs ${acceptedOffer.offer.needs_bag ? 'bg-amber-500/10 text-amber-600 border-amber-500/30' : 'bg-green-500/10 text-green-600 border-green-500/30'}`}>
+                    {acceptedOffer.offer.needs_bag ? '🎒 Precisa de bag' : '✓ Não precisa de bag'}
+                  </Badge>
+                  {acceptedOffer.offer.can_become_permanent && (
+                    <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                      💼 Possibilidade de fixo
+                    </Badge>
+                  )}
+                  {acceptedOffer.offer.includes_meal && (
+                    <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                      🍔 Direito a lanche
+                    </Badge>
+                  )}
+                </div>
 
                 <div className="flex items-center text-sm pt-2 border-t">
                   <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
