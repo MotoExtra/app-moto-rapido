@@ -16,6 +16,7 @@ import {
 import { Clock, MapPin, Package, Star, ArrowLeft, Phone, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatPayment } from "@/lib/utils";
 import RateRestaurantModal from "@/components/RateRestaurantModal";
 
 interface AcceptedOffer {
@@ -298,7 +299,7 @@ const AcceptedOffers = () => {
 
                 {acceptedOffer.offer.payment && (
                   <div className="pt-2 border-t">
-                    <p className="text-sm font-medium">Pagamento: {acceptedOffer.offer.payment}</p>
+                    <p className="text-sm font-medium">Pagamento: {formatPayment(acceptedOffer.offer.payment)}</p>
                   </div>
                 )}
 
