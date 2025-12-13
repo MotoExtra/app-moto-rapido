@@ -632,14 +632,7 @@ const Home = () => {
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
                         <Clock className="w-4 h-4 text-primary" />
                       </div>
-                      <span>{offer.time_start} até {offer.time_end} • Raio de {offer.radius} km</span>
-                    </div>
-
-                    <div className="flex items-center text-sm text-foreground/80">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
-                        <Package className="w-4 h-4 text-primary" />
-                      </div>
-                      <span>Faz {offer.delivery_range}</span>
+                      <span>{offer.time_start} até {offer.time_end}</span>
                     </div>
                   </div>
 
