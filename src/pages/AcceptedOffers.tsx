@@ -36,6 +36,7 @@ interface AcceptedOffer {
     can_become_permanent?: boolean;
     includes_meal?: boolean;
     delivery_range: string;
+    delivery_quantity?: string | null;
     experience: string | null;
     rating: number;
     review_count: number;
@@ -307,6 +308,11 @@ const AcceptedOffers = () => {
                   {acceptedOffer.offer.delivery_range && (
                     <Badge variant="outline" className="text-xs bg-teal-500/10 text-teal-600 border-teal-500/30">
                       📍 {acceptedOffer.offer.delivery_range}
+                    </Badge>
+                  )}
+                  {acceptedOffer.offer.delivery_quantity && (
+                    <Badge variant="outline" className="text-xs bg-indigo-500/10 text-indigo-600 border-indigo-500/30">
+                      📦 {acceptedOffer.offer.delivery_quantity}
                     </Badge>
                   )}
                   <Badge variant="outline" className={`text-xs ${acceptedOffer.offer.needs_bag ? 'bg-amber-500/10 text-amber-600 border-amber-500/30' : 'bg-green-500/10 text-green-600 border-green-500/30'}`}>

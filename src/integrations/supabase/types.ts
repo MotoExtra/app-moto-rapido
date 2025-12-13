@@ -56,6 +56,7 @@ export type Database = {
           can_become_permanent: boolean | null
           created_at: string
           created_by: string | null
+          delivery_quantity: string | null
           delivery_range: string
           description: string
           experience: string | null
@@ -84,6 +85,7 @@ export type Database = {
           can_become_permanent?: boolean | null
           created_at?: string
           created_by?: string | null
+          delivery_quantity?: string | null
           delivery_range: string
           description: string
           experience?: string | null
@@ -112,6 +114,7 @@ export type Database = {
           can_become_permanent?: boolean | null
           created_at?: string
           created_by?: string | null
+          delivery_quantity?: string | null
           delivery_range?: string
           description?: string
           experience?: string | null
