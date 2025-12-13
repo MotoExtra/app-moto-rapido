@@ -121,7 +121,21 @@ const OfferExtra = () => {
       }
 
       const { error } = await supabase.from("offers").insert({
-        ...formData,
+        restaurant_name: formData.restaurant_name,
+        description: formData.description,
+        address: formData.address,
+        time_start: formData.time_start,
+        time_end: formData.time_end,
+        radius: formData.radius,
+        needs_bag: formData.needs_bag,
+        can_become_permanent: formData.can_become_permanent,
+        includes_meal: formData.includes_meal,
+        delivery_range: formData.delivery_range,
+        delivery_quantity: formData.delivery_quantity || null,
+        experience: formData.experience || null,
+        payment: formData.payment || null,
+        phone: formData.phone || null,
+        observations: formData.observations || null,
         created_by: user.id,
         offer_type: "motoboy",
         rating: 5.0,
