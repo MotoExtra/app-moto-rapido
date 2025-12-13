@@ -632,15 +632,24 @@ const Home = () => {
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
                         <Clock className="w-4 h-4 text-primary" />
                       </div>
-                      <span>{offer.time_start} até {offer.time_end} • Raio de {offer.radius} km</span>
+                      <span>{offer.time_start} até {offer.time_end}</span>
                     </div>
 
                     <div className="flex items-center text-sm text-foreground/80">
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
-                        <Package className="w-4 h-4 text-primary" />
+                        <MapPin className="w-4 h-4 text-primary" />
                       </div>
-                      <span>Faz {offer.delivery_range}</span>
+                      <span>Raio: {offer.delivery_range}</span>
                     </div>
+
+                    {offer.delivery_quantity && (
+                      <div className="flex items-center text-sm text-foreground/80">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
+                          <Package className="w-4 h-4 text-primary" />
+                        </div>
+                        <span>Entregas: {offer.delivery_quantity}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Pagamento */}
@@ -651,16 +660,6 @@ const Home = () => {
                   )}
 
                   <div className="flex flex-wrap gap-1.5">
-                    {offer.delivery_range && (
-                      <Badge variant="outline" className="text-xs bg-teal-500/10 text-teal-600 border-teal-500/30">
-                        📍 {offer.delivery_range}
-                      </Badge>
-                    )}
-                    {offer.delivery_quantity && (
-                      <Badge variant="outline" className="text-xs bg-indigo-500/10 text-indigo-600 border-indigo-500/30">
-                        📦 {offer.delivery_quantity}
-                      </Badge>
-                    )}
                     <Badge variant="outline" className={`text-xs ${offer.needs_bag ? 'bg-amber-500/10 text-amber-600 border-amber-500/30' : 'bg-green-500/10 text-green-600 border-green-500/30'}`}>
                       {offer.needs_bag ? '🎒 Precisa de bag' : '✓ Não precisa de bag'}
                     </Badge>
