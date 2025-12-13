@@ -30,6 +30,7 @@ interface LastOffer {
   time_start: string;
   time_end: string;
   delivery_range: string;
+  delivery_quantity: string | null;
   needs_bag: boolean;
   can_become_permanent: boolean;
   includes_meal: boolean;
@@ -50,6 +51,7 @@ const CreateOffer = () => {
     timeStart: "",
     timeEnd: "",
     deliveryRange: "",
+    deliveryQuantity: "",
     needsBag: false,
     canBecomePermanent: false,
     includesMeal: false,
@@ -86,7 +88,7 @@ const CreateOffer = () => {
       // Fetch last offer created by this restaurant
       const { data: lastOfferData } = await supabase
         .from("offers")
-        .select("address, time_start, time_end, delivery_range, needs_bag, can_become_permanent, includes_meal, payment, observations")
+        .select("address, time_start, time_end, delivery_range, delivery_quantity, needs_bag, can_become_permanent, includes_meal, payment, observations")
         .eq("created_by", session.user.id)
         .eq("offer_type", "restaurant")
         .order("created_at", { ascending: false })
@@ -128,6 +130,7 @@ const CreateOffer = () => {
           time_start: formData.timeStart,
           time_end: formData.timeEnd,
           delivery_range: formData.deliveryRange,
+          delivery_quantity: formData.deliveryQuantity || null,
           needs_bag: formData.needsBag,
           can_become_permanent: formData.canBecomePermanent,
           includes_meal: formData.includesMeal,
@@ -225,6 +228,7 @@ const CreateOffer = () => {
                 timeStart: lastOffer.time_start,
                 timeEnd: lastOffer.time_end,
                 deliveryRange: lastOffer.delivery_range,
+                deliveryQuantity: lastOffer.delivery_quantity || "",
                 needsBag: lastOffer.needs_bag || false,
                 canBecomePermanent: lastOffer.can_become_permanent || false,
                 includesMeal: lastOffer.includes_meal || false,
@@ -350,6 +354,16 @@ const CreateOffer = () => {
                   value={formData.payment}
                   onChange={(e) => setFormData({ ...formData, payment: e.target.value })}
                   placeholder="Ex: R$ 30/hora ou R$ 5/entrega"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deliveryQuantity">Quantidade de Entregas</Label>
+                <Input
+                  id="deliveryQuantity"
+                  value={formData.deliveryQuantity}
+                  onChange={(e) => setFormData({ ...formData, deliveryQuantity: e.target.value })}
+                  placeholder="Ex: 15-25 entregas"
                 />
               </div>
 
