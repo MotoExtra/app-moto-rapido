@@ -31,6 +31,7 @@ interface Offer {
   delivery_range: string;
   experience: string | null;
   observations: string | null;
+  payment?: string | null;
   rating: number;
   review_count: number;
   is_accepted: boolean;
@@ -639,6 +640,13 @@ const Home = () => {
                       <span>Faz {offer.delivery_range}</span>
                     </div>
                   </div>
+
+                  {/* Pagamento */}
+                  {offer.payment && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <span className="text-green-600 font-medium text-sm">💰 {offer.payment}</span>
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap gap-1.5">
                     {offer.delivery_range && (

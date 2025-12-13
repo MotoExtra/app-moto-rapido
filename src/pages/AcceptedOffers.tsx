@@ -303,6 +303,11 @@ const AcceptedOffers = () => {
                 )}
 
                 <div className="flex flex-wrap gap-1.5">
+                  {acceptedOffer.offer.delivery_range && (
+                    <Badge variant="outline" className="text-xs bg-teal-500/10 text-teal-600 border-teal-500/30">
+                      📍 {acceptedOffer.offer.delivery_range}
+                    </Badge>
+                  )}
                   <Badge variant="outline" className={`text-xs ${acceptedOffer.offer.needs_bag ? 'bg-amber-500/10 text-amber-600 border-amber-500/30' : 'bg-green-500/10 text-green-600 border-green-500/30'}`}>
                     {acceptedOffer.offer.needs_bag ? '🎒 Precisa de bag' : '✓ Não precisa de bag'}
                   </Badge>
