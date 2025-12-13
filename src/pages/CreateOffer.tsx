@@ -31,6 +31,8 @@ interface LastOffer {
   time_end: string;
   delivery_range: string;
   needs_bag: boolean;
+  can_become_permanent: boolean;
+  includes_meal: boolean;
   payment: string | null;
   observations: string | null;
 }
@@ -49,6 +51,8 @@ const CreateOffer = () => {
     timeEnd: "",
     deliveryRange: "",
     needsBag: false,
+    canBecomePermanent: false,
+    includesMeal: false,
     payment: "",
     observations: "",
   });
@@ -82,7 +86,7 @@ const CreateOffer = () => {
       // Fetch last offer created by this restaurant
       const { data: lastOfferData } = await supabase
         .from("offers")
-        .select("address, time_start, time_end, delivery_range, needs_bag, payment, observations")
+        .select("address, time_start, time_end, delivery_range, needs_bag, can_become_permanent, includes_meal, payment, observations")
         .eq("created_by", session.user.id)
         .eq("offer_type", "restaurant")
         .order("created_at", { ascending: false })
@@ -125,6 +129,8 @@ const CreateOffer = () => {
           time_end: formData.timeEnd,
           delivery_range: formData.deliveryRange,
           needs_bag: formData.needsBag,
+          can_become_permanent: formData.canBecomePermanent,
+          includes_meal: formData.includesMeal,
           payment: formData.payment || null,
           observations: formData.observations || null,
           phone: restaurant.phone,
@@ -220,6 +226,8 @@ const CreateOffer = () => {
                 timeEnd: lastOffer.time_end,
                 deliveryRange: lastOffer.delivery_range,
                 needsBag: lastOffer.needs_bag || false,
+                canBecomePermanent: lastOffer.can_become_permanent || false,
+                includesMeal: lastOffer.includes_meal || false,
                 payment: lastOffer.payment || "",
                 observations: lastOffer.observations || "",
               }));
@@ -353,6 +361,28 @@ const CreateOffer = () => {
                 />
                 <Label htmlFor="needsBag" className="text-sm font-normal">
                   Requer bag térmica
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="canBecomePermanent"
+                  checked={formData.canBecomePermanent}
+                  onCheckedChange={(checked) => setFormData({ ...formData, canBecomePermanent: checked === true })}
+                />
+                <Label htmlFor="canBecomePermanent" className="text-sm font-normal">
+                  Possibilidade de ficar fixo
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="includesMeal"
+                  checked={formData.includesMeal}
+                  onCheckedChange={(checked) => setFormData({ ...formData, includesMeal: checked === true })}
+                />
+                <Label htmlFor="includesMeal" className="text-sm font-normal">
+                  Direito a um lanche
                 </Label>
               </div>
 
