@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ArrowLeft, Loader2, Package, CalendarIcon, RotateCcw } from "lucide-react";
@@ -353,37 +353,73 @@ const CreateOffer = () => {
                 />
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="needsBag"
-                  checked={formData.needsBag}
-                  onCheckedChange={(checked) => setFormData({ ...formData, needsBag: checked === true })}
-                />
-                <Label htmlFor="needsBag" className="text-sm font-normal">
-                  Requer bag térmica
-                </Label>
+              {/* Requisito: Bag Térmica */}
+              <div className="rounded-xl border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <span>🎒</span>
+                  <span>Requisito</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="needsBag" className="text-base font-medium cursor-pointer">
+                      {formData.needsBag ? "Requer bag térmica" : "Não requer bag térmica"}
+                    </Label>
+                    <p className={`text-sm ${formData.needsBag ? "text-amber-600" : "text-green-600"}`}>
+                      {formData.needsBag ? "Motoboy precisa ter bag" : "Bag não é necessária"}
+                    </p>
+                  </div>
+                  <Switch
+                    id="needsBag"
+                    checked={formData.needsBag}
+                    onCheckedChange={(checked) => setFormData({ ...formData, needsBag: checked })}
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="canBecomePermanent"
-                  checked={formData.canBecomePermanent}
-                  onCheckedChange={(checked) => setFormData({ ...formData, canBecomePermanent: checked === true })}
-                />
-                <Label htmlFor="canBecomePermanent" className="text-sm font-normal">
-                  Possibilidade de ficar fixo
-                </Label>
-              </div>
+              {/* Benefícios do Extra */}
+              <div className="rounded-xl border bg-card p-4 space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <span>✨</span>
+                  <span>Benefícios do Extra</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">💼</span>
+                    <div className="space-y-0.5">
+                      <Label htmlFor="canBecomePermanent" className="text-sm font-medium cursor-pointer">
+                        Possibilidade de fixo
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Pode virar trabalho permanente
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="canBecomePermanent"
+                    checked={formData.canBecomePermanent}
+                    onCheckedChange={(checked) => setFormData({ ...formData, canBecomePermanent: checked })}
+                  />
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="includesMeal"
-                  checked={formData.includesMeal}
-                  onCheckedChange={(checked) => setFormData({ ...formData, includesMeal: checked === true })}
-                />
-                <Label htmlFor="includesMeal" className="text-sm font-normal">
-                  Direito a um lanche
-                </Label>
+                <div className="border-t pt-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🍔</span>
+                    <div className="space-y-0.5">
+                      <Label htmlFor="includesMeal" className="text-sm font-medium cursor-pointer">
+                        Direito a um lanche
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Inclui refeição no trabalho
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="includesMeal"
+                    checked={formData.includesMeal}
+                    onCheckedChange={(checked) => setFormData({ ...formData, includesMeal: checked })}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
