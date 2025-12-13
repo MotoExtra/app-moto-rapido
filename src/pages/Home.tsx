@@ -26,6 +26,8 @@ interface Offer {
   time_end: string;
   radius: number;
   needs_bag: boolean;
+  can_become_permanent?: boolean;
+  includes_meal?: boolean;
   delivery_range: string;
   experience: string | null;
   observations: string | null;
@@ -638,9 +640,21 @@ const Home = () => {
                     </div>
                   </div>
 
-                  <Badge variant="outline" className={`text-xs ${offer.needs_bag ? 'bg-amber-500/10 text-amber-600 border-amber-500/30' : 'bg-green-500/10 text-green-600 border-green-500/30'}`}>
-                    {offer.needs_bag ? '🎒 Precisa de bag' : '✓ Não precisa de bag'}
-                  </Badge>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge variant="outline" className={`text-xs ${offer.needs_bag ? 'bg-amber-500/10 text-amber-600 border-amber-500/30' : 'bg-green-500/10 text-green-600 border-green-500/30'}`}>
+                      {offer.needs_bag ? '🎒 Precisa de bag' : '✓ Não precisa de bag'}
+                    </Badge>
+                    {offer.can_become_permanent && (
+                      <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                        💼 Possibilidade de fixo
+                      </Badge>
+                    )}
+                    {offer.includes_meal && (
+                      <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                        🍔 Direito a lanche
+                      </Badge>
+                    )}
+                  </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border/50">
                     {offer.restaurant_rating !== undefined && offer.restaurant_review_count && offer.restaurant_review_count > 0 ? (
