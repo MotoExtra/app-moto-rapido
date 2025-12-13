@@ -47,6 +47,7 @@ const OfferExtra = () => {
     can_become_permanent: false,
     includes_meal: false,
     delivery_range: "",
+    delivery_quantity: "",
     experience: "",
     payment: "",
     phone: "",
@@ -89,6 +90,7 @@ const OfferExtra = () => {
       can_become_permanent: lastOffer.can_become_permanent || false,
       includes_meal: lastOffer.includes_meal || false,
       delivery_range: lastOffer.delivery_range,
+      delivery_quantity: "",
       experience: lastOffer.experience || "",
       payment: lastOffer.payment || "",
       phone: lastOffer.phone || "",
@@ -311,13 +313,12 @@ const OfferExtra = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="delivery_range">Quantidade de Entregas *</Label>
+              <Label htmlFor="delivery_quantity">Quantidade de Entregas</Label>
               <Input
-                id="delivery_range"
+                id="delivery_quantity"
                 placeholder="Ex: 15-25 entregas"
-                value={formData.delivery_range}
-                onChange={(e) => setFormData({ ...formData, delivery_range: e.target.value })}
-                required
+                value={formData.delivery_quantity}
+                onChange={(e) => setFormData({ ...formData, delivery_quantity: e.target.value })}
               />
             </div>
           </CardContent>
