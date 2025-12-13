@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Package, MapPin, Clock, DollarSign, Briefcase, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,8 @@ const EditExtra = () => {
     time_end: "",
     radius: 5,
     needs_bag: false,
+    can_become_permanent: false,
+    includes_meal: false,
     delivery_range: "",
     experience: "",
     payment: "",
@@ -77,6 +80,8 @@ const EditExtra = () => {
         time_end: offer.time_end || "",
         radius: offer.radius || 5,
         needs_bag: offer.needs_bag || false,
+        can_become_permanent: offer.can_become_permanent || false,
+        includes_meal: offer.includes_meal || false,
         delivery_range: offer.delivery_range || "",
         experience: offer.experience || "",
         payment: offer.payment || "",
@@ -303,6 +308,28 @@ const EditExtra = () => {
                 checked={formData.needs_bag}
                 onCheckedChange={(checked) => setFormData({ ...formData, needs_bag: checked })}
               />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="can_become_permanent"
+                checked={formData.can_become_permanent}
+                onCheckedChange={(checked) => setFormData({ ...formData, can_become_permanent: checked === true })}
+              />
+              <Label htmlFor="can_become_permanent" className="text-sm font-normal">
+                Possibilidade de ficar fixo
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="includes_meal"
+                checked={formData.includes_meal}
+                onCheckedChange={(checked) => setFormData({ ...formData, includes_meal: checked === true })}
+              />
+              <Label htmlFor="includes_meal" className="text-sm font-normal">
+                Direito a um lanche
+              </Label>
             </div>
 
             <div className="space-y-2">

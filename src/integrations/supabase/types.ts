@@ -53,12 +53,14 @@ export type Database = {
         Row: {
           accepted_by: string | null
           address: string
+          can_become_permanent: boolean | null
           created_at: string
           created_by: string | null
           delivery_range: string
           description: string
           experience: string | null
           id: string
+          includes_meal: boolean | null
           is_accepted: boolean | null
           lat: number | null
           lng: number | null
@@ -79,12 +81,14 @@ export type Database = {
         Insert: {
           accepted_by?: string | null
           address: string
+          can_become_permanent?: boolean | null
           created_at?: string
           created_by?: string | null
           delivery_range: string
           description: string
           experience?: string | null
           id?: string
+          includes_meal?: boolean | null
           is_accepted?: boolean | null
           lat?: number | null
           lng?: number | null
@@ -105,12 +109,14 @@ export type Database = {
         Update: {
           accepted_by?: string | null
           address?: string
+          can_become_permanent?: boolean | null
           created_at?: string
           created_by?: string | null
           delivery_range?: string
           description?: string
           experience?: string | null
           id?: string
+          includes_meal?: boolean | null
           is_accepted?: boolean | null
           lat?: number | null
           lng?: number | null
