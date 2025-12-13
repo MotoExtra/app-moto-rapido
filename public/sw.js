@@ -1,5 +1,7 @@
 // Service Worker para Push Notifications - MotoPay
 
+const CACHE_VERSION = 'v1';
+
 self.addEventListener('push', function(event) {
   console.log('[SW] Push recebido:', event);
   
@@ -69,10 +71,44 @@ self.addEventListener('notificationclick', function(event) {
 
 self.addEventListener('install', function(event) {
   console.log('[SW] Service Worker instalado');
+  // Força ativação imediata sem esperar tabs fecharem
   self.skipWaiting();
 });
 
 self.addEventListener('activate', function(event) {
   console.log('[SW] Service Worker ativado');
-  event.waitUntil(clients.claim());
+  
+  // Limpa todos os caches antigos para garantir conteúdo atualizado
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          console.log('[SW] Removendo cache antigo:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(function() {
+      // Assume controle de todas as páginas imediatamente
+      return clients.claim();
+    })
+  );
+});
+
+// Estratégia Network First - sempre busca da rede, só usa cache se offline
+self.addEventListener('fetch', function(event) {
+  // Ignora requisições não-GET e de extensões
+  if (event.request.method !== 'GET') return;
+  if (event.request.url.includes('chrome-extension')) return;
+  if (event.request.url.includes('supabase')) return;
+  
+  event.respondWith(
+    fetch(event.request)
+      .then(function(response) {
+        return response;
+      })
+      .catch(function() {
+        // Só usa cache se a rede falhar
+        return caches.match(event.request);
+      })
+  );
 });
