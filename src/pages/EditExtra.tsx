@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -209,15 +210,22 @@ const EditExtra = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="radius">Raio de entrega (km)</Label>
-              <Input
-                id="radius"
-                type="number"
-                min="1"
-                max="50"
-                value={formData.radius}
-                onChange={(e) => setFormData({ ...formData, radius: parseInt(e.target.value) || 5 })}
-              />
+              <Label htmlFor="delivery_range">Raio de Entrega *</Label>
+              <Select 
+                value={formData.delivery_range} 
+                onValueChange={(value) => setFormData({ ...formData, delivery_range: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o raio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Menos de 10km">Menos de 10km</SelectItem>
+                  <SelectItem value="De 10km a 15km">De 10km a 15km</SelectItem>
+                  <SelectItem value="De 15km a 20km">De 15km a 20km</SelectItem>
+                  <SelectItem value="De 20km a 30km">De 20km a 30km</SelectItem>
+                  <SelectItem value="Mais de 30km">Mais de 30km</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>

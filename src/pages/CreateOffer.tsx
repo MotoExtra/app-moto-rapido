@@ -334,11 +334,11 @@ const CreateOffer = () => {
                     <SelectValue placeholder="Selecione o raio" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Até 3km">Até 3km</SelectItem>
-                    <SelectItem value="Até 5km">Até 5km</SelectItem>
-                    <SelectItem value="Até 10km">Até 10km</SelectItem>
-                    <SelectItem value="Até 15km">Até 15km</SelectItem>
-                    <SelectItem value="Acima de 15km">Acima de 15km</SelectItem>
+                    <SelectItem value="Menos de 10km">Menos de 10km</SelectItem>
+                    <SelectItem value="De 10km a 15km">De 10km a 15km</SelectItem>
+                    <SelectItem value="De 15km a 20km">De 15km a 20km</SelectItem>
+                    <SelectItem value="De 20km a 30km">De 20km a 30km</SelectItem>
+                    <SelectItem value="Mais de 30km">Mais de 30km</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
