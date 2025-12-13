@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { formatPayment } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
 
 interface Offer {
@@ -644,7 +645,7 @@ const Home = () => {
                   {/* Pagamento */}
                   {offer.payment && (
                     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <span className="text-green-600 font-medium text-sm">💰 {offer.payment}</span>
+                      <span className="text-green-600 font-medium text-sm">💰 {formatPayment(offer.payment)}</span>
                     </div>
                   )}
 
