@@ -199,16 +199,16 @@ const Home = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Filter out expired offers (past date/time)
+        // Filter out expired offers (past start time)
         const now = new Date();
         const validOffers = data.filter(offer => {
           const offerDate = offer.offer_date ? parseISO(offer.offer_date) : new Date();
-          const [endHours, endMinutes] = offer.time_end.split(':').map(Number);
-          const offerEndTime = new Date(offerDate);
-          offerEndTime.setHours(endHours, endMinutes, 0, 0);
+          const [startHours, startMinutes] = offer.time_start.split(':').map(Number);
+          const offerStartTime = new Date(offerDate);
+          offerStartTime.setHours(startHours, startMinutes, 0, 0);
           
-          // Keep only offers that haven't ended yet
-          return offerEndTime > now;
+          // Keep only offers that haven't started yet
+          return offerStartTime > now;
         });
 
         // Fetch restaurant ratings from motoboys
