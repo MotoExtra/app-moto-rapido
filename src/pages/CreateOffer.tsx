@@ -162,6 +162,7 @@ const CreateOffer = () => {
           description: `Extra de ${restaurant.fantasy_name}`,
           time_start: formData.timeStart,
           time_end: formData.timeEnd,
+          city: restaurant.city,
         },
       }).then((result) => {
         console.log("Notificações enviadas:", result);

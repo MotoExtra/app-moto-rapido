@@ -11,10 +11,10 @@ interface NotifyRequest {
   description: string;
   time_start: string;
   time_end: string;
+  city?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -25,14 +25,41 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    const { restaurant_name, description, time_start, time_end }: NotifyRequest = await req.json();
+    const { restaurant_name, description, time_start, time_end, city }: NotifyRequest = await req.json();
 
-    console.log("Notificando novo extra de:", restaurant_name);
+    console.log("Notificando novo extra de:", restaurant_name, "cidade:", city);
 
-    // Busca todas as subscriptions de motoboys
-    const { data: subscriptions, error: subError } = await supabase
-      .from("push_subscriptions")
-      .select("*");
+    let targetUserIds: string[] = [];
+
+    if (city) {
+      // Busca motoboys que têm interesse nessa cidade
+      const { data: cityPrefs, error: prefError } = await supabase
+        .from("motoboy_city_preferences")
+        .select("user_id")
+        .eq("city", city);
+
+      if (prefError) {
+        console.error("Erro ao buscar preferências de cidade:", prefError);
+      } else if (cityPrefs && cityPrefs.length > 0) {
+        targetUserIds = cityPrefs.map(p => p.user_id);
+        console.log(`Encontrados ${targetUserIds.length} motoboys interessados em ${city}`);
+      } else {
+        console.log(`Nenhum motoboy interessado em ${city}`);
+        return new Response(
+          JSON.stringify({ message: "Nenhum motoboy interessado nessa cidade", sent: 0 }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Busca subscriptions (filtradas por user_id se tiver cidade)
+    let query = supabase.from("push_subscriptions").select("*");
+    
+    if (targetUserIds.length > 0) {
+      query = query.in("user_id", targetUserIds);
+    }
+
+    const { data: subscriptions, error: subError } = await query;
 
     if (subError) {
       console.error("Erro ao buscar subscriptions:", subError);
@@ -56,7 +83,6 @@ const handler = async (req: Request): Promise<Response> => {
     let failed = 0;
     const failedSubscriptions: string[] = [];
 
-    // Envia push para cada subscription usando fetch direto (simples, sem payload criptografado)
     for (const sub of subscriptions) {
       try {
         const response = await fetch(sub.endpoint, {
@@ -84,7 +110,6 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Remove subscriptions inválidas
     if (failedSubscriptions.length > 0) {
       await supabase
         .from("push_subscriptions")
@@ -101,6 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
         sent,
         failed,
         removed: failedSubscriptions.length,
+        city: city || "todas",
         notification: {
           restaurant: restaurant_name,
           time: `${time_start} - ${time_end}`
