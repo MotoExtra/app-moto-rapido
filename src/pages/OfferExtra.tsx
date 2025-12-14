@@ -266,11 +266,9 @@ const OfferExtra = () => {
                   <SelectValue placeholder="Selecione o raio" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Menos de 10km">Menos de 10km</SelectItem>
-                  <SelectItem value="De 10km a 15km">De 10km a 15km</SelectItem>
-                  <SelectItem value="De 15km a 20km">De 15km a 20km</SelectItem>
-                  <SelectItem value="De 20km a 30km">De 20km a 30km</SelectItem>
-                  <SelectItem value="Mais de 30km">Mais de 30km</SelectItem>
+                  <SelectItem value="Menos de 5km">Menos de 5km</SelectItem>
+                  <SelectItem value="5 a 10km">5 a 10km</SelectItem>
+                  <SelectItem value="Mais de 10km">Mais de 10km</SelectItem>
                 </SelectContent>
               </Select>
             </div>
