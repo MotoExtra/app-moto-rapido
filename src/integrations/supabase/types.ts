@@ -49,6 +49,60 @@ export type Database = {
           },
         ]
       }
+      expired_offers_archive: {
+        Row: {
+          accepted_by: string | null
+          accepted_by_name: string | null
+          archived_at: string
+          city: string | null
+          created_by: string | null
+          created_by_name: string | null
+          id: string
+          offer_date: string | null
+          offer_type: string | null
+          original_offer_id: string
+          payment: string | null
+          restaurant_name: string
+          time_end: string
+          time_start: string
+          was_accepted: boolean
+        }
+        Insert: {
+          accepted_by?: string | null
+          accepted_by_name?: string | null
+          archived_at?: string
+          city?: string | null
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          offer_date?: string | null
+          offer_type?: string | null
+          original_offer_id: string
+          payment?: string | null
+          restaurant_name: string
+          time_end: string
+          time_start: string
+          was_accepted?: boolean
+        }
+        Update: {
+          accepted_by?: string | null
+          accepted_by_name?: string | null
+          archived_at?: string
+          city?: string | null
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          offer_date?: string | null
+          offer_type?: string | null
+          original_offer_id?: string
+          payment?: string | null
+          restaurant_name?: string
+          time_end?: string
+          time_start?: string
+          was_accepted?: boolean
+        }
+        Relationships: []
+      }
       motoboy_city_preferences: {
         Row: {
           city: string
@@ -335,15 +389,43 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_offers: { Args: never; Returns: number }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -470,6 +552,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
