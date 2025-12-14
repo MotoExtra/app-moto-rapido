@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X, ChevronRight } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X, ChevronRight, Filter, Check } from "lucide-react";
+import { ES_CITIES } from "@/lib/cities";
 import { RestaurantRatingsModal } from "@/components/RestaurantRatingsModal";
 import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +62,8 @@ const Home = () => {
   const [ratingsModalOpen, setRatingsModalOpen] = useState(false);
   const [selectedRestaurantForRatings, setSelectedRestaurantForRatings] = useState<{ id: string; name: string } | null>(null);
   const [cityPreferences, setCityPreferences] = useState<string[]>([]);
+  const [showCityFilter, setShowCityFilter] = useState(false);
+  const [tempCityFilter, setTempCityFilter] = useState<string[]>([]);
 
   // Check if app is installed as PWA
   useEffect(() => {
@@ -584,6 +587,111 @@ const Home = () => {
           </div>
           <span className="text-lg font-semibold">Ofertar Extra para Motoboys</span>
         </Button>
+      </div>
+
+      {/* City Filter Section */}
+      <div className="px-4 pt-4">
+        <div className="flex items-center justify-between mb-2">
+          <button
+            onClick={() => {
+              setTempCityFilter(cityPreferences);
+              setShowCityFilter(!showCityFilter);
+            }}
+            className="flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+          >
+            <Filter className="w-4 h-4" />
+            <span>Filtrar por cidade</span>
+            {cityPreferences.length > 0 && (
+              <Badge variant="secondary" className="ml-1 bg-primary/10 text-primary border-0">
+                {cityPreferences.length}
+              </Badge>
+            )}
+          </button>
+          {cityPreferences.length > 0 && !showCityFilter && (
+            <button
+              onClick={() => {
+                setCityPreferences([]);
+                fetchOffers();
+              }}
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              Limpar filtro
+            </button>
+          )}
+        </div>
+
+        {showCityFilter && (
+          <div className="bg-card border rounded-xl p-4 shadow-lg animate-fade-in">
+            <div className="flex flex-wrap gap-2 mb-4">
+              {ES_CITIES.map((city) => {
+                const isSelected = tempCityFilter.includes(city);
+                return (
+                  <button
+                    key={city}
+                    onClick={() => {
+                      setTempCityFilter(prev => 
+                        isSelected 
+                          ? prev.filter(c => c !== city)
+                          : [...prev, city]
+                      );
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3" />}
+                    {city}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-2 pt-2 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 rounded-xl"
+                onClick={() => {
+                  setShowCityFilter(false);
+                  setTempCityFilter(cityPreferences);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 rounded-xl"
+                onClick={() => {
+                  setCityPreferences(tempCityFilter);
+                  setShowCityFilter(false);
+                }}
+              >
+                Aplicar ({tempCityFilter.length || "Todas"})
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Active filters display */}
+        {cityPreferences.length > 0 && !showCityFilter && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {cityPreferences.slice(0, 4).map((city) => (
+              <Badge
+                key={city}
+                variant="secondary"
+                className="bg-primary/10 text-primary border-0 text-xs"
+              >
+                📍 {city}
+              </Badge>
+            ))}
+            {cityPreferences.length > 4 && (
+              <Badge variant="secondary" className="bg-muted text-muted-foreground border-0 text-xs">
+                +{cityPreferences.length - 4} mais
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Offers List */}
