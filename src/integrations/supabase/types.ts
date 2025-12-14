@@ -416,6 +416,7 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_offers: { Args: never; Returns: number }
+      grant_admin_role: { Args: { target_user_id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
