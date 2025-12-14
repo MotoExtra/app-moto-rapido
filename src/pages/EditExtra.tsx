@@ -31,6 +31,7 @@ const EditExtra = () => {
     can_become_permanent: false,
     includes_meal: false,
     delivery_range: "",
+    delivery_quantity: "",
     experience: "",
     payment: "",
     phone: "",
@@ -84,6 +85,7 @@ const EditExtra = () => {
         can_become_permanent: offer.can_become_permanent || false,
         includes_meal: offer.includes_meal || false,
         delivery_range: offer.delivery_range || "",
+        delivery_quantity: offer.delivery_quantity || "",
         experience: offer.experience || "",
         payment: offer.payment || "",
         phone: offer.phone || "",
@@ -287,14 +289,20 @@ const EditExtra = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="delivery_range">Quantidade de Entregas *</Label>
-              <Input
-                id="delivery_range"
-                placeholder="Ex: 15-25 entregas"
-                value={formData.delivery_range}
-                onChange={(e) => setFormData({ ...formData, delivery_range: e.target.value })}
-                required
-              />
+              <Label htmlFor="delivery_quantity">Quantidade de Entregas</Label>
+              <Select 
+                value={formData.delivery_quantity || ""} 
+                onValueChange={(value) => setFormData({ ...formData, delivery_quantity: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a quantidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Menos de 10 entregas">Menos de 10 entregas</SelectItem>
+                  <SelectItem value="10 a 20 entregas">10 a 20 entregas</SelectItem>
+                  <SelectItem value="Mais de 20 entregas">Mais de 20 entregas</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
