@@ -736,9 +736,8 @@ const Home = () => {
                       )}
                       {!isOwnOffer && (
                         <Button 
-                          size="sm"
                           onClick={() => handleAccept(offer)}
-                          className="rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all"
+                          className="rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all px-8 py-3 text-base font-semibold min-w-[140px]"
                         >
                           Aceitar
                         </Button>
