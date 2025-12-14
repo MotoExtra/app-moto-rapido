@@ -217,16 +217,22 @@ const Home = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Filter out expired offers (past start time)
+        // Filter out expired offers (past end time)
         const now = new Date();
         let validOffers = data.filter(offer => {
           const offerDate = offer.offer_date ? parseISO(offer.offer_date) : new Date();
-          const [startHours, startMinutes] = offer.time_start.split(':').map(Number);
-          const offerStartTime = new Date(offerDate);
-          offerStartTime.setHours(startHours, startMinutes, 0, 0);
+          const [endHours, endMinutes] = offer.time_end.split(':').map(Number);
+          const offerEndTime = new Date(offerDate);
+          offerEndTime.setHours(endHours, endMinutes, 0, 0);
           
-          // Keep only offers that haven't started yet
-          return offerStartTime > now;
+          // If end time is before start time, it means it ends the next day
+          const [startHours] = offer.time_start.split(':').map(Number);
+          if (endHours < startHours) {
+            offerEndTime.setDate(offerEndTime.getDate() + 1);
+          }
+          
+          // Keep only offers that haven't ended yet
+          return offerEndTime > now;
         });
 
         // Count offers per city (before filtering by preferences)
