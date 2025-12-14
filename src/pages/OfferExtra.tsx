@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Package, MapPin, Clock, DollarSign, Briefcase, RotateCcw } from "lucide-react";
+import { ArrowLeft, Package, MapPin, Clock, DollarSign, Briefcase, RotateCcw, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+import { cn } from "@/lib/utils";
 
 interface LastOffer {
   restaurant_name: string;
@@ -37,6 +41,7 @@ const OfferExtra = () => {
   const [lastOffer, setLastOffer] = useState<LastOffer | null>(null);
   
   const [formData, setFormData] = useState({
+    offerDate: new Date() as Date | undefined,
     restaurant_name: "",
     description: "",
     address: "",
@@ -80,6 +85,7 @@ const OfferExtra = () => {
     if (!lastOffer) return;
     
     setFormData({
+      offerDate: new Date(),
       restaurant_name: lastOffer.restaurant_name,
       description: lastOffer.description,
       address: lastOffer.address,
@@ -138,6 +144,7 @@ const OfferExtra = () => {
         observations: formData.observations || null,
         created_by: user.id,
         offer_type: "motoboy",
+        offer_date: formData.offerDate ? format(formData.offerDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
         rating: 5.0,
         review_count: 0,
       });
@@ -276,10 +283,38 @@ const OfferExtra = () => {
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <Clock className="w-4 h-4 text-primary" />
               </div>
-              Horário
+              Data e Horário
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Data do Extra *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.offerDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.offerDate ? format(formData.offerDate, "PPP", { locale: ptBR }) : <span>Selecione a data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.offerDate}
+                    onSelect={(date) => setFormData({ ...formData, offerDate: date })}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="time_start">Início *</Label>
