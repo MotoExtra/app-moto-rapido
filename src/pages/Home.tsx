@@ -64,6 +64,7 @@ const Home = () => {
   const [cityPreferences, setCityPreferences] = useState<string[]>([]);
   const [showCityFilter, setShowCityFilter] = useState(false);
   const [tempCityFilter, setTempCityFilter] = useState<string[]>([]);
+  const [cityOfferCounts, setCityOfferCounts] = useState<Map<string, number>>(new Map());
 
   // Check if app is installed as PWA
   useEffect(() => {
@@ -227,6 +228,15 @@ const Home = () => {
           // Keep only offers that haven't started yet
           return offerStartTime > now;
         });
+
+        // Count offers per city (before filtering by preferences)
+        const cityCounts = new Map<string, number>();
+        validOffers.forEach(offer => {
+          if (offer.city) {
+            cityCounts.set(offer.city, (cityCounts.get(offer.city) || 0) + 1);
+          }
+        });
+        setCityOfferCounts(cityCounts);
 
         // Filter by city preferences if user has any
         if (cityPreferences.length > 0) {
@@ -623,29 +633,59 @@ const Home = () => {
         {showCityFilter && (
           <div className="bg-card border rounded-xl p-4 shadow-lg animate-fade-in">
             <div className="flex flex-wrap gap-2 mb-4">
-              {ES_CITIES.map((city) => {
-                const isSelected = tempCityFilter.includes(city);
-                return (
-                  <button
-                    key={city}
-                    onClick={() => {
-                      setTempCityFilter(prev => 
-                        isSelected 
-                          ? prev.filter(c => c !== city)
-                          : [...prev, city]
-                      );
-                    }}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
-                      isSelected
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "bg-muted hover:bg-muted/80 text-muted-foreground"
-                    }`}
-                  >
-                    {isSelected && <Check className="w-3 h-3" />}
-                    {city}
-                  </button>
-                );
-              })}
+              {ES_CITIES
+                .map(city => ({ city, count: cityOfferCounts.get(city) || 0 }))
+                .sort((a, b) => b.count - a.count)
+                .map(({ city, count }) => {
+                  const isSelected = tempCityFilter.includes(city);
+                  const hasOffers = count > 0;
+                  const isPopular = count >= 3;
+                  return (
+                    <button
+                      key={city}
+                      onClick={() => {
+                        setTempCityFilter(prev => 
+                          isSelected 
+                            ? prev.filter(c => c !== city)
+                            : [...prev, city]
+                        );
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : hasOffers
+                            ? isPopular
+                              ? "bg-green-500/20 hover:bg-green-500/30 text-green-700 border border-green-500/30"
+                              : "bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border border-blue-500/20"
+                            : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3" />}
+                      {city}
+                      {hasOffers && (
+                        <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                          isSelected
+                            ? "bg-primary-foreground/20 text-primary-foreground"
+                            : isPopular
+                              ? "bg-green-500 text-white"
+                              : "bg-blue-500/80 text-white"
+                        }`}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                <span>Popular (3+)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span>Disponível</span>
+              </div>
             </div>
             <div className="flex gap-2 pt-2 border-t">
               <Button
