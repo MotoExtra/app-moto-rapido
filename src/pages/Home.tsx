@@ -711,39 +711,38 @@ const Home = () => {
                       </div>
                     )}
                     
-                    <div className="flex gap-2">
-                      {isOwnOffer && (
-                        <>
-                          <Button 
-                            variant="outline" 
-                            size="icon"
-                            onClick={() => navigate(`/editar-extra/${offer.id}`)}
-                            className="rounded-xl hover:bg-blue-500/10 hover:border-blue-500/50 hover:text-blue-600"
-                            title="Editar"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon"
-                            onClick={() => handleDeleteOffer(offer.id)}
-                            className="rounded-xl hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive"
-                            title="Excluir"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                      {!isOwnOffer && (
+                    {isOwnOffer && (
+                      <div className="flex gap-2">
                         <Button 
-                          onClick={() => handleAccept(offer)}
-                          className="rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all px-8 py-3 text-base font-semibold min-w-[140px]"
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => navigate(`/editar-extra/${offer.id}`)}
+                          className="rounded-xl hover:bg-blue-500/10 hover:border-blue-500/50 hover:text-blue-600"
+                          title="Editar"
                         >
-                          Aceitar
+                          <Pencil className="w-4 h-4" />
                         </Button>
-                      )}
-                    </div>
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => handleDeleteOffer(offer.id)}
+                          className="rounded-xl hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
+
+                  {!isOwnOffer && (
+                    <Button 
+                      onClick={() => handleAccept(offer)}
+                      className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all text-lg font-semibold"
+                    >
+                      Aceitar Extra
+                    </Button>
+                  )}
 
                   {offer.observations && (
                     <p className="text-xs text-muted-foreground italic bg-muted/30 px-3 py-2 rounded-lg">
