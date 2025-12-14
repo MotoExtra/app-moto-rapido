@@ -257,13 +257,13 @@ const OfferExtra = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="delivery_range">Raio de Entrega *</Label>
+              <Label htmlFor="delivery_range">Raio de Entrega</Label>
               <Select 
                 value={formData.delivery_range} 
                 onValueChange={(value) => setFormData({ ...formData, delivery_range: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o raio" />
+                  <SelectValue placeholder="Selecione o raio (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Menos de 5km">Menos de 5km</SelectItem>

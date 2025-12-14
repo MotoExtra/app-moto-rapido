@@ -108,7 +108,7 @@ const CreateOffer = () => {
     
     if (!restaurant) return;
 
-    if (!formData.address || !formData.offerDate || !formData.timeStart || !formData.timeEnd || !formData.deliveryRange) {
+    if (!formData.address || !formData.offerDate || !formData.timeStart || !formData.timeEnd) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -329,13 +329,13 @@ const CreateOffer = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="deliveryRange">Raio de Entrega *</Label>
+                <Label htmlFor="deliveryRange">Raio de Entrega</Label>
                 <Select 
                   value={formData.deliveryRange} 
                   onValueChange={(value) => setFormData({ ...formData, deliveryRange: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o raio" />
+                    <SelectValue placeholder="Selecione o raio (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Menos de 5km">Menos de 5km</SelectItem>
