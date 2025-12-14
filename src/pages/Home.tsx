@@ -231,7 +231,7 @@ const Home = () => {
         // Filter by city preferences if user has any
         if (cityPreferences.length > 0) {
           validOffers = validOffers.filter(offer => 
-            !offer.city || cityPreferences.includes(offer.city)
+            offer.city && cityPreferences.includes(offer.city)
           );
         }
 
