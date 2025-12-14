@@ -228,22 +228,16 @@ const Home = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Filter out expired offers (past end time)
+        // Filter out expired offers (past start time - extras disappear when start time passes)
         const now = new Date();
         let validOffers = data.filter(offer => {
           const offerDate = offer.offer_date ? parseISO(offer.offer_date) : new Date();
-          const [endHours, endMinutes] = offer.time_end.split(':').map(Number);
-          const offerEndTime = new Date(offerDate);
-          offerEndTime.setHours(endHours, endMinutes, 0, 0);
+          const [startHours, startMinutes] = offer.time_start.split(':').map(Number);
+          const offerStartTime = new Date(offerDate);
+          offerStartTime.setHours(startHours, startMinutes, 0, 0);
           
-          // If end time is before start time, it means it ends the next day
-          const [startHours] = offer.time_start.split(':').map(Number);
-          if (endHours < startHours) {
-            offerEndTime.setDate(offerEndTime.getDate() + 1);
-          }
-          
-          // Keep only offers that haven't ended yet
-          return offerEndTime > now;
+          // Keep only offers whose start time hasn't passed yet
+          return offerStartTime > now;
         });
 
         // Count offers per city (before filtering by preferences)
