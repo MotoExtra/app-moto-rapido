@@ -199,8 +199,20 @@ const Home = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
+        // Filter out expired offers (past date/time)
+        const now = new Date();
+        const validOffers = data.filter(offer => {
+          const offerDate = offer.offer_date ? parseISO(offer.offer_date) : new Date();
+          const [endHours, endMinutes] = offer.time_end.split(':').map(Number);
+          const offerEndTime = new Date(offerDate);
+          offerEndTime.setHours(endHours, endMinutes, 0, 0);
+          
+          // Keep only offers that haven't ended yet
+          return offerEndTime > now;
+        });
+
         // Fetch restaurant ratings from motoboys
-        const creatorIds = [...new Set(data.filter(o => o.created_by).map(o => o.created_by))];
+        const creatorIds = [...new Set(validOffers.filter(o => o.created_by).map(o => o.created_by))];
         
         const { data: ratingsData } = await supabase
           .from("ratings")
@@ -218,7 +230,7 @@ const Home = () => {
           });
         });
 
-        const enrichedOffers = data.map(offer => {
+        const enrichedOffers = validOffers.map(offer => {
           const restaurantRating = offer.created_by ? ratingsByRestaurant.get(offer.created_by) : null;
           return {
             ...offer,
