@@ -723,6 +723,15 @@ const Home = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <CardTitle className="text-lg font-bold">{offer.restaurant_name}</CardTitle>
+                        {offer.city && (
+                          <Badge 
+                            variant="outline"
+                            className="bg-blue-500/10 text-blue-600 border-blue-500/30 font-medium"
+                          >
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {offer.city}
+                          </Badge>
+                        )}
                         {isMotoboyOffer && (
                           <Badge 
                             className="bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm shadow-blue-600/30 font-semibold"
@@ -758,14 +767,6 @@ const Home = () => {
               
                 <CardContent className="space-y-3 pb-4">
                   <div className="space-y-2.5 p-3 rounded-xl bg-muted/30">
-                    {offer.city && (
-                      <div className="flex items-center text-sm text-foreground/80">
-                        <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center mr-2.5">
-                          <MapPin className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <span className="font-medium text-blue-600">📍 {offer.city}</span>
-                      </div>
-                    )}
                     
                     <div className="flex items-center text-sm text-foreground/80">
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
