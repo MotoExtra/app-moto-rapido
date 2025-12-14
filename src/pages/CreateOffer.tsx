@@ -359,12 +359,19 @@ const CreateOffer = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="deliveryQuantity">Quantidade de Entregas</Label>
-                <Input
-                  id="deliveryQuantity"
-                  value={formData.deliveryQuantity}
-                  onChange={(e) => setFormData({ ...formData, deliveryQuantity: e.target.value })}
-                  placeholder="Ex: 15-25 entregas"
-                />
+                <Select 
+                  value={formData.deliveryQuantity} 
+                  onValueChange={(value) => setFormData({ ...formData, deliveryQuantity: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a quantidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Menos de 10 entregas">Menos de 10 entregas</SelectItem>
+                    <SelectItem value="10 a 20 entregas">10 a 20 entregas</SelectItem>
+                    <SelectItem value="Mais de 20 entregas">Mais de 20 entregas</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Requisito: Bag Térmica */}
