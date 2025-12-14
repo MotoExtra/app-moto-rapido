@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X, ChevronRight, Filter, Check } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X, ChevronRight, Filter, Check, Shield } from "lucide-react";
 import { ES_CITIES } from "@/lib/cities";
 import { RestaurantRatingsModal } from "@/components/RestaurantRatingsModal";
 import logo from "@/assets/logo.png";
@@ -65,6 +65,7 @@ const Home = () => {
   const [showCityFilter, setShowCityFilter] = useState(false);
   const [tempCityFilter, setTempCityFilter] = useState<string[]>([]);
   const [cityOfferCounts, setCityOfferCounts] = useState<Map<string, number>>(new Map());
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Check if app is installed as PWA
   useEffect(() => {
@@ -125,6 +126,16 @@ const Home = () => {
       if (cityPrefs && cityPrefs.length > 0) {
         setCityPreferences(cityPrefs.map(p => p.city));
       }
+
+      // Check if user is admin
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      setIsAdmin(!!adminRole);
 
       // Check if user already has an active offer
       const { data: activeOffers } = await supabase
@@ -540,6 +551,21 @@ const Home = () => {
                         <p className="text-xs text-muted-foreground">Veja sua posição</p>
                       </div>
                     </button>
+                    
+                    {isAdmin && (
+                      <button
+                        onClick={() => { setMenuOpen(false); navigate("/admin"); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors text-left"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                          <Shield className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Painel Admin</p>
+                          <p className="text-xs text-muted-foreground">Gerenciar plataforma</p>
+                        </div>
+                      </button>
+                    )}
                   </div>
                   
                   <div className="absolute bottom-6 left-6 right-6">
