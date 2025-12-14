@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
+import { ES_CITIES } from "@/lib/cities";
 
 interface LastOffer {
   restaurant_name: string;
@@ -45,6 +46,7 @@ const OfferExtra = () => {
     restaurant_name: "",
     description: "",
     address: "",
+    city: "",
     time_start: "",
     time_end: "",
     radius: 5,
@@ -89,6 +91,7 @@ const OfferExtra = () => {
       restaurant_name: lastOffer.restaurant_name,
       description: lastOffer.description,
       address: lastOffer.address,
+      city: "",
       time_start: lastOffer.time_start,
       time_end: lastOffer.time_end,
       radius: lastOffer.radius,
@@ -130,6 +133,7 @@ const OfferExtra = () => {
         restaurant_name: formData.restaurant_name,
         description: formData.description,
         address: formData.address,
+        city: formData.city || null,
         time_start: formData.time_start,
         time_end: formData.time_end,
         radius: formData.radius,
@@ -254,6 +258,23 @@ const OfferExtra = () => {
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="city">Cidade *</Label>
+              <Select 
+                value={formData.city} 
+                onValueChange={(value) => setFormData({ ...formData, city: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a cidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ES_CITIES.map((city) => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

@@ -139,6 +139,7 @@ const CreateOffer = () => {
           phone: restaurant.phone,
           created_by: restaurant.id,
           offer_type: "restaurant",
+          city: restaurant.city,
           radius: 5,
           is_accepted: false,
         })
