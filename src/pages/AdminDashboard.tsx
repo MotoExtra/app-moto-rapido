@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, Trash2, CheckCircle, XCircle, Calendar, Clock, MapPin, User } from "lucide-react";
+import { LogOut, RefreshCw, Trash2, CheckCircle, XCircle, Calendar, Clock, MapPin, User, BarChart3, TrendingUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, subDays, startOfDay, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from "recharts";
 
 interface ArchivedOffer {
   id: string;
@@ -179,6 +181,87 @@ const AdminDashboard = () => {
   const acceptedActive = activeOffers.filter(o => o.is_accepted);
   const notAcceptedActive = activeOffers.filter(o => !o.is_accepted);
 
+  // Chart data - last 7 days
+  const chartData = useMemo(() => {
+    const last7Days = eachDayOfInterval({
+      start: subDays(new Date(), 6),
+      end: new Date()
+    });
+
+    return last7Days.map(day => {
+      const dayStart = startOfDay(day);
+      const dayStr = format(day, 'yyyy-MM-dd');
+      
+      const activeCreated = activeOffers.filter(o => {
+        if (!o.created_at) return false;
+        const createdDate = format(parseISO(o.created_at), 'yyyy-MM-dd');
+        return createdDate === dayStr;
+      }).length;
+
+      const archivedCreated = archivedOffers.filter(o => {
+        if (!o.offer_date) return false;
+        return o.offer_date === dayStr;
+      }).length;
+
+      const totalCreated = activeCreated + archivedCreated;
+      
+      const acceptedCount = activeOffers.filter(o => {
+        if (!o.created_at || !o.is_accepted) return false;
+        const createdDate = format(parseISO(o.created_at), 'yyyy-MM-dd');
+        return createdDate === dayStr;
+      }).length + archivedOffers.filter(o => {
+        if (!o.offer_date || !o.was_accepted) return false;
+        return o.offer_date === dayStr;
+      }).length;
+
+      return {
+        day: format(day, 'EEE', { locale: ptBR }),
+        date: format(day, 'dd/MM'),
+        criados: totalCreated,
+        aceitos: acceptedCount
+      };
+    });
+  }, [activeOffers, archivedOffers]);
+
+  // Pie chart data - by type
+  const pieData = useMemo(() => {
+    const restaurantCount = activeOffers.filter(o => o.offer_type === 'restaurant').length + 
+                           archivedOffers.filter(o => o.offer_type === 'restaurant').length;
+    const motoboyCount = activeOffers.filter(o => o.offer_type === 'motoboy').length + 
+                        archivedOffers.filter(o => o.offer_type === 'motoboy').length;
+    
+    return [
+      { name: 'Restaurante', value: restaurantCount, fill: 'hsl(var(--primary))' },
+      { name: 'Motoboy', value: motoboyCount, fill: 'hsl(var(--secondary))' }
+    ];
+  }, [activeOffers, archivedOffers]);
+
+  // City distribution
+  const cityData = useMemo(() => {
+    const cityCounts: Record<string, number> = {};
+    
+    [...activeOffers, ...archivedOffers].forEach(o => {
+      const city = ('city' in o ? o.city : null) || 'Não definida';
+      cityCounts[city] = (cityCounts[city] || 0) + 1;
+    });
+
+    return Object.entries(cityCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([city, count]) => ({ city, count }));
+  }, [activeOffers, archivedOffers]);
+
+  const chartConfig: ChartConfig = {
+    criados: {
+      label: "Criados",
+      color: "hsl(var(--primary))",
+    },
+    aceitos: {
+      label: "Aceitos",
+      color: "hsl(142 76% 36%)",
+    },
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b border-border px-4 py-3">
@@ -246,6 +329,142 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-red-600">{notAcceptedArchived.length}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Extras por Dia (Últimos 7 dias)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <BarChart data={chartData} accessibilityLayer>
+                  <XAxis 
+                    dataKey="date" 
+                    tickLine={false} 
+                    axisLine={false}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false}
+                    tick={{ fontSize: 12 }}
+                    allowDecimals={false}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="criados" fill="var(--color-criados)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="aceitos" fill="var(--color-aceitos)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Evolução de Extras
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <LineChart data={chartData} accessibilityLayer>
+                  <XAxis 
+                    dataKey="date" 
+                    tickLine={false} 
+                    axisLine={false}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false}
+                    tick={{ fontSize: 12 }}
+                    allowDecimals={false}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="criados" 
+                    stroke="var(--color-criados)" 
+                    strokeWidth={2}
+                    dot={{ fill: "var(--color-criados)" }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="aceitos" 
+                    stroke="var(--color-aceitos)" 
+                    strokeWidth={2}
+                    dot={{ fill: "var(--color-aceitos)" }}
+                  />
+                </LineChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Extras por Tipo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[250px] w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Top 5 Cidades
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer 
+                config={{ count: { label: "Extras", color: "hsl(var(--primary))" } }} 
+                className="h-[250px] w-full"
+              >
+                <BarChart data={cityData} layout="vertical" accessibilityLayer>
+                  <XAxis type="number" tickLine={false} axisLine={false} allowDecimals={false} />
+                  <YAxis 
+                    type="category" 
+                    dataKey="city" 
+                    tickLine={false} 
+                    axisLine={false}
+                    tick={{ fontSize: 11 }}
+                    width={100}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ChartContainer>
             </CardContent>
           </Card>
         </div>
