@@ -367,6 +367,11 @@ const Home = () => {
       setOffers((current) => current.filter((o) => o.id !== offer.id));
       setHasActiveOffer(true);
 
+      // Vibrate for haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+
       // Play success sound
       playSuccess();
 
