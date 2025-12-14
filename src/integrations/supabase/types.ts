@@ -49,11 +49,33 @@ export type Database = {
           },
         ]
       }
+      motoboy_city_preferences: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       offers: {
         Row: {
           accepted_by: string | null
           address: string
           can_become_permanent: boolean | null
+          city: string | null
           created_at: string
           created_by: string | null
           delivery_quantity: string | null
@@ -83,6 +105,7 @@ export type Database = {
           accepted_by?: string | null
           address: string
           can_become_permanent?: boolean | null
+          city?: string | null
           created_at?: string
           created_by?: string | null
           delivery_quantity?: string | null
@@ -112,6 +135,7 @@ export type Database = {
           accepted_by?: string | null
           address?: string
           can_become_permanent?: boolean | null
+          city?: string | null
           created_at?: string
           created_by?: string | null
           delivery_quantity?: string | null

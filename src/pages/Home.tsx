@@ -22,6 +22,7 @@ interface Offer {
   restaurant_name: string;
   description: string;
   address: string;
+  city?: string | null;
   offer_date?: string;
   time_start: string;
   time_end: string;
@@ -59,6 +60,7 @@ const Home = () => {
   const [isStandalone, setIsStandalone] = useState(false);
   const [ratingsModalOpen, setRatingsModalOpen] = useState(false);
   const [selectedRestaurantForRatings, setSelectedRestaurantForRatings] = useState<{ id: string; name: string } | null>(null);
+  const [cityPreferences, setCityPreferences] = useState<string[]>([]);
 
   // Check if app is installed as PWA
   useEffect(() => {
@@ -110,6 +112,16 @@ const Home = () => {
         setProfileData(profile);
       }
 
+      // Fetch city preferences
+      const { data: cityPrefs } = await supabase
+        .from("motoboy_city_preferences")
+        .select("city")
+        .eq("user_id", user.id);
+
+      if (cityPrefs && cityPrefs.length > 0) {
+        setCityPreferences(cityPrefs.map(p => p.city));
+      }
+
       // Check if user already has an active offer
       const { data: activeOffers } = await supabase
         .from("accepted_offers")
@@ -146,7 +158,9 @@ const Home = () => {
   }, [user, isSupported, isSubscribed, permission, subscribe, notificationPromptShown]);
 
   useEffect(() => {
-    fetchOffers();
+    if (user) {
+      fetchOffers();
+    }
 
     // Setup realtime subscription
     const channel = supabase
@@ -186,7 +200,7 @@ const Home = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user, cityPreferences]);
 
   const fetchOffers = async () => {
     try {
@@ -201,7 +215,7 @@ const Home = () => {
       if (data && data.length > 0) {
         // Filter out expired offers (past start time)
         const now = new Date();
-        const validOffers = data.filter(offer => {
+        let validOffers = data.filter(offer => {
           const offerDate = offer.offer_date ? parseISO(offer.offer_date) : new Date();
           const [startHours, startMinutes] = offer.time_start.split(':').map(Number);
           const offerStartTime = new Date(offerDate);
@@ -210,6 +224,13 @@ const Home = () => {
           // Keep only offers that haven't started yet
           return offerStartTime > now;
         });
+
+        // Filter by city preferences if user has any
+        if (cityPreferences.length > 0) {
+          validOffers = validOffers.filter(offer => 
+            !offer.city || cityPreferences.includes(offer.city)
+          );
+        }
 
         // Fetch restaurant ratings from motoboys
         const creatorIds = [...new Set(validOffers.filter(o => o.created_by).map(o => o.created_by))];
@@ -629,6 +650,15 @@ const Home = () => {
               
                 <CardContent className="space-y-3 pb-4">
                   <div className="space-y-2.5 p-3 rounded-xl bg-muted/30">
+                    {offer.city && (
+                      <div className="flex items-center text-sm text-foreground/80">
+                        <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center mr-2.5">
+                          <MapPin className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <span className="font-medium text-blue-600">📍 {offer.city}</span>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center text-sm text-foreground/80">
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
                         <MapPin className="w-4 h-4 text-primary" />

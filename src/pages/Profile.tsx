@@ -7,9 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Camera, Package, Clock, Save, Loader2, Pencil, Trash2, Plus, Bike, MapPin, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ES_CITIES } from "@/lib/cities";
 import type { User } from "@supabase/supabase-js";
 
 interface ProfileData {
@@ -44,6 +46,8 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [myOffers, setMyOffers] = useState<MyOffer[]>([]);
+  const [cityPreferences, setCityPreferences] = useState<string[]>([]);
+  const [savingCities, setSavingCities] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
     name: "",
     phone: "",
@@ -67,6 +71,7 @@ const Profile = () => {
       setUser(user);
       await fetchProfile(user.id);
       await fetchMyOffers(user.id);
+      await fetchCityPreferences(user.id);
     };
 
     checkAuth();
@@ -128,6 +133,70 @@ const Profile = () => {
       setMyOffers(data || []);
     } catch (error) {
       console.error("Erro ao buscar meus extras:", error);
+    }
+  };
+
+  const fetchCityPreferences = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("motoboy_city_preferences")
+        .select("city")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      setCityPreferences(data?.map(p => p.city) || []);
+    } catch (error) {
+      console.error("Erro ao buscar preferências de cidade:", error);
+    }
+  };
+
+  const handleCityToggle = (city: string) => {
+    setCityPreferences(prev => 
+      prev.includes(city) 
+        ? prev.filter(c => c !== city)
+        : [...prev, city]
+    );
+  };
+
+  const saveCityPreferences = async () => {
+    if (!user) return;
+    
+    setSavingCities(true);
+    try {
+      // Delete existing preferences
+      await supabase
+        .from("motoboy_city_preferences")
+        .delete()
+        .eq("user_id", user.id);
+
+      // Insert new preferences
+      if (cityPreferences.length > 0) {
+        const { error } = await supabase
+          .from("motoboy_city_preferences")
+          .insert(cityPreferences.map(city => ({
+            user_id: user.id,
+            city
+          })));
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Preferências salvas!",
+        description: cityPreferences.length > 0 
+          ? `Você receberá extras de ${cityPreferences.length} cidade(s).`
+          : "Você receberá extras de todas as cidades.",
+      });
+    } catch (error) {
+      console.error("Erro ao salvar preferências:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar as preferências.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingCities(false);
     }
   };
 
@@ -434,6 +503,70 @@ const Profile = () => {
                 checked={profile.has_thermal_bag}
                 onCheckedChange={(checked) => setProfile({ ...profile, has_thermal_bag: checked })}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* City Preferences */}
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-primary" />
+              </div>
+              Cidades de Interesse
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Selecione as cidades onde você deseja receber extras. Se nenhuma for selecionada, você verá extras de todas as cidades.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              {ES_CITIES.map((city) => (
+                <div 
+                  key={city}
+                  className={`flex items-center space-x-2 p-2 rounded-lg border transition-colors cursor-pointer ${
+                    cityPreferences.includes(city) 
+                      ? 'bg-primary/10 border-primary/30' 
+                      : 'bg-muted/30 border-border/50 hover:bg-muted/50'
+                  }`}
+                  onClick={() => handleCityToggle(city)}
+                >
+                  <Checkbox 
+                    id={`city-${city}`}
+                    checked={cityPreferences.includes(city)}
+                    onCheckedChange={() => handleCityToggle(city)}
+                  />
+                  <Label 
+                    htmlFor={`city-${city}`}
+                    className="text-sm cursor-pointer flex-1"
+                  >
+                    {city}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-muted-foreground">
+                {cityPreferences.length === 0 
+                  ? "Todas as cidades selecionadas"
+                  : `${cityPreferences.length} cidade(s) selecionada(s)`}
+              </p>
+              <Button
+                size="sm"
+                onClick={saveCityPreferences}
+                disabled={savingCities}
+              >
+                {savingCities ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-1" />
+                    Salvar cidades
+                  </>
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
