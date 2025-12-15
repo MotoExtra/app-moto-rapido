@@ -38,6 +38,17 @@ interface LastOffer {
   observations: string | null;
 }
 
+// Helper to parse address into structured fields
+const parseAddress = (address: string) => {
+  // Try to parse format: "Rua X, 123 - Bairro, Cidade, ES, Brasil"
+  const match = address.match(/^(.+?),\s*(\d+[A-Za-z]?)\s*-\s*(.+?),/);
+  if (match) {
+    return { rua: match[1], numero: match[2], bairro: match[3] };
+  }
+  // Fallback: put everything in rua
+  return { rua: address, numero: "", bairro: "" };
+};
+
 const CreateOffer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -46,7 +57,9 @@ const CreateOffer = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [lastOffer, setLastOffer] = useState<LastOffer | null>(null);
   const [formData, setFormData] = useState({
-    address: "",
+    rua: "",
+    numero: "",
+    bairro: "",
     offerDate: new Date() as Date | undefined,
     timeStart: "",
     timeEnd: "",
@@ -80,9 +93,13 @@ const CreateOffer = () => {
       }
 
       setRestaurant(data);
+      // Parse restaurant address into structured fields
+      const parsedAddress = parseAddress(data.address || "");
       setFormData(prev => ({
         ...prev,
-        address: data.address,
+        rua: parsedAddress.rua,
+        numero: parsedAddress.numero,
+        bairro: parsedAddress.bairro,
       }));
 
       // Fetch last offer created by this restaurant
@@ -108,14 +125,17 @@ const CreateOffer = () => {
     
     if (!restaurant) return;
 
-    if (!formData.address || !formData.offerDate || !formData.timeStart || !formData.timeEnd) {
+    if (!formData.rua || !formData.numero || !formData.bairro || !formData.offerDate || !formData.timeStart || !formData.timeEnd) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios.",
+        description: "Por favor, preencha todos os campos obrigatórios (rua, número, bairro, data e horários).",
         variant: "destructive",
       });
       return;
     }
+
+    // Concatenate address for geocoding
+    const fullAddress = `${formData.rua}, ${formData.numero} - ${formData.bairro}, ${restaurant.city}, ES, Brasil`;
 
     // Validate that date/time is not in the past
     const now = new Date();
@@ -140,7 +160,7 @@ const CreateOffer = () => {
         .insert({
           restaurant_name: restaurant.fantasy_name,
           description: `Extra de ${restaurant.fantasy_name}`,
-          address: formData.address,
+          address: fullAddress,
           offer_date: format(formData.offerDate!, "yyyy-MM-dd"),
           time_start: formData.timeStart,
           time_end: formData.timeEnd,
@@ -239,9 +259,12 @@ const CreateOffer = () => {
           <Card 
             className="border-2 border-primary/30 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all"
             onClick={() => {
+              const parsedAddress = parseAddress(lastOffer.address);
               setFormData(prev => ({
                 ...prev,
-                address: lastOffer.address,
+                rua: parsedAddress.rua,
+                numero: parsedAddress.numero,
+                bairro: parsedAddress.bairro,
                 timeStart: lastOffer.time_start,
                 timeEnd: lastOffer.time_end,
                 deliveryRange: lastOffer.delivery_range,
@@ -282,12 +305,42 @@ const CreateOffer = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="address">Endereço de Saída *</Label>
+                <Label htmlFor="rua">Rua/Logradouro *</Label>
                 <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Endereço do restaurante"
+                  id="rua"
+                  value={formData.rua}
+                  onChange={(e) => setFormData({ ...formData, rua: e.target.value })}
+                  placeholder="Ex: Rua das Flores"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="numero">Número *</Label>
+                  <Input
+                    id="numero"
+                    value={formData.numero}
+                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                    placeholder="Ex: 123"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bairro">Bairro *</Label>
+                  <Input
+                    id="bairro"
+                    value={formData.bairro}
+                    onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                    placeholder="Ex: Centro"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Cidade</Label>
+                <Input
+                  value={restaurant?.city || ""}
+                  disabled
+                  className="bg-muted"
                 />
               </div>
 

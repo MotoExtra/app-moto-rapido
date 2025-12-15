@@ -35,6 +35,17 @@ interface LastOffer {
   observations: string | null;
 }
 
+// Helper to parse address into structured fields
+const parseAddress = (address: string) => {
+  // Try to parse format: "Rua X, 123 - Bairro, Cidade, ES, Brasil"
+  const match = address.match(/^(.+?),\s*(\d+[A-Za-z]?)\s*-\s*(.+?),/);
+  if (match) {
+    return { rua: match[1], numero: match[2], bairro: match[3] };
+  }
+  // Fallback: put everything in rua
+  return { rua: address, numero: "", bairro: "" };
+};
+
 const OfferExtra = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -45,7 +56,9 @@ const OfferExtra = () => {
     offerDate: new Date() as Date | undefined,
     restaurant_name: "",
     description: "",
-    address: "",
+    rua: "",
+    numero: "",
+    bairro: "",
     city: "",
     time_start: "",
     time_end: "",
@@ -86,11 +99,15 @@ const OfferExtra = () => {
   const fillFromLastOffer = () => {
     if (!lastOffer) return;
     
+    const parsedAddress = parseAddress(lastOffer.address);
+    
     setFormData({
       offerDate: new Date(),
       restaurant_name: lastOffer.restaurant_name,
       description: lastOffer.description,
-      address: lastOffer.address,
+      rua: parsedAddress.rua,
+      numero: parsedAddress.numero,
+      bairro: parsedAddress.bairro,
       city: "",
       time_start: lastOffer.time_start,
       time_end: lastOffer.time_end,
@@ -147,10 +164,24 @@ const OfferExtra = () => {
         return;
       }
 
+      // Validate required address fields
+      if (!formData.rua || !formData.numero || !formData.bairro || !formData.city) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Por favor, preencha rua, número, bairro e cidade.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Concatenate address for geocoding
+      const fullAddress = `${formData.rua}, ${formData.numero} - ${formData.bairro}, ${formData.city}, ES, Brasil`;
+
       const { error } = await supabase.from("offers").insert({
         restaurant_name: formData.restaurant_name,
         description: formData.description,
-        address: formData.address,
+        address: fullAddress,
         city: formData.city || null,
         time_start: formData.time_start,
         time_end: formData.time_end,
@@ -268,14 +299,37 @@ const OfferExtra = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="address">Endereço *</Label>
+              <Label htmlFor="rua">Rua/Logradouro *</Label>
               <Input
-                id="address"
-                placeholder="Rua, número, bairro"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                id="rua"
+                placeholder="Ex: Rua das Flores"
+                value={formData.rua}
+                onChange={(e) => setFormData({ ...formData, rua: e.target.value })}
                 required
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="numero">Número *</Label>
+                <Input
+                  id="numero"
+                  placeholder="Ex: 123"
+                  value={formData.numero}
+                  onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bairro">Bairro *</Label>
+                <Input
+                  id="bairro"
+                  placeholder="Ex: Centro"
+                  value={formData.bairro}
+                  onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
