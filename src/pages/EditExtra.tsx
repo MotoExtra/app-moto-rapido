@@ -120,10 +120,10 @@ const EditExtra = () => {
     e.preventDefault();
     
     // Validate required address fields
-    if (!formData.rua || !formData.numero || !formData.bairro || !formData.city) {
+    if (!formData.rua || !formData.numero || !formData.bairro || !formData.city || !formData.delivery_quantity) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha rua, número, bairro e cidade.",
+        description: "Por favor, preencha rua, número, bairro, cidade e quantidade de entregas.",
         variant: "destructive",
       });
       return;

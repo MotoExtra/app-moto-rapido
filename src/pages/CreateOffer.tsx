@@ -126,10 +126,10 @@ const CreateOffer = () => {
     
     if (!restaurant) return;
 
-    if (!formData.rua || !formData.numero || !formData.bairro || !formData.offerDate || !formData.timeStart || !formData.timeEnd) {
+    if (!formData.rua || !formData.numero || !formData.bairro || !formData.offerDate || !formData.timeStart || !formData.timeEnd || !formData.deliveryQuantity) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios (rua, número, bairro, data e horários).",
+        description: "Por favor, preencha todos os campos obrigatórios (rua, número, bairro, data, horários e quantidade de entregas).",
         variant: "destructive",
       });
       return;
