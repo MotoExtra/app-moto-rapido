@@ -12,6 +12,18 @@ import { ArrowLeft, Package, MapPin, Clock, DollarSign, Briefcase, Loader2 } fro
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+import { ES_CITIES } from "@/lib/cities";
+
+// Helper to parse address into structured fields
+const parseAddress = (address: string) => {
+  // Try to parse format: "Rua X, 123 - Bairro, Cidade, ES, Brasil"
+  const match = address.match(/^(.+?),\s*(\d+[A-Za-z]?)\s*-\s*(.+?),\s*(.+?),\s*ES/);
+  if (match) {
+    return { rua: match[1], numero: match[2], bairro: match[3], city: match[4] };
+  }
+  // Fallback: put everything in rua
+  return { rua: address, numero: "", bairro: "", city: "" };
+};
 
 const EditExtra = () => {
   const navigate = useNavigate();
@@ -23,7 +35,10 @@ const EditExtra = () => {
   const [formData, setFormData] = useState({
     restaurant_name: "",
     description: "",
-    address: "",
+    rua: "",
+    numero: "",
+    bairro: "",
+    city: "",
     time_start: "",
     time_end: "",
     radius: 5,
@@ -74,10 +89,14 @@ const EditExtra = () => {
         return;
       }
 
+      const parsedAddress = parseAddress(offer.address || "");
       setFormData({
         restaurant_name: offer.restaurant_name || "",
         description: offer.description || "",
-        address: offer.address || "",
+        rua: parsedAddress.rua,
+        numero: parsedAddress.numero,
+        bairro: parsedAddress.bairro,
+        city: offer.city || parsedAddress.city || "",
         time_start: offer.time_start || "",
         time_end: offer.time_end || "",
         radius: offer.radius || 5,
@@ -99,12 +118,43 @@ const EditExtra = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required address fields
+    if (!formData.rua || !formData.numero || !formData.bairro || !formData.city) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha rua, número, bairro e cidade.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
+
+    // Concatenate address for geocoding
+    const fullAddress = `${formData.rua}, ${formData.numero} - ${formData.bairro}, ${formData.city}, ES, Brasil`;
 
     try {
       const { error } = await supabase
         .from("offers")
-        .update(formData)
+        .update({
+          restaurant_name: formData.restaurant_name,
+          description: formData.description,
+          address: fullAddress,
+          city: formData.city,
+          time_start: formData.time_start,
+          time_end: formData.time_end,
+          radius: formData.radius,
+          needs_bag: formData.needs_bag,
+          can_become_permanent: formData.can_become_permanent,
+          includes_meal: formData.includes_meal,
+          delivery_range: formData.delivery_range,
+          delivery_quantity: formData.delivery_quantity || null,
+          experience: formData.experience || null,
+          payment: formData.payment || null,
+          phone: formData.phone || null,
+          observations: formData.observations || null,
+        })
         .eq("id", id);
 
       if (error) throw error;
@@ -201,24 +251,64 @@ const EditExtra = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="address">Endereço *</Label>
+              <Label htmlFor="rua">Rua/Logradouro *</Label>
               <Input
-                id="address"
-                placeholder="Rua, número, bairro"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                id="rua"
+                placeholder="Ex: Rua das Flores"
+                value={formData.rua}
+                onChange={(e) => setFormData({ ...formData, rua: e.target.value })}
                 required
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="numero">Número *</Label>
+                <Input
+                  id="numero"
+                  placeholder="Ex: 123"
+                  value={formData.numero}
+                  onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bairro">Bairro *</Label>
+                <Input
+                  id="bairro"
+                  placeholder="Ex: Centro"
+                  value={formData.bairro}
+                  onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="delivery_range">Raio de Entrega *</Label>
+              <Label htmlFor="city">Cidade *</Label>
+              <Select 
+                value={formData.city} 
+                onValueChange={(value) => setFormData({ ...formData, city: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a cidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ES_CITIES.map((city) => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="delivery_range">Raio de Entrega</Label>
               <Select 
                 value={formData.delivery_range} 
                 onValueChange={(value) => setFormData({ ...formData, delivery_range: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o raio" />
+                  <SelectValue placeholder="Selecione o raio (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Menos de 5km">Menos de 5km</SelectItem>
