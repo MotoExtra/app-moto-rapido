@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { Icon } from "leaflet";
 import { Button } from "@/components/ui/button";
 import { Navigation, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import "leaflet/dist/leaflet.css";
 
 // Fix for default marker icon
@@ -21,6 +22,7 @@ interface OfferLocationMapProps {
   lat?: number | null;
   lng?: number | null;
   restaurantName: string;
+  offerId?: string;
 }
 
 interface Coordinates {
@@ -28,7 +30,7 @@ interface Coordinates {
   lng: number;
 }
 
-const OfferLocationMap = ({ address, lat, lng, restaurantName }: OfferLocationMapProps) => {
+const OfferLocationMap = ({ address, lat, lng, restaurantName, offerId }: OfferLocationMapProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(
     lat && lng ? { lat, lng } : null
@@ -50,10 +52,18 @@ const OfferLocationMap = ({ address, lat, lng, restaurantName }: OfferLocationMa
         const data = await response.json();
 
         if (data && data.length > 0) {
-          setCoordinates({
-            lat: parseFloat(data[0].lat),
-            lng: parseFloat(data[0].lon),
-          });
+          const newLat = parseFloat(data[0].lat);
+          const newLng = parseFloat(data[0].lon);
+          
+          setCoordinates({ lat: newLat, lng: newLng });
+
+          // Save coordinates to database if offerId is provided
+          if (offerId) {
+            await supabase
+              .from("offers")
+              .update({ lat: newLat, lng: newLng })
+              .eq("id", offerId);
+          }
         } else {
           setError("Endereço não encontrado");
         }
@@ -68,7 +78,7 @@ const OfferLocationMap = ({ address, lat, lng, restaurantName }: OfferLocationMa
     if (isExpanded && !coordinates) {
       geocodeAddress();
     }
-  }, [isExpanded, address, coordinates]);
+  }, [isExpanded, address, coordinates, offerId]);
 
   const openInGoogleMaps = () => {
     if (coordinates) {

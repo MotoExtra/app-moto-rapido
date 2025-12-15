@@ -351,6 +351,7 @@ const AcceptedOffers = () => {
                   lat={acceptedOffer.offer.lat}
                   lng={acceptedOffer.offer.lng}
                   restaurantName={acceptedOffer.offer.restaurant_name}
+                  offerId={acceptedOffer.offer.id}
                 />
 
                 {acceptedOffer.status === "pending" && (
