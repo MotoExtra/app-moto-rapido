@@ -377,7 +377,7 @@ const EditExtra = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="delivery_quantity">Quantidade de Entregas</Label>
+              <Label htmlFor="delivery_quantity">Quantidade de Entregas *</Label>
               <Select 
                 value={formData.delivery_quantity || ""} 
                 onValueChange={(value) => setFormData({ ...formData, delivery_quantity: value })}

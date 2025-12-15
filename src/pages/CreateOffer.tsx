@@ -434,7 +434,7 @@ const CreateOffer = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="deliveryQuantity">Quantidade de Entregas</Label>
+                <Label htmlFor="deliveryQuantity">Quantidade de Entregas *</Label>
                 <Select 
                   value={formData.deliveryQuantity} 
                   onValueChange={(value) => setFormData({ ...formData, deliveryQuantity: value })}
