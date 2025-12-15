@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import AddressMapPreview from "@/components/AddressMapPreview";
 
 interface Restaurant {
   id: string;
@@ -344,6 +345,13 @@ const CreateOffer = () => {
                 />
               </div>
 
+              {/* Map Preview */}
+              <AddressMapPreview
+                rua={formData.rua}
+                numero={formData.numero}
+                bairro={formData.bairro}
+                cidade={restaurant?.city || ""}
+              />
               <div className="space-y-2">
                 <Label>Data do Extra *</Label>
                 <Popover>

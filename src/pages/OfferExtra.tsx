@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 import { ES_CITIES } from "@/lib/cities";
+import AddressMapPreview from "@/components/AddressMapPreview";
 
 interface LastOffer {
   restaurant_name: string;
@@ -365,6 +366,14 @@ const OfferExtra = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Map Preview */}
+            <AddressMapPreview
+              rua={formData.rua}
+              numero={formData.numero}
+              bairro={formData.bairro}
+              cidade={formData.city}
+            />
           </CardContent>
         </Card>
 
