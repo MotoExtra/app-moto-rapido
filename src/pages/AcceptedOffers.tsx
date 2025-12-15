@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatPayment } from "@/lib/utils";
 import RateRestaurantModal from "@/components/RateRestaurantModal";
+import OfferLocationMap from "@/components/OfferLocationMap";
 
 interface AcceptedOffer {
   id: string;
@@ -43,6 +44,8 @@ interface AcceptedOffer {
     phone: string | null;
     payment: string | null;
     created_by: string | null;
+    lat: number | null;
+    lng: number | null;
   };
   has_rating?: boolean;
 }
@@ -99,7 +102,9 @@ const AcceptedOffers = () => {
               review_count,
               phone,
               payment,
-              created_by
+              created_by,
+              lat,
+              lng
             )
           `)
           .order("accepted_at", { ascending: false });
@@ -339,6 +344,14 @@ const AcceptedOffers = () => {
                 <p className="text-xs text-muted-foreground">
                   Aceito em: {new Date(acceptedOffer.accepted_at).toLocaleString("pt-BR")}
                 </p>
+
+                {/* Location Map */}
+                <OfferLocationMap
+                  address={acceptedOffer.offer.address}
+                  lat={acceptedOffer.offer.lat}
+                  lng={acceptedOffer.offer.lng}
+                  restaurantName={acceptedOffer.offer.restaurant_name}
+                />
 
                 {acceptedOffer.status === "pending" && (
                   <div className="flex gap-2 mt-3">
