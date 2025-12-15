@@ -114,6 +114,24 @@ const OfferExtra = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate that date/time is not in the past
+    if (formData.offerDate && formData.time_start) {
+      const now = new Date();
+      const [startHours, startMinutes] = formData.time_start.split(':').map(Number);
+      const offerStartTime = new Date(formData.offerDate);
+      offerStartTime.setHours(startHours, startMinutes, 0, 0);
+
+      if (offerStartTime <= now) {
+        toast({
+          title: "Data/hora inválida",
+          description: "O horário de início do extra já passou. Escolha uma data ou horário futuro.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
