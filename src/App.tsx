@@ -16,7 +16,6 @@ import Home from "./pages/Home";
 import RestaurantHome from "./pages/RestaurantHome";
 import RestaurantProfile from "./pages/RestaurantProfile";
 import CreateOffer from "./pages/CreateOffer";
-import OfferDetails from "./pages/OfferDetails";
 import Ranking from "./pages/Ranking";
 import AcceptedOffers from "./pages/AcceptedOffers";
 import Profile from "./pages/Profile";
@@ -71,7 +70,6 @@ const App = () => {
               <Route path="/perfil" element={<ProtectedRoute allowedUserType="motoboy"><Profile /></ProtectedRoute>} />
               <Route path="/ofertar-extra" element={<ProtectedRoute allowedUserType="motoboy"><OfferExtra /></ProtectedRoute>} />
               <Route path="/editar-extra/:id" element={<ProtectedRoute allowedUserType="motoboy"><EditExtra /></ProtectedRoute>} />
-              <Route path="/oferta/:id" element={<ProtectedRoute allowedUserType="motoboy"><OfferDetails /></ProtectedRoute>} />
               
               {/* Rotas protegidas de restaurante */}
               <Route path="/restaurante/home" element={<ProtectedRoute allowedUserType="restaurant"><RestaurantHome /></ProtectedRoute>} />
