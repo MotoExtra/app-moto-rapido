@@ -18,6 +18,7 @@ import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 import { ES_CITIES } from "@/lib/cities";
 import AddressMapPreview from "@/components/AddressMapPreview";
+import PaymentFieldsStructured from "@/components/PaymentFieldsStructured";
 
 interface LastOffer {
   restaurant_name: string;
@@ -450,16 +451,10 @@ const OfferExtra = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="payment">Valor/Forma de Pagamento *</Label>
-              <Input
-                id="payment"
-                placeholder="Ex: R$ 80 fixo + R$ 3 por entrega"
-                value={formData.payment}
-                onChange={(e) => setFormData({ ...formData, payment: e.target.value })}
-                required
-              />
-            </div>
+            <PaymentFieldsStructured
+              value={formData.payment}
+              onChange={(value) => setFormData({ ...formData, payment: value })}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="delivery_quantity">Quantidade de Entregas *</Label>

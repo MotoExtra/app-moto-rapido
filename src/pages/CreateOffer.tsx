@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import AddressMapPreview from "@/components/AddressMapPreview";
+import PaymentFieldsStructured from "@/components/PaymentFieldsStructured";
 
 interface Restaurant {
   id: string;
@@ -423,15 +424,10 @@ const CreateOffer = () => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="payment">Forma de Pagamento</Label>
-                <Input
-                  id="payment"
-                  value={formData.payment}
-                  onChange={(e) => setFormData({ ...formData, payment: e.target.value })}
-                  placeholder="Ex: R$ 30/hora ou R$ 5/entrega"
-                />
-              </div>
+              <PaymentFieldsStructured
+                value={formData.payment}
+                onChange={(value) => setFormData({ ...formData, payment: value })}
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="deliveryQuantity">Quantidade de Entregas *</Label>
