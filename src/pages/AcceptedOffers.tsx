@@ -216,7 +216,7 @@ const AcceptedOffers = () => {
     <>
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={!!offerToCancel} onOpenChange={(open) => !open && setOfferToCancel(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[1000]">
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar Extra</AlertDialogTitle>
             <AlertDialogDescription>
