@@ -239,7 +239,11 @@ const Ranking = () => {
             <Package className="w-5 h-5 mb-1" />
             <span className="text-xs">Ofertas</span>
           </Button>
-          <Button variant="ghost" className="flex-col h-auto py-2">
+          <Button
+            variant="ghost"
+            className="flex-col h-auto py-2"
+            onClick={() => navigate("/extras-aceitos")}
+          >
             <Clock className="w-5 h-5 mb-1" />
             <span className="text-xs">Meus Turnos</span>
           </Button>
