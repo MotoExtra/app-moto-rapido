@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -451,44 +452,88 @@ const Home = () => {
     }
   };
 
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Bom dia";
+    if (hour < 18) return "Boa tarde";
+    return "Boa noite";
+  };
+
+  const firstName = profileData?.name?.split(" ")[0] || "Motoboy";
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-gradient-to-b from-primary/15 via-primary/5 to-background border-b shadow-lg">
-        <div className="px-4 py-5">
-          <div className="flex items-center justify-between">
-            <img src={logo} alt="MotoPay" className="h-16 w-auto drop-shadow-md" />
+      {/* Header with Glassmorphism */}
+      <motion.header 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="sticky top-0 z-10 bg-white/80 dark:bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-lg shadow-primary/5"
+      >
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            {/* Logo + Greeting */}
+            <div className="flex items-center gap-3 min-w-0">
+              <motion.img 
+                src={logo} 
+                alt="MotoPay" 
+                className="h-10 w-auto flex-shrink-0"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              />
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground truncate">{getGreeting()},</p>
+                <p className="text-sm font-semibold text-foreground truncate">{firstName}!</p>
+              </div>
+            </div>
             
             <div className="flex items-center gap-2">
               {/* Notification Bell */}
               {isSupported && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={subscribe}
-                  className={`rounded-xl shadow-sm hover:shadow-md transition-shadow ${isSubscribed ? 'bg-primary/10 border-primary/30' : ''}`}
-                  title={isSubscribed ? "Notificações ativadas" : "Ativar notificações"}
-                >
-                  <Bell className={`w-5 h-5 ${isSubscribed ? 'text-primary fill-primary/20' : ''}`} />
-                </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={subscribe}
+                    className={`rounded-full h-9 w-9 ${isSubscribed ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}
+                    title={isSubscribed ? "Notificações ativadas" : "Ativar notificações"}
+                  >
+                    <Bell className={`w-4 h-4 ${isSubscribed ? 'fill-primary/30' : ''}`} />
+                  </Button>
+                </motion.div>
               )}
               
-              {/* Avatar + Score */}
-              <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2.5 py-1 rounded-full border shadow-sm">
-                <Star className="w-3.5 h-3.5 fill-primary text-primary" />
+              {/* Score Card */}
+              <motion.div 
+                className="flex items-center gap-1.5 bg-gradient-to-r from-primary/15 to-primary/5 px-3 py-1.5 rounded-full border border-primary/20"
+                whileHover={{ scale: 1.03 }}
+                title="Sua pontuação"
+              >
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                >
+                  <Star className="w-4 h-4 fill-primary text-primary" />
+                </motion.div>
                 <span className="text-sm font-bold text-primary">100</span>
-              </div>
+              </motion.div>
               
-              {/* Menu Drawer */}
+              {/* Avatar that opens menu */}
               <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative"
                   >
-                    <Menu className="w-5 h-5" />
-                  </Button>
+                    <Avatar className="h-9 w-9 ring-2 ring-primary/30 ring-offset-2 ring-offset-background cursor-pointer">
+                      <AvatarImage src={profileData?.avatar_url} alt={profileData?.name} className="object-cover" />
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-xs font-semibold">
+                        {profileData?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || <UserIcon className="w-4 h-4" />}
+                      </AvatarFallback>
+                    </Avatar>
+                  </motion.button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-80">
                   <SheetHeader className="text-left pb-6">
@@ -577,7 +622,7 @@ const Home = () => {
             </div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* PWA Install Banner */}
       {showInstallBanner && !isStandalone && (
