@@ -85,7 +85,7 @@ const RateRestaurantModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md z-[1000]">
         <DialogHeader>
           <DialogTitle>Avaliar Restaurante</DialogTitle>
           <DialogDescription>
