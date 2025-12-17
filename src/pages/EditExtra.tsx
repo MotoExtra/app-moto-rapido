@@ -228,16 +228,6 @@ const EditExtra = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
-              <Textarea
-                id="description"
-                placeholder="Descreva o trabalho..."
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                required
-              />
-            </div>
           </CardContent>
         </Card>
 
