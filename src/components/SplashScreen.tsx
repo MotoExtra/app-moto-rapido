@@ -85,7 +85,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
             >
               <img 
                 src={logo} 
-                alt="MotoPay" 
+                alt="MotoExtra" 
                 className="w-full h-full object-contain"
               />
             </motion.div>
@@ -97,7 +97,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
               transition={{ delay: 0.5, duration: 0.4 }}
               className="mt-6 text-3xl font-bold text-white tracking-tight"
             >
-              MotoPay
+              MotoExtra
             </motion.h1>
 
             {/* Tagline */}

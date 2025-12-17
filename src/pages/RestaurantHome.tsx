@@ -238,7 +238,7 @@ const RestaurantHome = () => {
       {/* Header */}
       <header className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-4 pb-6">
         <div className="flex items-center justify-between mb-4">
-          <img src={logo} alt="MotoPay" className="h-10" />
+          <img src={logo} alt="MotoExtra" className="h-10" />
           <div className="flex items-center gap-2">
             <Button 
               variant="ghost" 

@@ -147,7 +147,7 @@ const SignupRestaurant = () => {
         </Button>
 
         <div className="flex flex-col items-center mb-6">
-          <img src={logo} alt="MotoPay" className="h-16 mb-2" />
+          <img src={logo} alt="MotoExtra" className="h-16 mb-2" />
           <div className="flex items-center gap-2 text-primary">
             <Store className="w-6 h-6" />
             <span className="text-lg font-semibold">Área do Restaurante</span>

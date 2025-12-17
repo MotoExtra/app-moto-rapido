@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.png", "apple-touch-icon.png"],
       manifest: {
-        name: "MotoPay - Extras para Motoboys",
-        short_name: "MotoPay",
+        name: "MotoExtra - Extras para Motoboys",
+        short_name: "MotoExtra",
         description: "Encontre extras de entrega e ganhe dinheiro",
         theme_color: "#f97316",
         background_color: "#ffffff",

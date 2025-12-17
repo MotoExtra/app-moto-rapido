@@ -477,7 +477,7 @@ const Home = () => {
             <div className="flex items-center gap-3 min-w-0">
               <motion.img 
                 src={logo} 
-                alt="MotoPay" 
+                alt="MotoExtra" 
                 className="h-10 w-auto flex-shrink-0"
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 400 }}
@@ -642,7 +642,7 @@ const Home = () => {
                 <Download className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground text-sm">Instale o MotoPay</p>
+                <p className="font-semibold text-foreground text-sm">Instale o MotoExtra</p>
                 <p className="text-xs text-muted-foreground">Acesso rápido e notificações de novos extras!</p>
               </div>
               <Button

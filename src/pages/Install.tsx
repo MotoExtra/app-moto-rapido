@@ -69,7 +69,7 @@ const Install = () => {
           </motion.div>
           <h1 className="text-2xl font-bold text-foreground">App Instalado!</h1>
           <p className="text-muted-foreground">
-            O MotoPay já está instalado no seu dispositivo.
+            O MotoExtra já está instalado no seu dispositivo.
           </p>
           <Button onClick={() => navigate("/home")} className="mt-4" size="lg">
             Ir para o App
@@ -105,7 +105,7 @@ const Install = () => {
           >
             <div className="absolute inset-0 bg-primary/30 rounded-2xl blur-xl" />
             <div className="relative w-24 h-24 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
-              <img src={logo} alt="MotoPay" className="w-16 h-16 object-contain" />
+              <img src={logo} alt="MotoExtra" className="w-16 h-16 object-contain" />
             </div>
           </motion.div>
           
@@ -114,7 +114,7 @@ const Install = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <h2 className="text-2xl font-bold text-foreground">Instale o MotoPay</h2>
+            <h2 className="text-2xl font-bold text-foreground">Instale o MotoExtra</h2>
             <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-2">
               Adicione o app na sua tela inicial para acesso rápido e notificações de novos extras!
             </p>

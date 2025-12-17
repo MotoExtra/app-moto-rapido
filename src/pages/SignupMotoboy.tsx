@@ -125,7 +125,7 @@ const SignupMotoboy = () => {
 
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Bem-vindo ao Moto Rápido",
+        description: "Bem-vindo ao MotoExtra",
       });
       
       navigate("/home");
