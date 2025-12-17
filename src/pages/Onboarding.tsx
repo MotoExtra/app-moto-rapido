@@ -42,7 +42,7 @@ const Onboarding = () => {
   const handleSelectType = (type: "motoboy" | "restaurant") => {
     setUserType(type);
     if (type === "motoboy") {
-      navigate("/login");
+      navigate("/login/motoboy");
     } else {
       navigate("/login/restaurante");
     }

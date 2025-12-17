@@ -17,7 +17,7 @@ const ProtectedRoute = ({ children, allowedUserType }: ProtectedRouteProps) => {
       
       if (!session) {
         // Not logged in, redirect to appropriate login
-        navigate(allowedUserType === "restaurant" ? "/login/restaurante" : "/login");
+        navigate(allowedUserType === "restaurant" ? "/login/restaurante" : "/login/motoboy");
         return;
       }
 
@@ -57,7 +57,7 @@ const ProtectedRoute = ({ children, allowedUserType }: ProtectedRouteProps) => {
           // Restaurant trying to access motoboy area
           navigate("/restaurante/home");
         } else {
-          navigate("/login");
+          navigate("/login/motoboy");
         }
       }
     };

@@ -302,7 +302,7 @@ const SignupMotoboy = () => {
               <Button
                 variant="link"
                 className="p-0 h-auto font-semibold"
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/login/motoboy")}
               >
                 Entre aqui
               </Button>

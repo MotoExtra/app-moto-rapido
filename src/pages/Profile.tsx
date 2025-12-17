@@ -64,7 +64,7 @@ const Profile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        navigate("/login");
+        navigate("/login/motoboy");
         return;
       }
 
@@ -78,7 +78,7 @@ const Profile = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        navigate("/login");
+        navigate("/login/motoboy");
       }
       setUser(session?.user ?? null);
     });
