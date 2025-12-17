@@ -1,4 +1,4 @@
-// Service Worker para Push Notifications - MotoPay
+// Service Worker para Push Notifications - MotoExtra
 
 const CACHE_VERSION = 'v1';
 

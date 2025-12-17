@@ -54,7 +54,7 @@ const Onboarding = () => {
         <div className="text-center space-y-4">
           <div className="relative">
             <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150" />
-            <img src={logo} alt="MotoPay" className="relative h-40 w-auto mx-auto drop-shadow-lg" />
+            <img src={logo} alt="MotoExtra" className="relative h-40 w-auto mx-auto drop-shadow-lg" />
           </div>
           <p className="text-muted-foreground text-lg">Conectando motoboys a oportunidades</p>
         </div>

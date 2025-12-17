@@ -250,7 +250,7 @@ const OfferExtra = () => {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <img src={logo} alt="MotoPay" className="h-10 w-auto" />
+            <img src={logo} alt="MotoExtra" className="h-10 w-auto" />
             <h1 className="text-lg font-bold text-foreground">Ofertar Extra</h1>
           </div>
         </div>
