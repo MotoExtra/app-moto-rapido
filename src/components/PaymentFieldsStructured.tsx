@@ -65,17 +65,47 @@ const buildPaymentString = (data: PaymentData): string => {
 
 const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredProps) => {
   const [paymentData, setPaymentData] = useState<PaymentData>(() => parsePaymentString(value));
+  const [showCustomFixo, setShowCustomFixo] = useState(false);
+  const [customFixoError, setCustomFixoError] = useState("");
+  
+  const fixoOptions = ["80", "90", "100", "110", "120"];
   
   // Sync with external value on mount
   useEffect(() => {
     const parsed = parsePaymentString(value);
     setPaymentData(parsed);
+    // Check if current value is custom (not in predefined options)
+    if (parsed.fixo && !fixoOptions.includes(parsed.fixo)) {
+      setShowCustomFixo(true);
+    }
   }, []);
   
   // Update parent when data changes
   const handleFixoChange = (fieldValue: string) => {
     // Only allow numbers and dots/commas
     const sanitized = fieldValue.replace(/[^0-9.,]/g, "").replace(",", ".");
+    setCustomFixoError("");
+    
+    const newData = { ...paymentData, fixo: sanitized };
+    setPaymentData(newData);
+    onChange(buildPaymentString(newData));
+  };
+
+  const handleFixoButtonClick = (val: string) => {
+    setShowCustomFixo(false);
+    setCustomFixoError("");
+    handleFixoChange(val);
+  };
+
+  const handleCustomFixoChange = (fieldValue: string) => {
+    const sanitized = fieldValue.replace(/[^0-9.,]/g, "").replace(",", ".");
+    const numValue = parseFloat(sanitized);
+    
+    if (sanitized && numValue < 80) {
+      setCustomFixoError("Mínimo R$ 80");
+    } else {
+      setCustomFixoError("");
+    }
     
     const newData = { ...paymentData, fixo: sanitized };
     setPaymentData(newData);
@@ -90,8 +120,7 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
   
   const previewString = buildPaymentString(paymentData);
   const hasAnyValue = paymentData.fixo || paymentData.porEntrega;
-
-  const fixoOptions = ["80", "90", "100", "110", "120"];
+  const isCustomValue = showCustomFixo || (paymentData.fixo && !fixoOptions.includes(paymentData.fixo));
 
   return (
     <div className="space-y-4">
@@ -101,24 +130,70 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
           💰 Valor Fixo
         </Label>
         <div className="flex flex-wrap gap-2">
-          {fixoOptions.map((value) => (
+          {fixoOptions.map((val) => (
             <button
-              key={value}
+              key={val}
               type="button"
-              onClick={() => handleFixoChange(value)}
+              onClick={() => handleFixoButtonClick(val)}
               className={`
                 px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-200
                 min-w-[72px] border-2
-                ${paymentData.fixo === value 
+                ${paymentData.fixo === val && !isCustomValue
                   ? 'bg-primary text-primary-foreground border-primary shadow-md scale-105' 
                   : 'bg-background text-foreground border-border hover:border-primary/50 hover:bg-accent'
                 }
               `}
             >
-              R$ {value}
+              R$ {val}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => {
+              setShowCustomFixo(true);
+              handleFixoChange("");
+            }}
+            className={`
+              px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-200
+              min-w-[72px] border-2
+              ${isCustomValue
+                ? 'bg-primary text-primary-foreground border-primary shadow-md scale-105' 
+                : 'bg-background text-foreground border-border hover:border-primary/50 hover:bg-accent'
+              }
+            `}
+          >
+            Outro
+          </button>
         </div>
+        
+        {/* Campo de valor personalizado */}
+        <AnimatePresence mode="wait">
+          {isCustomValue && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-sm text-muted-foreground">R$</span>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="80"
+                  value={paymentData.fixo}
+                  onChange={(e) => handleCustomFixoChange(e.target.value)}
+                  className={`w-24 ${customFixoError ? 'border-destructive' : ''}`}
+                />
+                {customFixoError && (
+                  <span className="text-xs text-destructive">{customFixoError}</span>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
         <p className="text-xs text-muted-foreground">Valor fixo pago independente de entregas</p>
       </div>
 
