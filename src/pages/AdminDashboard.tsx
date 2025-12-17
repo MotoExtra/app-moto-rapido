@@ -61,7 +61,7 @@ const AdminDashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        navigate("/login");
+        navigate("/login/motoboy");
         return;
       }
 
@@ -148,7 +148,7 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/login");
+    navigate("/login/motoboy");
   };
 
   const formatDate = (dateString: string | null) => {

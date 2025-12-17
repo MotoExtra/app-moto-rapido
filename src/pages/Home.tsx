@@ -101,7 +101,7 @@ const Home = () => {
           description: "Você precisa estar logado para ver as ofertas.",
           variant: "destructive",
         });
-        navigate("/login");
+        navigate("/login/motoboy");
         return;
       }
 
@@ -153,7 +153,7 @@ const Home = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        navigate("/login");
+        navigate("/login/motoboy");
       }
       setUser(session?.user ?? null);
     });
@@ -339,7 +339,7 @@ const Home = () => {
       title: "Logout realizado",
       description: "Até logo!",
     });
-    navigate("/login");
+    navigate("/login/motoboy");
   };
 
   const handleDeleteOffer = async (offerId: string) => {
@@ -376,7 +376,7 @@ const Home = () => {
         description: "Você precisa estar logado para aceitar ofertas.",
         variant: "destructive",
       });
-      navigate("/login");
+      navigate("/login/motoboy");
       return;
     }
 

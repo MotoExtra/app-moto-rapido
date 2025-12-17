@@ -179,7 +179,7 @@ const LoginRestaurant = () => {
               
               <button
                 type="button"
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/login/motoboy")}
                 className="w-full text-sm text-muted-foreground hover:text-primary transition-colors underline-offset-4 hover:underline"
               >
                 Sou motoboy

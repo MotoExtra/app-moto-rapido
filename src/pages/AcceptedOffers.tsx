@@ -72,7 +72,7 @@ const AcceptedOffers = () => {
             description: "Você precisa estar logado para ver seus extras aceitos.",
             variant: "destructive",
           });
-          navigate("/login");
+          navigate("/login/motoboy");
           return;
         }
 
@@ -143,7 +143,7 @@ const AcceptedOffers = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        navigate("/login");
+        navigate("/login/motoboy");
       }
     });
 

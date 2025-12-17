@@ -174,7 +174,7 @@ const OfferExtra = () => {
           description: "Você precisa estar logado para ofertar um extra.",
           variant: "destructive",
         });
-        navigate("/login");
+        navigate("/login/motoboy");
         return;
       }
 
