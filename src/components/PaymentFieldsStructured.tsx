@@ -10,14 +10,12 @@ interface PaymentFieldsStructuredProps {
 
 interface PaymentData {
   fixo: string;
-  ate10: string;
-  de11a20: string;
-  acima20: string;
+  porEntrega: string;
 }
 
 // Parse existing payment string to structured data
 const parsePaymentString = (payment: string): PaymentData => {
-  const data: PaymentData = { fixo: "", ate10: "", de11a20: "", acima20: "" };
+  const data: PaymentData = { fixo: "", porEntrega: "" };
   
   if (!payment) return data;
   
@@ -27,18 +25,10 @@ const parsePaymentString = (payment: string): PaymentData => {
     data.fixo = fixoMatch[1].replace(",", ".");
   }
   
-  // Try to extract values after "+" signs (R$ XX)
-  const valuesMatch = payment.match(/\+\s*R?\$?\s*(\d+(?:[.,]\d+)?)/gi);
-  if (valuesMatch) {
-    valuesMatch.forEach((match, index) => {
-      const valueMatch = match.match(/(\d+(?:[.,]\d+)?)/);
-      if (valueMatch) {
-        const val = valueMatch[1].replace(",", ".");
-        if (index === 0) data.ate10 = val;
-        else if (index === 1) data.de11a20 = val;
-        else if (index === 2) data.acima20 = val;
-      }
-    });
+  // Extract everything after "fixo + " or just the values if no fixo
+  const afterFixo = payment.replace(/(\d+(?:[.,]\d+)?)\s*fixo\s*\+?\s*/i, "").trim();
+  if (afterFixo) {
+    data.porEntrega = afterFixo;
   }
   
   return data;
@@ -52,16 +42,8 @@ const buildPaymentString = (data: PaymentData): string => {
     parts.push(`${data.fixo} fixo`);
   }
   
-  if (data.ate10) {
-    parts.push(`R$ ${data.ate10}`);
-  }
-  
-  if (data.de11a20) {
-    parts.push(`R$ ${data.de11a20}`);
-  }
-  
-  if (data.acima20) {
-    parts.push(`R$ ${data.acima20}`);
+  if (data.porEntrega) {
+    parts.push(data.porEntrega);
   }
   
   return parts.join(" + ");
@@ -77,17 +59,23 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
   }, []);
   
   // Update parent when data changes
-  const handleFieldChange = (field: keyof PaymentData, fieldValue: string) => {
+  const handleFixoChange = (fieldValue: string) => {
     // Only allow numbers and dots/commas
     const sanitized = fieldValue.replace(/[^0-9.,]/g, "").replace(",", ".");
     
-    const newData = { ...paymentData, [field]: sanitized };
+    const newData = { ...paymentData, fixo: sanitized };
+    setPaymentData(newData);
+    onChange(buildPaymentString(newData));
+  };
+
+  const handlePorEntregaChange = (fieldValue: string) => {
+    const newData = { ...paymentData, porEntrega: fieldValue };
     setPaymentData(newData);
     onChange(buildPaymentString(newData));
   };
   
   const previewString = buildPaymentString(paymentData);
-  const hasAnyValue = paymentData.fixo || paymentData.ate10 || paymentData.de11a20 || paymentData.acima20;
+  const hasAnyValue = paymentData.fixo || paymentData.porEntrega;
 
   return (
     <div className="space-y-4">
@@ -104,75 +92,26 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
             inputMode="decimal"
             placeholder="80"
             value={paymentData.fixo}
-            onChange={(e) => handleFieldChange("fixo", e.target.value)}
+            onChange={(e) => handleFixoChange(e.target.value)}
             className="pl-10"
           />
         </div>
         <p className="text-xs text-muted-foreground">Valor fixo pago independente de entregas</p>
       </div>
 
-      {/* Valores por faixa */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">📦 Valor por Entrega (por faixa)</Label>
-        
-        <div className="grid grid-cols-3 gap-3">
-          {/* 1-10 entregas */}
-          <div className="space-y-1.5">
-            <Label htmlFor="payment-ate10" className="text-xs text-muted-foreground">
-              1-10 entregas
-            </Label>
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">R$</span>
-              <Input
-                id="payment-ate10"
-                type="text"
-                inputMode="decimal"
-                placeholder="3"
-                value={paymentData.ate10}
-                onChange={(e) => handleFieldChange("ate10", e.target.value)}
-                className="pl-8 text-sm h-9"
-              />
-            </div>
-          </div>
-
-          {/* 11-20 entregas */}
-          <div className="space-y-1.5">
-            <Label htmlFor="payment-de11a20" className="text-xs text-muted-foreground">
-              11-20 entregas
-            </Label>
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">R$</span>
-              <Input
-                id="payment-de11a20"
-                type="text"
-                inputMode="decimal"
-                placeholder="4"
-                value={paymentData.de11a20}
-                onChange={(e) => handleFieldChange("de11a20", e.target.value)}
-                className="pl-8 text-sm h-9"
-              />
-            </div>
-          </div>
-
-          {/* 21+ entregas */}
-          <div className="space-y-1.5">
-            <Label htmlFor="payment-acima20" className="text-xs text-muted-foreground">
-              21+ entregas
-            </Label>
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">R$</span>
-              <Input
-                id="payment-acima20"
-                type="text"
-                inputMode="decimal"
-                placeholder="5"
-                value={paymentData.acima20}
-                onChange={(e) => handleFieldChange("acima20", e.target.value)}
-                className="pl-8 text-sm h-9"
-              />
-            </div>
-          </div>
-        </div>
+      {/* Valor por Entrega - campo único */}
+      <div className="space-y-2">
+        <Label htmlFor="payment-entrega" className="text-sm font-medium">
+          📦 Valor por Entrega
+        </Label>
+        <Input
+          id="payment-entrega"
+          type="text"
+          placeholder="R$ 3 + R$ 4 + R$ 5"
+          value={paymentData.porEntrega}
+          onChange={(e) => handlePorEntregaChange(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">Ex: R$ 3 + R$ 4 + R$ 5 (por faixa de entregas)</p>
       </div>
 
       {/* Preview em tempo real */}
