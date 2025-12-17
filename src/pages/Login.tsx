@@ -167,7 +167,7 @@ const Login = () => {
             
             <button
               type="button"
-              onClick={() => navigate("/restaurante/login")}
+              onClick={() => navigate("/login/restaurante")}
               className="w-full text-sm text-muted-foreground hover:text-primary transition-colors underline-offset-4 hover:underline"
             >
               Sou restaurante
