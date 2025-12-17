@@ -566,15 +566,6 @@ const OfferExtra = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="experience">Experiência necessária</Label>
-              <Input
-                id="experience"
-                placeholder="Ex: Iniciante aceito"
-                value={formData.experience}
-                onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-              />
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone para contato *</Label>
