@@ -39,11 +39,25 @@ const buildPaymentString = (data: PaymentData): string => {
   const parts: string[] = [];
   
   if (data.fixo) {
-    parts.push(`${data.fixo} fixo`);
+    parts.push(`R$ ${data.fixo} fixo`);
   }
   
   if (data.porEntrega) {
-    parts.push(data.porEntrega);
+    // Add R$ to numbers that don't already have it
+    const formattedEntrega = data.porEntrega
+      .split('+')
+      .map(part => {
+        const trimmed = part.trim();
+        // If it already has R$, keep as is; otherwise add R$ before numbers
+        if (trimmed.toLowerCase().includes('r$')) {
+          return trimmed;
+        }
+        // Extract number and format with R$
+        const num = trimmed.replace(/[^0-9.,]/g, '');
+        return num ? `R$ ${num}` : trimmed;
+      })
+      .join(' + ');
+    parts.push(formattedEntrega);
   }
   
   return parts.join(" + ");
@@ -111,7 +125,7 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
           value={paymentData.porEntrega}
           onChange={(e) => handlePorEntregaChange(e.target.value)}
         />
-        <p className="text-xs text-muted-foreground">Ex: R$ 3 + R$ 4 + R$ 5 (por faixa de entregas)</p>
+        <p className="text-xs text-muted-foreground">Ex: R$ 3 + R$ 4 + R$ 5 (por distância de entregas)</p>
       </div>
 
       {/* Preview em tempo real */}
