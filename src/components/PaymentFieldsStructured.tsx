@@ -91,24 +91,33 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
   const previewString = buildPaymentString(paymentData);
   const hasAnyValue = paymentData.fixo || paymentData.porEntrega;
 
+  const fixoOptions = ["80", "90", "100", "110", "120"];
+
   return (
     <div className="space-y-4">
-      {/* Valor Fixo */}
+      {/* Valor Fixo - Botões de seleção rápida */}
       <div className="space-y-2">
-        <Label htmlFor="payment-fixo" className="text-sm font-medium">
-          💰 Valor Fixo (R$)
+        <Label className="text-sm font-medium">
+          💰 Valor Fixo
         </Label>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
-          <Input
-            id="payment-fixo"
-            type="text"
-            inputMode="decimal"
-            placeholder="80"
-            value={paymentData.fixo}
-            onChange={(e) => handleFixoChange(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex flex-wrap gap-2">
+          {fixoOptions.map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => handleFixoChange(value)}
+              className={`
+                px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-200
+                min-w-[72px] border-2
+                ${paymentData.fixo === value 
+                  ? 'bg-primary text-primary-foreground border-primary shadow-md scale-105' 
+                  : 'bg-background text-foreground border-border hover:border-primary/50 hover:bg-accent'
+                }
+              `}
+            >
+              R$ {value}
+            </button>
+          ))}
         </div>
         <p className="text-xs text-muted-foreground">Valor fixo pago independente de entregas</p>
       </div>
