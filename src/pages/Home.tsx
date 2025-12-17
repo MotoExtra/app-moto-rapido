@@ -489,19 +489,35 @@ const Home = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              {/* Notification Bell */}
+              {/* Notification Toggle */}
               {isSupported && (
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={subscribe}
-                    className={`rounded-full h-9 w-9 ${isSubscribed ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}
-                    title={isSubscribed ? "Notificações ativadas" : "Ativar notificações"}
+                <motion.button
+                  onClick={subscribe}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-300 ${
+                    isSubscribed 
+                      ? 'bg-primary/15 border-primary/30 text-primary' 
+                      : 'bg-muted/50 border-border text-muted-foreground'
+                  }`}
+                >
+                  <motion.div
+                    animate={isSubscribed ? { rotate: [0, 15, -15, 0] } : {}}
+                    transition={{ duration: 0.5 }}
                   >
                     <Bell className={`w-4 h-4 ${isSubscribed ? 'fill-primary/30' : ''}`} />
-                  </Button>
-                </motion.div>
+                  </motion.div>
+                  <span className="text-xs font-medium hidden sm:inline">Notificações</span>
+                  <div className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${
+                    isSubscribed ? 'bg-primary' : 'bg-muted-foreground/30'
+                  }`}>
+                    <motion.div
+                      className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm"
+                      animate={{ left: isSubscribed ? '16px' : '2px' }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  </div>
+                </motion.button>
               )}
               
               {/* Score Card */}
