@@ -77,10 +77,22 @@ const OfferExtra = () => {
   });
 
   useEffect(() => {
-    const fetchLastOffer = async () => {
+    const fetchUserDataAndLastOffer = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Fetch user profile phone
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.phone) {
+        setFormData(prev => ({ ...prev, phone: profile.phone }));
+      }
+
+      // Fetch last offer
       const { data } = await supabase
         .from("offers")
         .select("restaurant_name, description, address, time_start, time_end, radius, needs_bag, can_become_permanent, includes_meal, delivery_range, experience, payment, phone, observations")
@@ -95,7 +107,7 @@ const OfferExtra = () => {
       }
     };
 
-    fetchLastOffer();
+    fetchUserDataAndLastOffer();
   }, []);
 
   const fillFromLastOffer = () => {
