@@ -507,7 +507,7 @@ const Home = () => {
                   >
                     <Bell className={`w-4 h-4 ${isSubscribed ? 'fill-primary/30' : ''}`} />
                   </motion.div>
-                  <span className="text-xs font-medium hidden sm:inline">Notificações</span>
+                  <span className="text-xs font-medium">Notificações</span>
                   <div className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${
                     isSubscribed ? 'bg-primary' : 'bg-muted-foreground/30'
                   }`}>
