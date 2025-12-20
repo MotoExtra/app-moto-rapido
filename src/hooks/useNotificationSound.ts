@@ -21,6 +21,20 @@ const NOTIFICATION_SOUNDS = {
     { frequency: 220, duration: 200 },    // A3
     { frequency: 196, duration: 300 },    // G3
   ],
+  // Som muito alto e repetitivo para chegada do motoboy
+  motoboyArrived: [
+    { frequency: 1046.5, duration: 200 },  // C6
+    { frequency: 1318.51, duration: 200 }, // E6
+    { frequency: 1567.98, duration: 300 }, // G6
+    { frequency: 0, duration: 100 },       // pausa
+    { frequency: 1567.98, duration: 200 }, // G6
+    { frequency: 1318.51, duration: 200 }, // E6
+    { frequency: 1046.5, duration: 300 },  // C6
+    { frequency: 0, duration: 100 },       // pausa
+    { frequency: 1046.5, duration: 200 },  // C6
+    { frequency: 1318.51, duration: 200 }, // E6
+    { frequency: 1567.98, duration: 400 }, // G6 longo
+  ],
 };
 
 type SoundType = keyof typeof NOTIFICATION_SOUNDS;
@@ -47,9 +61,10 @@ export const useNotificationSound = () => {
     oscillator.frequency.value = frequency;
     oscillator.type = "sine";
     
-    // Smooth envelope
+    // Smooth envelope - usar volume maior para motoboyArrived
+    const volume = frequency >= 1000 ? 0.6 : 0.3; // Volume maior para frequências altas
     gainNode.gain.setValueAtTime(0, startTime);
-    gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+    gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.01);
     gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration / 1000);
     
     oscillator.start(startTime);
@@ -69,7 +84,9 @@ export const useNotificationSound = () => {
       let currentTime = audioContext.currentTime;
       
       notes.forEach((note) => {
-        playTone(note.frequency, note.duration, currentTime);
+        if (note.frequency > 0) {
+          playTone(note.frequency, note.duration, currentTime);
+        }
         currentTime += note.duration / 1000;
       });
     } catch (error) {
@@ -81,6 +98,7 @@ export const useNotificationSound = () => {
   const playAlert = useCallback(() => playSound("alert"), [playSound]);
   const playNewOffer = useCallback(() => playSound("newOffer"), [playSound]);
   const playError = useCallback(() => playSound("error"), [playSound]);
+  const playMotoboyArrived = useCallback(() => playSound("motoboyArrived"), [playSound]);
 
   return {
     playSound,
@@ -88,5 +106,6 @@ export const useNotificationSound = () => {
     playAlert,
     playNewOffer,
     playError,
+    playMotoboyArrived,
   };
 };

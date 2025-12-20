@@ -50,7 +50,7 @@ interface Offer {
 const RestaurantHome = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { playAlert, playSuccess } = useNotificationSound();
+  const { playAlert, playSuccess, playMotoboyArrived } = useNotificationSound();
   const [loading, setLoading] = useState(true);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -203,11 +203,59 @@ const RestaurantHome = () => {
       )
       .subscribe();
 
+    // Set up realtime listener for accepted_offers status changes (when motoboy arrives)
+    const arrivalChannel = supabase
+      .channel('restaurant-motoboy-arrival')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'accepted_offers'
+        },
+        async (payload) => {
+          const updatedAcceptedOffer = payload.new as any;
+          const oldAcceptedOffer = payload.old as any;
+          
+          // Check if status changed to "in_progress" (motoboy arrived)
+          if (updatedAcceptedOffer.status === "in_progress" && oldAcceptedOffer.status !== "in_progress") {
+            // Fetch offer details to check if it belongs to this restaurant
+            const { data: offerData } = await supabase
+              .from("offers")
+              .select("created_by, restaurant_name")
+              .eq("id", updatedAcceptedOffer.offer_id)
+              .single();
+            
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session && offerData && offerData.created_by === session.user.id) {
+              // Play loud arrival sound
+              playMotoboyArrived();
+              
+              // Fetch motoboy name
+              const { data: motoboyProfile } = await supabase
+                .from("profiles")
+                .select("name")
+                .eq("id", updatedAcceptedOffer.user_id)
+                .single();
+              
+              toast({
+                title: "🏍️ MOTOBOY CHEGOU!",
+                description: `${motoboyProfile?.name || "O motoboy"} chegou e está pronto para trabalhar!`,
+                duration: 10000, // 10 seconds - longer duration
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       subscription.unsubscribe();
       supabase.removeChannel(offersChannel);
+      supabase.removeChannel(arrivalChannel);
     };
-  }, [navigate, playAlert, toast]);
+  }, [navigate, playAlert, playMotoboyArrived, toast]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
