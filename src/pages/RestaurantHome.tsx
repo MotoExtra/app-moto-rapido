@@ -14,7 +14,8 @@ import {
   Settings,
   Loader2,
   CheckCircle2,
-  Star
+  Star,
+  Navigation
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +46,7 @@ interface Offer {
   motoboy_name?: string;
   motoboy_rating?: number;
   motoboy_review_count?: number;
+  motoboy_status?: string; // pending, in_progress, completed
 }
 
 const RestaurantHome = () => {
@@ -114,6 +116,15 @@ const RestaurantHome = () => {
           .eq("rating_type", "restaurant_to_motoboy")
           .in("motoboy_id", acceptedMotoboyIds);
 
+        // Fetch accepted_offers status for each offer
+        const acceptedOfferIds = offersData.filter(o => o.is_accepted).map(o => o.id);
+        const { data: acceptedOffersData } = await supabase
+          .from("accepted_offers")
+          .select("offer_id, status")
+          .in("offer_id", acceptedOfferIds);
+
+        const statusByOfferId = new Map(acceptedOffersData?.map(ao => [ao.offer_id, ao.status]) || []);
+
         // Calculate average ratings per motoboy
         const ratingsByMotoboy = new Map<string, { total: number; count: number }>();
         motoboyRatingsData?.forEach(r => {
@@ -133,7 +144,8 @@ const RestaurantHome = () => {
             has_rating: ratedOfferIds.has(offer.id),
             motoboy_name: offer.accepted_by ? motoboyNameMap.get(offer.accepted_by) || "Motoboy" : undefined,
             motoboy_rating: motoboyRating ? Math.round((motoboyRating.total / motoboyRating.count) * 10) / 10 : undefined,
-            motoboy_review_count: motoboyRating?.count || 0
+            motoboy_review_count: motoboyRating?.count || 0,
+            motoboy_status: statusByOfferId.get(offer.id) || "pending"
           };
         });
 
@@ -238,6 +250,15 @@ const RestaurantHome = () => {
                 .select("name")
                 .eq("id", updatedAcceptedOffer.user_id)
                 .single();
+              
+              // Update offer status in local state
+              setOffers(current =>
+                current.map(o =>
+                  o.id === updatedAcceptedOffer.offer_id
+                    ? { ...o, motoboy_status: "in_progress" }
+                    : o
+                )
+              );
               
               toast({
                 title: "🏍️ MOTOBOY CHEGOU!",
@@ -394,6 +415,39 @@ const RestaurantHome = () => {
 
                   {offer.is_accepted && (
                     <div className="mt-3 pt-3 border-t space-y-2">
+                      {/* Motoboy Status Indicator */}
+                      {offer.motoboy_status === "in_progress" && (
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 animate-pulse">
+                          <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
+                            <Navigation className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                              🏍️ Motoboy chegou!
+                            </p>
+                            <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
+                              {offer.motoboy_name} está pronto para trabalhar
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {offer.motoboy_status !== "in_progress" && (
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                          <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                            <Clock className="w-4 h-4 text-amber-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                              Aguardando chegada
+                            </p>
+                            <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
+                              {offer.motoboy_name} confirmou o extra
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm text-green-600">
                           <User className="w-4 h-4" />
