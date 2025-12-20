@@ -32,6 +32,7 @@ interface AcceptedOffer {
     address: string;
     time_start: string;
     time_end: string;
+    offer_date: string | null;
     radius: number;
     needs_bag: boolean;
     can_become_permanent?: boolean;
@@ -92,6 +93,7 @@ const AcceptedOffers = () => {
               address,
               time_start,
               time_end,
+              offer_date,
               radius,
               needs_bag,
               can_become_permanent,
@@ -283,12 +285,21 @@ const AcceptedOffers = () => {
                   <span>{acceptedOffer.offer.address}</span>
                 </div>
 
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span>
-                    {acceptedOffer.offer.time_start} até {acceptedOffer.offer.time_end} • Raio de{" "}
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
+                  <Clock className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                      {acceptedOffer.offer.offer_date 
+                        ? new Date(acceptedOffer.offer.offer_date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
+                        : 'Data não informada'}
+                    </span>
+                    <span className="text-sm font-bold text-teal-600 dark:text-teal-400">
+                      {acceptedOffer.offer.time_start} até {acceptedOffer.offer.time_end}
+                    </span>
+                  </div>
+                  <Badge variant="outline" className="ml-auto bg-cyan-500/10 text-cyan-600 border-cyan-500/30 text-xs">
                     {acceptedOffer.offer.radius} km
-                  </span>
+                  </Badge>
                 </div>
 
                 <div className="flex items-center text-sm text-muted-foreground">
