@@ -64,6 +64,7 @@ const AcceptedOffers = () => {
   const [selectedOffer, setSelectedOffer] = useState<AcceptedOffer | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [arrivingId, setArrivingId] = useState<string | null>(null);
+  const [motoboyName, setMotoboyName] = useState<string>("Motoboy");
   
   // Geolocation hook
   const geolocation = useGeolocation();
@@ -91,6 +92,17 @@ const AcceptedOffers = () => {
         }
 
         setUserId(user.id);
+
+        // Fetch motoboy profile name
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile?.name) {
+          setMotoboyName(profile.name);
+        }
 
         const { data, error } = await supabase
           .from("accepted_offers")
@@ -262,6 +274,27 @@ const AcceptedOffers = () => {
           ao.id === acceptedOffer.id ? { ...ao, status: "in_progress" } : ao
         )
       );
+      
+      // Notify restaurant about motoboy arrival
+      if (acceptedOffer.offer.created_by) {
+        try {
+          const { error: notifyError } = await supabase.functions.invoke("notify-motoboy-arrived", {
+            body: {
+              offer_id: acceptedOffer.offer.id,
+              motoboy_name: motoboyName,
+              restaurant_user_id: acceptedOffer.offer.created_by,
+            },
+          });
+          
+          if (notifyError) {
+            console.error("Erro ao notificar restaurante:", notifyError);
+          } else {
+            console.log("Restaurante notificado sobre chegada");
+          }
+        } catch (notifyErr) {
+          console.error("Erro ao chamar função de notificação:", notifyErr);
+        }
+      }
       
       toast({
         title: "Check-in realizado!",
