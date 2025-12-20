@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,12 +13,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, MapPin, Package, Star, ArrowLeft, Phone, X, Loader2 } from "lucide-react";
+import { Clock, MapPin, Package, Star, ArrowLeft, Phone, X, Loader2, MapPinCheck, Navigation } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatPayment } from "@/lib/utils";
 import RateRestaurantModal from "@/components/RateRestaurantModal";
 import OfferLocationMap from "@/components/OfferLocationMap";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { isWithinRadius, isWithinTimeWindow, calculateDistance } from "@/lib/distance";
 
 interface AcceptedOffer {
   id: string;
@@ -61,6 +63,17 @@ const AcceptedOffers = () => {
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<AcceptedOffer | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [arrivingId, setArrivingId] = useState<string | null>(null);
+  
+  // Geolocation hook
+  const geolocation = useGeolocation();
+  
+  // Force re-render every minute to update time-based conditions
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchAcceptedOffers = async () => {
@@ -204,6 +217,66 @@ const AcceptedOffers = () => {
 
     const statusInfo = statusMap[status] || statusMap.pending;
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+  };
+
+  // Check if "Cheguei" button should be enabled for a specific offer
+  const getArrivalStatus = (offer: AcceptedOffer['offer']) => {
+    const isTimeOk = isWithinTimeWindow(offer.offer_date, offer.time_start, 30);
+    
+    let isLocationOk = false;
+    let distance: number | null = null;
+    
+    if (geolocation.latitude && geolocation.longitude && offer.lat && offer.lng) {
+      distance = calculateDistance(
+        geolocation.latitude,
+        geolocation.longitude,
+        offer.lat,
+        offer.lng
+      );
+      isLocationOk = distance <= 1; // Within 1km
+    }
+    
+    return {
+      isEnabled: isTimeOk && isLocationOk,
+      isTimeOk,
+      isLocationOk,
+      distance,
+      hasLocation: offer.lat !== null && offer.lng !== null,
+      hasUserLocation: geolocation.latitude !== null && geolocation.longitude !== null,
+      locationError: geolocation.error,
+    };
+  };
+
+  const handleArrival = async (acceptedOffer: AcceptedOffer) => {
+    setArrivingId(acceptedOffer.id);
+    try {
+      const { error } = await supabase
+        .from("accepted_offers")
+        .update({ status: "in_progress" })
+        .eq("id", acceptedOffer.id);
+      
+      if (error) throw error;
+      
+      setAcceptedOffers(current =>
+        current.map(ao =>
+          ao.id === acceptedOffer.id ? { ...ao, status: "in_progress" } : ao
+        )
+      );
+      
+      toast({
+        title: "Check-in realizado!",
+        description: "Sua chegada foi confirmada com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao confirmar chegada:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível confirmar sua chegada. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setArrivingId(null);
+    }
   };
 
   if (loading) {
@@ -365,49 +438,113 @@ const AcceptedOffers = () => {
                   offerId={acceptedOffer.offer.id}
                 />
 
-                {acceptedOffer.status === "pending" && (
-                  <div className="flex gap-2 mt-3">
-                    {!acceptedOffer.has_rating && acceptedOffer.offer.created_by && (
+                {acceptedOffer.status === "pending" && (() => {
+                  const arrivalStatus = getArrivalStatus(acceptedOffer.offer);
+                  
+                  return (
+                    <div className="space-y-3 mt-3">
+                      {/* Botão CHEGUEI */}
                       <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          setSelectedOffer(acceptedOffer);
-                          setRatingModalOpen(true);
-                        }}
+                        size="lg"
+                        className={`w-full h-14 text-lg font-bold transition-all duration-300 ${
+                          arrivalStatus.isEnabled
+                            ? 'bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30 animate-pulse'
+                            : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+                        }`}
+                        disabled={!arrivalStatus.isEnabled || arrivingId === acceptedOffer.id}
+                        onClick={() => handleArrival(acceptedOffer)}
                       >
-                        <Star className="w-4 h-4 mr-2" />
-                        Avaliar Restaurante
+                        {arrivingId === acceptedOffer.id ? (
+                          <>
+                            <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                            Confirmando...
+                          </>
+                        ) : arrivalStatus.isEnabled ? (
+                          <>
+                            <MapPinCheck className="w-6 h-6 mr-2" />
+                            CHEGUEI
+                          </>
+                        ) : (
+                          <>
+                            <MapPinCheck className="w-6 h-6 mr-2 opacity-50" />
+                            CHEGUEI
+                          </>
+                        )}
                       </Button>
-                    )}
-                    {acceptedOffer.has_rating && (
-                      <Badge variant="secondary" className="gap-1 flex-1 justify-center py-2">
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        Avaliado
-                      </Badge>
-                    )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setOfferToCancel(acceptedOffer)}
-                      disabled={cancellingId === acceptedOffer.id}
-                    >
-                      {cancellingId === acceptedOffer.id ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Cancelando...
-                        </>
-                      ) : (
-                        <>
-                          <X className="w-4 h-4 mr-2" />
-                          Cancelar
-                        </>
+                      
+                      {/* Status indicators */}
+                      {!arrivalStatus.isEnabled && (
+                        <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/50 border border-border">
+                          <div className="flex items-center gap-2 text-xs">
+                            <Clock className={`w-4 h-4 ${arrivalStatus.isTimeOk ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+                            <span className={arrivalStatus.isTimeOk ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-muted-foreground'}>
+                              {arrivalStatus.isTimeOk 
+                                ? '✓ Horário liberado' 
+                                : 'Aguarde até 30min antes do início'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Navigation className={`w-4 h-4 ${arrivalStatus.isLocationOk ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+                            <span className={arrivalStatus.isLocationOk ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-muted-foreground'}>
+                              {arrivalStatus.locationError 
+                                ? arrivalStatus.locationError
+                                : !arrivalStatus.hasUserLocation
+                                  ? 'Ativando GPS...'
+                                  : !arrivalStatus.hasLocation
+                                    ? 'Localização do extra indisponível'
+                                    : arrivalStatus.isLocationOk
+                                      ? '✓ Você está no local'
+                                      : `Você está a ${arrivalStatus.distance?.toFixed(1)} km do local (máx 1km)`}
+                            </span>
+                          </div>
+                        </div>
                       )}
-                    </Button>
-                  </div>
-                )}
+                      
+                      {/* Other action buttons */}
+                      <div className="flex gap-2">
+                        {!acceptedOffer.has_rating && acceptedOffer.offer.created_by && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              setSelectedOffer(acceptedOffer);
+                              setRatingModalOpen(true);
+                            }}
+                          >
+                            <Star className="w-4 h-4 mr-2" />
+                            Avaliar Restaurante
+                          </Button>
+                        )}
+                        {acceptedOffer.has_rating && (
+                          <Badge variant="secondary" className="gap-1 flex-1 justify-center py-2">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            Avaliado
+                          </Badge>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => setOfferToCancel(acceptedOffer)}
+                          disabled={cancellingId === acceptedOffer.id}
+                        >
+                          {cancellingId === acceptedOffer.id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Cancelando...
+                            </>
+                          ) : (
+                            <>
+                              <X className="w-4 h-4 mr-2" />
+                              Cancelar
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           ))
