@@ -241,6 +241,9 @@ const Home = () => {
           return offerStartTime > now;
         });
 
+        // Excluir extras criados pelo próprio usuário (motoboy não vê seus próprios extras)
+        validOffers = validOffers.filter(offer => offer.created_by !== user?.id);
+
         // Count offers per city (before filtering by preferences)
         const cityCounts = new Map<string, number>();
         validOffers.forEach(offer => {
