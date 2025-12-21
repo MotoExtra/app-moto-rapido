@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X, ChevronRight, Filter, Check, Shield } from "lucide-react";
+import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, Download, X, ChevronRight, Filter, Check, Shield, Navigation } from "lucide-react";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { ES_CITIES } from "@/lib/cities";
 import { RestaurantRatingsModal } from "@/components/RestaurantRatingsModal";
 import logo from "@/assets/logo.png";
@@ -51,6 +52,7 @@ const Home = () => {
   const { toast } = useToast();
   const { isSupported, isSubscribed, permission, subscribe } = usePushNotifications();
   const { playSuccess, playNewOffer, playError } = useNotificationSound();
+  const geolocation = useGeolocation();
   const [user, setUser] = useState<User | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -67,6 +69,30 @@ const Home = () => {
   const [tempCityFilter, setTempCityFilter] = useState<string[]>([]);
   const [cityOfferCounts, setCityOfferCounts] = useState<Map<string, number>>(new Map());
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Handle location permission request
+  const handleRequestLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          toast({
+            title: "Localização ativada",
+            description: "Sua localização foi obtida com sucesso!",
+          });
+        },
+        (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            toast({
+              title: "Permissão necessária",
+              description: "Acesse as configurações do navegador para permitir a localização.",
+              variant: "destructive",
+            });
+          }
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+  };
 
   // Check if app is installed as PWA
   useEffect(() => {
@@ -675,6 +701,63 @@ const Home = () => {
           </Card>
         </div>
       )}
+
+      {/* Location Status Indicator */}
+      <div className="px-4 pt-4">
+        <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+          geolocation.error 
+            ? 'bg-destructive/10 border-destructive/30' 
+            : geolocation.loading
+              ? 'bg-amber-500/10 border-amber-500/30'
+              : 'bg-emerald-500/10 border-emerald-500/30'
+        }`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            geolocation.error 
+              ? 'bg-destructive/20' 
+              : geolocation.loading
+                ? 'bg-amber-500/20'
+                : 'bg-emerald-500/20'
+          }`}>
+            <Navigation className={`w-5 h-5 ${
+              geolocation.error 
+                ? 'text-destructive' 
+                : geolocation.loading 
+                  ? 'text-amber-500 animate-pulse' 
+                  : 'text-emerald-500'
+            }`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-medium ${
+              geolocation.error 
+                ? 'text-destructive' 
+                : geolocation.loading 
+                  ? 'text-amber-600 dark:text-amber-400' 
+                  : 'text-emerald-600 dark:text-emerald-400'
+            }`}>
+              {geolocation.error 
+                ? geolocation.error 
+                : geolocation.loading 
+                  ? 'Obtendo localização...' 
+                  : 'GPS ativo'}
+            </p>
+            {geolocation.latitude && geolocation.longitude && !geolocation.loading && !geolocation.error && (
+              <p className="text-xs text-muted-foreground">
+                Precisão: ~{Math.round(geolocation.accuracy || 0)}m
+              </p>
+            )}
+          </div>
+          {geolocation.error && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleRequestLocation}
+              className="flex-shrink-0 border-destructive/30 text-destructive hover:bg-destructive/10"
+            >
+              Ativar
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Offer Extra Button */}
       <div className="px-4 pt-4">
