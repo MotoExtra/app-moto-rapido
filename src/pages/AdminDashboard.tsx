@@ -164,18 +164,7 @@ const AdminDashboard = () => {
     return timeString?.slice(0, 5) || "-";
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return null;
-  }
-
+  // All hooks must be called before any early returns
   const acceptedArchived = archivedOffers.filter(o => o.was_accepted);
   const notAcceptedArchived = archivedOffers.filter(o => !o.was_accepted);
   const acceptedActive = activeOffers.filter(o => o.is_accepted);
@@ -189,7 +178,6 @@ const AdminDashboard = () => {
     });
 
     return last7Days.map(day => {
-      const dayStart = startOfDay(day);
       const dayStr = format(day, 'yyyy-MM-dd');
       
       const activeCreated = activeOffers.filter(o => {
@@ -261,6 +249,19 @@ const AdminDashboard = () => {
       color: "hsl(142 76% 36%)",
     },
   };
+
+  // Early returns AFTER all hooks
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
