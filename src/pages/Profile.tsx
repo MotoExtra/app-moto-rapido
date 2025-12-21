@@ -599,7 +599,7 @@ const Profile = () => {
                 <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
                   <Bike className="w-4 h-4 text-blue-600" />
                 </div>
-                Meus Extras
+                Extra Ofertado
               </CardTitle>
               <Button
                 size="sm"
