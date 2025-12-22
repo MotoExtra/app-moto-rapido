@@ -69,6 +69,7 @@ const Home = () => {
   const [tempCityFilter, setTempCityFilter] = useState<string[]>([]);
   const [cityOfferCounts, setCityOfferCounts] = useState<Map<string, number>>(new Map());
   const [isAdmin, setIsAdmin] = useState(false);
+  const [myExtrasCount, setMyExtrasCount] = useState(0);
 
   // Handle location permission request
   const handleRequestLocation = () => {
@@ -163,6 +164,15 @@ const Home = () => {
         .maybeSingle();
 
       setIsAdmin(!!adminRole);
+
+      // Count user's offered extras
+      const { count: extrasCount } = await supabase
+        .from("offers")
+        .select("*", { count: "exact", head: true })
+        .eq("created_by", user.id)
+        .eq("is_accepted", false);
+
+      setMyExtrasCount(extrasCount || 0);
 
       // Check if user already has an active offer
       const { data: activeOffers } = await supabase
@@ -640,8 +650,13 @@ const Home = () => {
                       onClick={() => { setMenuOpen(false); navigate("/meus-extras"); }}
                       className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors text-left"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center relative">
                         <Bike className="w-5 h-5 text-blue-600" />
+                        {myExtrasCount > 0 && (
+                          <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                            {myExtrasCount}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <p className="font-medium">Extras Ofertados</p>
