@@ -24,6 +24,7 @@ import { useLiveLocationBroadcast } from "@/hooks/useLiveLocationBroadcast";
 import { isWithinRadius, isWithinTimeWindow, calculateDistance } from "@/lib/distance";
 import { ChatModal } from "@/components/ChatModal";
 import { useUnreadCounts } from "@/hooks/useChatMessages";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 interface AcceptedOffer {
   id: string;
   status: string;
@@ -58,6 +59,7 @@ interface AcceptedOffer {
 const AcceptedOffers = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { playNewMessage } = useNotificationSound();
   const [acceptedOffers, setAcceptedOffers] = useState<AcceptedOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -71,7 +73,7 @@ const AcceptedOffers = () => {
   
   // Get unread counts for all accepted offers
   const offerIds = useMemo(() => acceptedOffers.map(ao => ao.offer.id), [acceptedOffers]);
-  const unreadCounts = useUnreadCounts(offerIds, userId);
+  const unreadCounts = useUnreadCounts(offerIds, userId, playNewMessage);
   
   // Geolocation hook
   const geolocation = useGeolocation();

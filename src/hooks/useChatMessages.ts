@@ -15,9 +15,10 @@ interface UseChatMessagesOptions {
   offerId: string | null;
   userId: string | null;
   senderType: "restaurant" | "motoboy";
+  onNewMessage?: () => void;
 }
 
-export function useChatMessages({ offerId, userId, senderType }: UseChatMessagesOptions) {
+export function useChatMessages({ offerId, userId, senderType, onNewMessage }: UseChatMessagesOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -126,9 +127,10 @@ export function useChatMessages({ offerId, userId, senderType }: UseChatMessages
           const newMessage = payload.new as ChatMessage;
           setMessages(current => [...current, newMessage]);
           
-          // Increment unread if not from current user
+          // Increment unread if not from current user and play sound
           if (newMessage.sender_id !== userId) {
             setUnreadCount(c => c + 1);
+            onNewMessage?.();
           }
         }
       )
@@ -152,7 +154,7 @@ export function useChatMessages({ offerId, userId, senderType }: UseChatMessages
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [offerId, userId, fetchMessages]);
+  }, [offerId, userId, fetchMessages, onNewMessage]);
 
   return {
     messages,
@@ -166,7 +168,7 @@ export function useChatMessages({ offerId, userId, senderType }: UseChatMessages
 }
 
 // Hook to get unread count for multiple offers
-export function useUnreadCounts(offerIds: string[], userId: string | null) {
+export function useUnreadCounts(offerIds: string[], userId: string | null, onNewMessage?: () => void) {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -215,6 +217,7 @@ export function useUnreadCounts(offerIds: string[], userId: string | null) {
               ...c,
               [newMessage.offer_id]: (c[newMessage.offer_id] || 0) + 1,
             }));
+            onNewMessage?.();
           }
         }
       )
