@@ -31,7 +31,8 @@ import {
   Trash2,
   MoreVertical,
   MessageCircle,
-  Phone
+  Phone,
+  ChevronRight
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -46,6 +47,7 @@ import RatingModal from "@/components/RatingModal";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { ChatModal } from "@/components/ChatModal";
 import { useUnreadCounts } from "@/hooks/useChatMessages";
+import { AcceptedOfferDetailsModal } from "@/components/AcceptedOfferDetailsModal";
 
 interface Restaurant {
   id: string;
@@ -63,6 +65,7 @@ interface Offer {
   address: string;
   time_start: string;
   time_end: string;
+  offer_date?: string | null;
   is_accepted: boolean;
   accepted_by: string | null;
   created_at: string;
@@ -72,7 +75,14 @@ interface Offer {
   motoboy_avatar_url?: string | null;
   motoboy_rating?: number;
   motoboy_review_count?: number;
-  motoboy_status?: string; // pending, in_progress, completed
+  motoboy_status?: string;
+  payment?: string | null;
+  delivery_range?: string | null;
+  delivery_quantity?: string | null;
+  needs_bag?: boolean | null;
+  can_become_permanent?: boolean | null;
+  includes_meal?: boolean | null;
+  radius?: number | null;
 }
 
 const RestaurantHome = () => {
@@ -86,6 +96,7 @@ const RestaurantHome = () => {
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [offerToDelete, setOfferToDelete] = useState<Offer | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [detailsModalOffer, setDetailsModalOffer] = useState<Offer | null>(null);
   const [chatOffer, setChatOffer] = useState<Offer | null>(null);
 
   // Get unread counts for all accepted offers
@@ -119,10 +130,10 @@ const RestaurantHome = () => {
 
       setRestaurant(restaurantData);
 
-      // Fetch offers created by this restaurant
+      // Fetch offers created by this restaurant with all details
       const { data: offersData } = await supabase
         .from("offers")
-        .select("*")
+        .select("id, restaurant_name, description, address, time_start, time_end, offer_date, is_accepted, accepted_by, created_at, payment, delivery_range, delivery_quantity, needs_bag, can_become_permanent, includes_meal, radius")
         .eq("created_by", session.user.id)
         .order("created_at", { ascending: false });
 
@@ -559,12 +570,15 @@ const RestaurantHome = () => {
                   </div>
 
                   {offer.is_accepted && (
-                    <div className="mt-3 pt-3 border-t space-y-3">
-                      {/* Motoboy Card */}
-                      <div className={`p-3 rounded-xl border ${
+                    <div 
+                      className="mt-3 pt-3 border-t cursor-pointer group"
+                      onClick={() => setDetailsModalOffer(offer)}
+                    >
+                      {/* Motoboy Card - Clickable */}
+                      <div className={`p-3 rounded-xl border transition-all group-hover:shadow-md ${
                         offer.motoboy_status === "in_progress" 
-                          ? "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30" 
-                          : "bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20"
+                          ? "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30 group-hover:border-emerald-500/50" 
+                          : "bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20 group-hover:border-blue-500/40"
                       }`}>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-12 w-12 border-2 border-background">
@@ -589,69 +603,29 @@ const RestaurantHome = () => {
                                   {offer.motoboy_rating} ({offer.motoboy_review_count})
                                 </span>
                               )}
-                              {offer.motoboy_phone && (
-                                <span className="flex items-center gap-0.5">
-                                  <Phone className="w-3 h-3" />
-                                  {offer.motoboy_phone}
-                                </span>
+                              {unreadCounts[offer.id] > 0 && (
+                                <Badge 
+                                  variant="destructive" 
+                                  className="h-5 px-1.5 flex items-center justify-center text-[10px] animate-pulse"
+                                >
+                                  <MessageCircle className="w-3 h-3 mr-0.5" />
+                                  {unreadCounts[offer.id]} nova{unreadCounts[offer.id] > 1 ? 's' : ''}
+                                </Badge>
                               )}
                             </div>
                           </div>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                         </div>
                         
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 mt-3">
-                          {offer.motoboy_phone && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => window.open(`tel:${offer.motoboy_phone}`, "_blank")}
-                            >
-                              <Phone className="w-4 h-4 mr-1" />
-                              Ligar
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant={unreadCounts[offer.id] > 0 ? "default" : "outline"}
-                            className="flex-1 relative"
-                            onClick={() => setChatOffer(offer)}
-                          >
-                            <MessageCircle className="w-4 h-4 mr-1" />
-                            Chat
-                            {unreadCounts[offer.id] > 0 && (
-                              <Badge 
-                                variant="destructive" 
-                                className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px] animate-pulse"
-                              >
-                                {unreadCounts[offer.id]}
-                              </Badge>
-                            )}
-                          </Button>
-                          {!offer.has_rating && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedOffer(offer);
-                                setRatingModalOpen(true);
-                              }}
-                            >
-                              <Star className="w-4 h-4" />
-                            </Button>
-                          )}
-                          {offer.has_rating && (
-                            <Badge variant="secondary" className="gap-1 py-2">
-                              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            </Badge>
-                          )}
-                        </div>
+                        {/* Quick hint */}
+                        <p className="text-xs text-muted-foreground mt-2 text-center group-hover:text-foreground transition-colors">
+                          Toque para ver detalhes completos
+                        </p>
                       </div>
                       
                       {/* Status Indicator */}
                       {offer.motoboy_status !== "in_progress" && (
-                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 mt-2">
                           <Clock className="w-3 h-3" />
                           <span>Aguardando chegada do motoboy</span>
                         </div>
@@ -748,6 +722,29 @@ const RestaurantHome = () => {
             contactAvatarUrl={chatOffer.motoboy_avatar_url}
             contactPhone={chatOffer.motoboy_phone}
             contactRating={chatOffer.motoboy_rating}
+          />
+        )}
+
+        {/* Accepted Offer Details Modal */}
+        {detailsModalOffer && restaurant && (
+          <AcceptedOfferDetailsModal
+            open={!!detailsModalOffer}
+            onOpenChange={(open) => !open && setDetailsModalOffer(null)}
+            offer={detailsModalOffer}
+            unreadCount={unreadCounts[detailsModalOffer.id] || 0}
+            onChatClick={() => {
+              setChatOffer(detailsModalOffer);
+              setDetailsModalOffer(null);
+            }}
+            onRateClick={() => {
+              setSelectedOffer(detailsModalOffer);
+              setRatingModalOpen(true);
+              setDetailsModalOffer(null);
+            }}
+            onLiveTrackClick={() => {
+              navigate("/restaurante/motoboy-ao-vivo");
+              setDetailsModalOffer(null);
+            }}
           />
         )}
       </div>
