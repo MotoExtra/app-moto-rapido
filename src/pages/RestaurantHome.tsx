@@ -3,6 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Plus, 
   LogOut, 
@@ -15,8 +25,17 @@ import {
   Loader2,
   CheckCircle2,
   Star,
-  Navigation
+  Navigation,
+  Pencil,
+  Trash2,
+  MoreVertical
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
@@ -58,6 +77,8 @@ const RestaurantHome = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [offerToDelete, setOfferToDelete] = useState<Offer | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -291,6 +312,44 @@ const RestaurantHome = () => {
     return time.slice(0, 5);
   };
 
+  const handleDeleteOffer = async () => {
+    if (!offerToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      // First delete any accepted_offers for this offer
+      await supabase
+        .from("accepted_offers")
+        .delete()
+        .eq("offer_id", offerToDelete.id);
+      
+      // Then delete the offer itself
+      const { error } = await supabase
+        .from("offers")
+        .delete()
+        .eq("id", offerToDelete.id);
+      
+      if (error) throw error;
+      
+      setOffers(current => current.filter(o => o.id !== offerToDelete.id));
+      
+      toast({
+        title: "Extra apagado",
+        description: "O extra foi removido com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao apagar extra:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível apagar o extra. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setOfferToDelete(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -303,8 +362,49 @@ const RestaurantHome = () => {
   const acceptedOffers = offers.filter(o => o.is_accepted);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
+    <>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!offerToDelete} onOpenChange={(open) => !open && setOfferToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar Extra</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja apagar o extra "{offerToDelete?.description}"?
+              <br /><br />
+              {offerToDelete?.is_accepted ? (
+                <span className="text-amber-600 font-medium">
+                  ⚠️ Este extra já foi aceito por um motoboy. Apagá-lo também cancelará a aceitação.
+                </span>
+              ) : (
+                <span>Esta ação não pode ser desfeita.</span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteOffer}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Apagando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Apagar
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="min-h-screen bg-background pb-24">
+        {/* Header */}
       <header className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-4 pb-6">
         <div className="flex items-center justify-between mb-4">
           <img src={logo} alt="MotoExtra" className="h-10" />
@@ -390,20 +490,47 @@ const RestaurantHome = () => {
               <Card key={offer.id} className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <div>
+                    <div className="flex-1 min-w-0 pr-2">
                       <h3 className="font-semibold">{offer.description}</h3>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {offer.address}
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{offer.address}</span>
                       </p>
                     </div>
-                    <Badge variant={offer.is_accepted ? "default" : "secondary"}>
-                      {offer.is_accepted ? (
-                        <><CheckCircle2 className="w-3 h-3 mr-1" /> Aceito</>
-                      ) : (
-                        <><Clock className="w-3 h-3 mr-1" /> Disponível</>
-                      )}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={offer.is_accepted ? "default" : "secondary"}>
+                        {offer.is_accepted ? (
+                          <><CheckCircle2 className="w-3 h-3 mr-1" /> Aceito</>
+                        ) : (
+                          <><Clock className="w-3 h-3 mr-1" /> Disponível</>
+                        )}
+                      </Badge>
+                      
+                      {/* Actions Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={() => navigate(`/restaurante/editar-extra/${offer.id}`)}
+                            className="cursor-pointer"
+                          >
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => setOfferToDelete(offer)}
+                            className="cursor-pointer text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Apagar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -543,26 +670,27 @@ const RestaurantHome = () => {
         </div>
       </nav>
 
-      {/* Rating Modal */}
-      {selectedOffer && restaurant && (
-        <RatingModal
-          open={ratingModalOpen}
-          onOpenChange={setRatingModalOpen}
-          offerId={selectedOffer.id}
-          motoboyId={selectedOffer.accepted_by || ""}
-          motoboyName={selectedOffer.motoboy_name || "Motoboy"}
-          restaurantId={restaurant.id}
-          onRatingComplete={() => {
-            setOffers(current =>
-              current.map(o =>
-                o.id === selectedOffer.id ? { ...o, has_rating: true } : o
-              )
-            );
-            setSelectedOffer(null);
-          }}
-        />
-      )}
-    </div>
+        {/* Rating Modal */}
+        {selectedOffer && restaurant && (
+          <RatingModal
+            open={ratingModalOpen}
+            onOpenChange={setRatingModalOpen}
+            offerId={selectedOffer.id}
+            motoboyId={selectedOffer.accepted_by || ""}
+            motoboyName={selectedOffer.motoboy_name || "Motoboy"}
+            restaurantId={restaurant.id}
+            onRatingComplete={() => {
+              setOffers(current =>
+                current.map(o =>
+                  o.id === selectedOffer.id ? { ...o, has_rating: true } : o
+                )
+              );
+              setSelectedOffer(null);
+            }}
+          />
+        )}
+      </div>
+    </>
   );
 };
 

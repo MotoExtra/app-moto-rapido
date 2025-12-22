@@ -16,6 +16,7 @@ import Home from "./pages/Home";
 import RestaurantHome from "./pages/RestaurantHome";
 import RestaurantProfile from "./pages/RestaurantProfile";
 import CreateOffer from "./pages/CreateOffer";
+import EditRestaurantOffer from "./pages/EditRestaurantOffer";
 import LiveMotoboy from "./pages/LiveMotoboy";
 import Ranking from "./pages/Ranking";
 import AcceptedOffers from "./pages/AcceptedOffers";
@@ -76,6 +77,7 @@ const App = () => {
               <Route path="/restaurante/home" element={<ProtectedRoute allowedUserType="restaurant"><RestaurantHome /></ProtectedRoute>} />
               <Route path="/restaurante/perfil" element={<ProtectedRoute allowedUserType="restaurant"><RestaurantProfile /></ProtectedRoute>} />
               <Route path="/restaurante/criar-extra" element={<ProtectedRoute allowedUserType="restaurant"><CreateOffer /></ProtectedRoute>} />
+              <Route path="/restaurante/editar-extra/:id" element={<ProtectedRoute allowedUserType="restaurant"><EditRestaurantOffer /></ProtectedRoute>} />
               <Route path="/restaurante/motoboy-ao-vivo" element={<ProtectedRoute allowedUserType="restaurant"><LiveMotoboy /></ProtectedRoute>} />
               
               <Route path="/install" element={<Install />} />
