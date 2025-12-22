@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, MapPin, Package, Star, ArrowLeft, Phone, X, Loader2, MapPinCheck, Navigation } from "lucide-react";
+import { Clock, MapPin, Package, Star, ArrowLeft, Phone, X, Loader2, MapPinCheck, Navigation, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatPayment } from "@/lib/utils";
@@ -22,6 +22,8 @@ import OfferLocationMap from "@/components/OfferLocationMap";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useLiveLocationBroadcast } from "@/hooks/useLiveLocationBroadcast";
 import { isWithinRadius, isWithinTimeWindow, calculateDistance } from "@/lib/distance";
+import { ChatModal } from "@/components/ChatModal";
+import { useUnreadCounts } from "@/hooks/useChatMessages";
 interface AcceptedOffer {
   id: string;
   status: string;
@@ -65,6 +67,11 @@ const AcceptedOffers = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [arrivingId, setArrivingId] = useState<string | null>(null);
   const [motoboyName, setMotoboyName] = useState<string>("Motoboy");
+  const [chatOffer, setChatOffer] = useState<AcceptedOffer | null>(null);
+  
+  // Get unread counts for all accepted offers
+  const offerIds = useMemo(() => acceptedOffers.map(ao => ao.offer.id), [acceptedOffers]);
+  const unreadCounts = useUnreadCounts(offerIds, userId);
   
   // Geolocation hook
   const geolocation = useGeolocation();
@@ -429,9 +436,33 @@ const AcceptedOffers = () => {
                 </div>
 
                 {acceptedOffer.offer.phone && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
-                    <span>{acceptedOffer.offer.phone}</span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => window.open(`tel:${acceptedOffer.offer.phone}`, "_blank")}
+                    >
+                      <Phone className="w-4 h-4 mr-1" />
+                      Ligar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={unreadCounts[acceptedOffer.offer.id] > 0 ? "default" : "outline"}
+                      className="flex-1 relative"
+                      onClick={() => setChatOffer(acceptedOffer)}
+                    >
+                      <MessageCircle className="w-4 h-4 mr-1" />
+                      Chat
+                      {unreadCounts[acceptedOffer.offer.id] > 0 && (
+                        <Badge 
+                          variant="destructive" 
+                          className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px] animate-pulse"
+                        >
+                          {unreadCounts[acceptedOffer.offer.id]}
+                        </Badge>
+                      )}
+                    </Button>
                   </div>
                 )}
 
@@ -635,6 +666,19 @@ const AcceptedOffers = () => {
             );
             setSelectedOffer(null);
           }}
+        />
+      )}
+
+      {/* Chat Modal */}
+      {chatOffer && userId && (
+        <ChatModal
+          open={!!chatOffer}
+          onOpenChange={(open) => !open && setChatOffer(null)}
+          offerId={chatOffer.offer.id}
+          userId={userId}
+          senderType="motoboy"
+          contactName={chatOffer.offer.restaurant_name}
+          contactPhone={chatOffer.offer.phone}
         />
       )}
     </>

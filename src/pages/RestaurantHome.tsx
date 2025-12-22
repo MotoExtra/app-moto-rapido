@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +29,9 @@ import {
   Navigation,
   Pencil,
   Trash2,
-  MoreVertical
+  MoreVertical,
+  MessageCircle,
+  Phone
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,6 +44,8 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import RatingModal from "@/components/RatingModal";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { ChatModal } from "@/components/ChatModal";
+import { useUnreadCounts } from "@/hooks/useChatMessages";
 
 interface Restaurant {
   id: string;
@@ -63,6 +68,8 @@ interface Offer {
   created_at: string;
   has_rating?: boolean;
   motoboy_name?: string;
+  motoboy_phone?: string;
+  motoboy_avatar_url?: string | null;
   motoboy_rating?: number;
   motoboy_review_count?: number;
   motoboy_status?: string; // pending, in_progress, completed
@@ -79,6 +86,14 @@ const RestaurantHome = () => {
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [offerToDelete, setOfferToDelete] = useState<Offer | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [chatOffer, setChatOffer] = useState<Offer | null>(null);
+
+  // Get unread counts for all accepted offers
+  const acceptedOfferIds = useMemo(() => 
+    offers.filter(o => o.is_accepted).map(o => o.id), 
+    [offers]
+  );
+  const unreadCounts = useUnreadCounts(acceptedOfferIds, restaurant?.id || null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -121,14 +136,14 @@ const RestaurantHome = () => {
 
         const ratedOfferIds = new Set(ratingsData?.map(r => r.offer_id) || []);
 
-        // Fetch motoboy names for accepted offers
+        // Fetch motoboy profiles for accepted offers
         const acceptedMotoboyIds = offersData.filter(o => o.is_accepted && o.accepted_by).map(o => o.accepted_by);
         const { data: motoboyProfiles } = await supabase
           .from("profiles")
-          .select("id, name")
+          .select("id, name, phone, avatar_url")
           .in("id", acceptedMotoboyIds);
 
-        const motoboyNameMap = new Map(motoboyProfiles?.map(p => [p.id, p.name]) || []);
+        const motoboyProfileMap = new Map(motoboyProfiles?.map(p => [p.id, p]) || []);
 
         // Fetch motoboy ratings from other restaurants
         const { data: motoboyRatingsData } = await supabase
@@ -160,10 +175,13 @@ const RestaurantHome = () => {
 
         const enrichedOffers = offersData.map(offer => {
           const motoboyRating = offer.accepted_by ? ratingsByMotoboy.get(offer.accepted_by) : null;
+          const motoboyProfile = offer.accepted_by ? motoboyProfileMap.get(offer.accepted_by) : null;
           return {
             ...offer,
             has_rating: ratedOfferIds.has(offer.id),
-            motoboy_name: offer.accepted_by ? motoboyNameMap.get(offer.accepted_by) || "Motoboy" : undefined,
+            motoboy_name: motoboyProfile?.name || "Motoboy",
+            motoboy_phone: motoboyProfile?.phone || undefined,
+            motoboy_avatar_url: motoboyProfile?.avatar_url || null,
             motoboy_rating: motoboyRating ? Math.round((motoboyRating.total / motoboyRating.count) * 10) / 10 : undefined,
             motoboy_review_count: motoboyRating?.count || 0,
             motoboy_status: statusByOfferId.get(offer.id) || "pending"
@@ -541,75 +559,103 @@ const RestaurantHome = () => {
                   </div>
 
                   {offer.is_accepted && (
-                    <div className="mt-3 pt-3 border-t space-y-2">
-                      {/* Motoboy Status Indicator */}
-                      {offer.motoboy_status === "in_progress" && (
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 animate-pulse">
-                          <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
-                            <Navigation className="w-4 h-4 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                              🏍️ Motoboy chegou!
-                            </p>
-                            <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
-                              {offer.motoboy_name} está pronto para trabalhar
-                            </p>
+                    <div className="mt-3 pt-3 border-t space-y-3">
+                      {/* Motoboy Card */}
+                      <div className={`p-3 rounded-xl border ${
+                        offer.motoboy_status === "in_progress" 
+                          ? "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30" 
+                          : "bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20"
+                      }`}>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12 border-2 border-background">
+                            <AvatarImage src={offer.motoboy_avatar_url || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {offer.motoboy_name?.charAt(0).toUpperCase() || "M"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold truncate">{offer.motoboy_name}</p>
+                              {offer.motoboy_status === "in_progress" && (
+                                <Badge variant="default" className="bg-emerald-500 text-white text-[10px] px-1.5 py-0">
+                                  Chegou
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {offer.motoboy_rating !== undefined && offer.motoboy_review_count && offer.motoboy_review_count > 0 && (
+                                <span className="flex items-center gap-0.5">
+                                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                  {offer.motoboy_rating} ({offer.motoboy_review_count})
+                                </span>
+                              )}
+                              {offer.motoboy_phone && (
+                                <span className="flex items-center gap-0.5">
+                                  <Phone className="w-3 h-3" />
+                                  {offer.motoboy_phone}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      )}
-                      
-                      {offer.motoboy_status !== "in_progress" && (
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                          <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-                            <Clock className="w-4 h-4 text-amber-600" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                              Aguardando chegada
-                            </p>
-                            <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
-                              {offer.motoboy_name} confirmou o extra
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm text-green-600">
-                          <User className="w-4 h-4" />
-                          {offer.motoboy_name || "Motoboy confirmado"}
-                        </div>
-                        {offer.motoboy_rating !== undefined && offer.motoboy_review_count && offer.motoboy_review_count > 0 && (
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10">
-                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                            <span className="text-xs font-bold text-amber-600">{offer.motoboy_rating}</span>
-                            <span className="text-xs text-muted-foreground">({offer.motoboy_review_count})</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-end gap-2">
-                        {!offer.has_rating && (
+                        
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 mt-3">
+                          {offer.motoboy_phone && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => window.open(`tel:${offer.motoboy_phone}`, "_blank")}
+                            >
+                              <Phone className="w-4 h-4 mr-1" />
+                              Ligar
+                            </Button>
+                          )}
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedOffer(offer);
-                              setRatingModalOpen(true);
-                            }}
-                            className="gap-1"
+                            variant={unreadCounts[offer.id] > 0 ? "default" : "outline"}
+                            className="flex-1 relative"
+                            onClick={() => setChatOffer(offer)}
                           >
-                            <Star className="w-4 h-4" />
-                            Avaliar
+                            <MessageCircle className="w-4 h-4 mr-1" />
+                            Chat
+                            {unreadCounts[offer.id] > 0 && (
+                              <Badge 
+                                variant="destructive" 
+                                className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px] animate-pulse"
+                              >
+                                {unreadCounts[offer.id]}
+                              </Badge>
+                            )}
                           </Button>
-                        )}
-                        {offer.has_rating && (
-                          <Badge variant="secondary" className="gap-1">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            Avaliado
-                          </Badge>
-                        )}
+                          {!offer.has_rating && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedOffer(offer);
+                                setRatingModalOpen(true);
+                              }}
+                            >
+                              <Star className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {offer.has_rating && (
+                            <Badge variant="secondary" className="gap-1 py-2">
+                              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            </Badge>
+                          )}
+                        </div>
                       </div>
+                      
+                      {/* Status Indicator */}
+                      {offer.motoboy_status !== "in_progress" && (
+                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+                          <Clock className="w-3 h-3" />
+                          <span>Aguardando chegada do motoboy</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -687,6 +733,21 @@ const RestaurantHome = () => {
               );
               setSelectedOffer(null);
             }}
+          />
+        )}
+
+        {/* Chat Modal */}
+        {chatOffer && restaurant && (
+          <ChatModal
+            open={!!chatOffer}
+            onOpenChange={(open) => !open && setChatOffer(null)}
+            offerId={chatOffer.id}
+            userId={restaurant.id}
+            senderType="restaurant"
+            contactName={chatOffer.motoboy_name || "Motoboy"}
+            contactAvatarUrl={chatOffer.motoboy_avatar_url}
+            contactPhone={chatOffer.motoboy_phone}
+            contactRating={chatOffer.motoboy_rating}
           />
         )}
       </div>
