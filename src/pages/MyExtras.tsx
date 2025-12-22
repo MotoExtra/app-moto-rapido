@@ -128,7 +128,7 @@ const MyExtras = () => {
                 <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
                   <Bike className="w-5 h-5 text-blue-600" />
                 </div>
-                <h1 className="text-xl font-bold text-foreground">Meus Extras</h1>
+                <h1 className="text-xl font-bold text-foreground">Extras Ofertados</h1>
               </div>
             </div>
             <Button
