@@ -5,10 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Camera, Package, Clock, Save, Loader2, Pencil, Trash2, Plus, Bike, MapPin, Star } from "lucide-react";
+import { ArrowLeft, Camera, Package, Clock, Save, Loader2, MapPin, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ES_CITIES } from "@/lib/cities";
@@ -25,17 +24,6 @@ interface ProfileData {
   avatar_url: string;
 }
 
-interface MyOffer {
-  id: string;
-  restaurant_name: string;
-  description: string;
-  address: string;
-  time_start: string;
-  time_end: string;
-  is_accepted: boolean;
-}
-
-
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -45,7 +33,6 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [myOffers, setMyOffers] = useState<MyOffer[]>([]);
   const [cityPreferences, setCityPreferences] = useState<string[]>([]);
   const [savingCities, setSavingCities] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
@@ -70,7 +57,6 @@ const Profile = () => {
 
       setUser(user);
       await fetchProfile(user.id);
-      await fetchMyOffers(user.id);
       await fetchCityPreferences(user.id);
     };
 
@@ -120,21 +106,6 @@ const Profile = () => {
     }
   };
 
-  const fetchMyOffers = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("offers")
-        .select("id, restaurant_name, description, address, time_start, time_end, is_accepted")
-        .eq("created_by", userId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      setMyOffers(data || []);
-    } catch (error) {
-      console.error("Erro ao buscar meus extras:", error);
-    }
-  };
 
   const fetchCityPreferences = async (userId: string) => {
     try {
@@ -200,32 +171,6 @@ const Profile = () => {
     }
   };
 
-  const handleDeleteOffer = async (offerId: string) => {
-    if (!confirm("Tem certeza que deseja excluir este extra?")) return;
-
-    try {
-      const { error } = await supabase
-        .from("offers")
-        .delete()
-        .eq("id", offerId);
-
-      if (error) throw error;
-
-      setMyOffers((current) => current.filter((o) => o.id !== offerId));
-
-      toast({
-        title: "Extra excluído",
-        description: "O extra foi removido com sucesso.",
-      });
-    } catch (error) {
-      console.error("Erro ao excluir extra:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível excluir o extra.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -591,91 +536,6 @@ const Profile = () => {
           )}
         </Button>
 
-        {/* My Extras Section */}
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-blue-500/5">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                  <Bike className="w-4 h-4 text-blue-600" />
-                </div>
-                Extra Ofertado
-              </CardTitle>
-              <Button
-                size="sm"
-                onClick={() => navigate("/ofertar-extra")}
-                className="rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Novo
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {myOffers.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Você ainda não criou nenhum extra</p>
-                <p className="text-xs mt-1">Oferte extras para outros motoboys!</p>
-              </div>
-            ) : (
-              myOffers.map((offer) => (
-                <div
-                  key={offer.id}
-                  className="p-3 rounded-xl bg-muted/30 border border-border/50 hover:border-blue-500/30 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-sm truncate">{offer.restaurant_name}</h4>
-                        {offer.is_accepted ? (
-                          <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
-                            Aceito
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-xs">
-                            Disponível
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">{offer.description}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {offer.time_start} - {offer.time_end}
-                        </span>
-                        <span className="flex items-center gap-1 truncate">
-                          <MapPin className="w-3 h-3" />
-                          {offer.address}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-1.5 flex-shrink-0">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg hover:bg-blue-500/10 hover:border-blue-500/50 hover:text-blue-600"
-                        onClick={() => navigate(`/editar-extra/${offer.id}`)}
-                        title="Editar"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive"
-                        onClick={() => handleDeleteOffer(offer.id)}
-                        title="Excluir"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
 
       </div>
 

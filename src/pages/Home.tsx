@@ -636,6 +636,19 @@ const Home = () => {
                       </div>
                     </button>
                     
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate("/meus-extras"); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors text-left"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                        <Bike className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Meus Extras</p>
+                        <p className="text-xs text-muted-foreground">Extras que você ofertou</p>
+                      </div>
+                    </button>
+                    
                     {isAdmin && (
                       <button
                         onClick={() => { setMenuOpen(false); navigate("/admin"); }}
