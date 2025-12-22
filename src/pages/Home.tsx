@@ -644,7 +644,7 @@ const Home = () => {
                         <Bike className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-medium">Meus Extras</p>
+                        <p className="font-medium">Extras Ofertados</p>
                         <p className="text-xs text-muted-foreground">Extras que você ofertou</p>
                       </div>
                     </button>
