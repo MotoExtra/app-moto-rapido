@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 import { ES_CITIES } from "@/lib/cities";
+import { geocodeAddress } from "@/lib/geocoding";
 import AddressMapPreview from "@/components/AddressMapPreview";
 import PaymentFieldsStructured from "@/components/PaymentFieldsStructured";
 
@@ -192,6 +193,9 @@ const OfferExtra = () => {
       // Concatenate address for geocoding
       const fullAddress = `${formData.rua}, ${formData.numero} - ${formData.bairro}, ${formData.city}, ES, Brasil`;
 
+      // Geocodificar o endereço para obter coordenadas
+      const coordinates = await geocodeAddress(fullAddress);
+
       const { error } = await supabase.from("offers").insert({
         restaurant_name: formData.restaurant_name,
         description: formData.description,
@@ -214,6 +218,8 @@ const OfferExtra = () => {
         offer_date: formData.offerDate ? format(formData.offerDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
         rating: 5.0,
         review_count: 0,
+        lat: coordinates?.lat || null,
+        lng: coordinates?.lng || null,
       });
 
       if (error) throw error;
