@@ -1017,12 +1017,14 @@ const Home = () => {
                       <span>{offer.time_start} até {offer.time_end}</span>
                     </div>
 
-                    <div className="flex items-center text-sm text-foreground/80">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
-                        <MapPin className="w-4 h-4 text-primary" />
+                    {offer.delivery_range && (
+                      <div className="flex items-center text-sm text-foreground/80">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5">
+                          <MapPin className="w-4 h-4 text-primary" />
+                        </div>
+                        <span>Raio: {offer.delivery_range}</span>
                       </div>
-                      <span>Raio: {offer.delivery_range}</span>
-                    </div>
+                    )}
 
                     {offer.delivery_quantity && (
                       <div className="flex items-center text-sm text-foreground/80">
