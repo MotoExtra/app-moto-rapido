@@ -428,15 +428,19 @@ const AcceptedOffers = () => {
                       {acceptedOffer.offer.time_start} até {acceptedOffer.offer.time_end}
                     </span>
                   </div>
-                  <Badge variant="outline" className="ml-auto bg-cyan-500/10 text-cyan-600 border-cyan-500/30 text-xs">
-                    {acceptedOffer.offer.radius} km
-                  </Badge>
+                  {acceptedOffer.offer.radius && (
+                    <Badge variant="outline" className="ml-auto bg-cyan-500/10 text-cyan-600 border-cyan-500/30 text-xs">
+                      {acceptedOffer.offer.radius} km
+                    </Badge>
+                  )}
                 </div>
 
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Package className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span>Raio: {acceptedOffer.offer.delivery_range}</span>
-                </div>
+                {acceptedOffer.offer.delivery_range && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Package className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>Raio: {acceptedOffer.offer.delivery_range}</span>
+                  </div>
+                )}
 
                 {acceptedOffer.offer.delivery_quantity && (
                   <div className="flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400">
