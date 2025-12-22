@@ -435,8 +435,15 @@ const AcceptedOffers = () => {
 
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Package className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span>Faz {acceptedOffer.offer.delivery_range}</span>
+                  <span>Raio: {acceptedOffer.offer.delivery_range}</span>
                 </div>
+
+                {acceptedOffer.offer.delivery_quantity && (
+                  <div className="flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                    <Package className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>Entregas: {acceptedOffer.offer.delivery_quantity}</span>
+                  </div>
+                )}
 
                 {acceptedOffer.offer.phone && (
                   <div className="flex items-center gap-2">
