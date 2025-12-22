@@ -1,0 +1,408 @@
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  ArrowLeft,
+  Phone,
+  MapPin,
+  Clock,
+  Navigation,
+  User,
+  RefreshCw,
+  AlertCircle,
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { calculateDistance } from '@/lib/distance';
+import LiveMotoboyMap from '@/components/LiveMotoboyMap';
+
+interface MotoboyLocation {
+  user_id: string;
+  offer_id: string;
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+  updated_at: string;
+}
+
+interface ActiveMotoboy {
+  id: string;
+  offer_id: string;
+  motoboy_name: string;
+  motoboy_phone: string | null;
+  offer_address: string;
+  offer_lat: number | null;
+  offer_lng: number | null;
+  offer_description: string;
+  time_start: string;
+  time_end: string;
+  location: MotoboyLocation | null;
+  accepted_at: string;
+}
+
+const LiveMotoboy = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [activeMotoboys, setActiveMotoboys] = useState<ActiveMotoboy[]>([]);
+  const [selectedMotoboy, setSelectedMotoboy] = useState<ActiveMotoboy | null>(null);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+
+  // Fetch active motoboys (status = in_progress)
+  useEffect(() => {
+    const fetchActiveMotoboys = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate('/login/restaurante');
+          return;
+        }
+
+        setRestaurantId(user.id);
+
+        // Get offers created by this restaurant that are in_progress
+        const { data: offersData, error: offersError } = await supabase
+          .from('offers')
+          .select('id, description, address, lat, lng, time_start, time_end, accepted_by')
+          .eq('created_by', user.id)
+          .eq('is_accepted', true);
+
+        if (offersError) throw offersError;
+
+        if (!offersData || offersData.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        // Get accepted_offers with status = in_progress
+        const offerIds = offersData.map(o => o.id);
+        const { data: acceptedData, error: acceptedError } = await supabase
+          .from('accepted_offers')
+          .select('offer_id, user_id, status, accepted_at')
+          .in('offer_id', offerIds)
+          .eq('status', 'in_progress');
+
+        if (acceptedError) throw acceptedError;
+
+        if (!acceptedData || acceptedData.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        // Get motoboy profiles
+        const motoboyIds = acceptedData.map(a => a.user_id);
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, name, phone')
+          .in('id', motoboyIds);
+
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+        // Get motoboy locations
+        const { data: locationsData } = await supabase
+          .from('motoboy_locations')
+          .select('*')
+          .in('offer_id', offerIds);
+
+        const locationsMap = new Map(locationsData?.map(l => [l.offer_id, l]) || []);
+
+        // Build active motoboys list
+        const motoboys: ActiveMotoboy[] = acceptedData.map(accepted => {
+          const offer = offersData.find(o => o.id === accepted.offer_id)!;
+          const profile = profilesMap.get(accepted.user_id);
+          const location = locationsMap.get(accepted.offer_id);
+
+          return {
+            id: accepted.user_id,
+            offer_id: accepted.offer_id,
+            motoboy_name: profile?.name || 'Motoboy',
+            motoboy_phone: profile?.phone || null,
+            offer_address: offer.address,
+            offer_lat: offer.lat,
+            offer_lng: offer.lng,
+            offer_description: offer.description,
+            time_start: offer.time_start,
+            time_end: offer.time_end,
+            location: location || null,
+            accepted_at: accepted.accepted_at,
+          };
+        });
+
+        setActiveMotoboys(motoboys);
+        if (motoboys.length > 0) {
+          setSelectedMotoboy(motoboys[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching active motoboys:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível carregar os motoboys ativos.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActiveMotoboys();
+
+    // Set up realtime listener for location updates
+    const channel = supabase
+      .channel('live-motoboy-locations')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'motoboy_locations',
+        },
+        (payload) => {
+          const newLocation = payload.new as MotoboyLocation;
+          
+          setActiveMotoboys(current =>
+            current.map(m =>
+              m.offer_id === newLocation.offer_id
+                ? { ...m, location: newLocation }
+                : m
+            )
+          );
+
+          // Update selected motoboy if it's the same
+          setSelectedMotoboy(current =>
+            current && current.offer_id === newLocation.offer_id
+              ? { ...current, location: newLocation }
+              : current
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [navigate, toast]);
+
+  const formatTime = (time: string) => time.slice(0, 5);
+
+  const getTimeSinceCheckin = (acceptedAt: string) => {
+    const now = new Date();
+    const checkin = new Date(acceptedAt);
+    const diffMs = now.getTime() - checkin.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 60) {
+      return `${diffMins}min`;
+    }
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return `${hours}h ${mins}min`;
+  };
+
+  const getLastUpdateTime = (updatedAt: string | undefined) => {
+    if (!updatedAt) return 'Sem dados';
+    
+    const now = new Date();
+    const updated = new Date(updatedAt);
+    const diffMs = now.getTime() - updated.getTime();
+    const diffSecs = Math.floor(diffMs / 1000);
+    
+    if (diffSecs < 60) {
+      return `há ${diffSecs}s`;
+    }
+    const mins = Math.floor(diffSecs / 60);
+    return `há ${mins}min`;
+  };
+
+  const getDistance = useMemo(() => {
+    if (!selectedMotoboy?.location || !selectedMotoboy.offer_lat || !selectedMotoboy.offer_lng) {
+      return null;
+    }
+    return calculateDistance(
+      selectedMotoboy.location.lat,
+      selectedMotoboy.location.lng,
+      selectedMotoboy.offer_lat,
+      selectedMotoboy.offer_lng
+    );
+  }, [selectedMotoboy]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Carregando rastreamento...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeMotoboys.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 bg-background border-b">
+          <div className="p-4 flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/restaurante/home')}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-xl font-bold">Motoboy ao Vivo</h1>
+          </div>
+        </header>
+
+        <div className="p-4 flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Navigation className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <h2 className="text-lg font-semibold mb-2">Nenhum motoboy ativo</h2>
+          <p className="text-muted-foreground text-center mb-4">
+            Quando um motoboy apertar "CHEGUEI", você poderá acompanhá-lo em tempo real aqui.
+          </p>
+          <Button onClick={() => navigate('/restaurante/home')}>
+            Voltar para Extras
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b">
+        <div className="p-4 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/restaurante/home')}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              Motoboy ao Vivo
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {activeMotoboys.length} motoboy{activeMotoboys.length > 1 ? 's' : ''} em atividade
+            </p>
+          </div>
+        </div>
+      </header>
+
+      {/* Map Container */}
+      <div className="flex-1 relative">
+        {selectedMotoboy?.location && selectedMotoboy.offer_lat && selectedMotoboy.offer_lng ? (
+          <LiveMotoboyMap
+            motoboyLat={selectedMotoboy.location.lat}
+            motoboyLng={selectedMotoboy.location.lng}
+            restaurantLat={selectedMotoboy.offer_lat}
+            restaurantLng={selectedMotoboy.offer_lng}
+            motoboyName={selectedMotoboy.motoboy_name}
+            restaurantName={selectedMotoboy.offer_description}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-muted/30">
+            <div className="text-center p-8">
+              <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">
+                Aguardando posição do motoboy...
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                A localização será atualizada automaticamente
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Floating Card with Motoboy Info */}
+        {selectedMotoboy && (
+          <Card className="absolute bottom-4 left-4 right-4 shadow-2xl border-0 bg-background/95 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                {/* Motoboy Avatar */}
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
+                  <User className="w-7 h-7 text-white" />
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-lg truncate">{selectedMotoboy.motoboy_name}</h3>
+                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+                      <Navigation className="w-3 h-3 mr-1" />
+                      Em rota
+                    </Badge>
+                  </div>
+
+                  {/* Extra info */}
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                    <MapPin className="w-3 h-3" />
+                    <span className="truncate">{selectedMotoboy.offer_description}</span>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="p-1.5 rounded-lg bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Tempo</p>
+                      <p className="text-sm font-bold text-foreground">
+                        {getTimeSinceCheckin(selectedMotoboy.accepted_at)}
+                      </p>
+                    </div>
+                    <div className="p-1.5 rounded-lg bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Distância</p>
+                      <p className="text-sm font-bold text-foreground">
+                        {getDistance !== null ? `${getDistance.toFixed(1)} km` : '-'}
+                      </p>
+                    </div>
+                    <div className="p-1.5 rounded-lg bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Atualizado</p>
+                      <p className="text-sm font-bold text-foreground">
+                        {getLastUpdateTime(selectedMotoboy.location?.updated_at)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Horário */}
+                  <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span>
+                      Horário: {formatTime(selectedMotoboy.time_start)} - {formatTime(selectedMotoboy.time_end)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Call Button */}
+                {selectedMotoboy.motoboy_phone && (
+                  <Button
+                    size="icon"
+                    className="shrink-0 bg-emerald-500 hover:bg-emerald-600"
+                    onClick={() => window.open(`tel:${selectedMotoboy.motoboy_phone}`, '_self')}
+                  >
+                    <Phone className="w-5 h-5" />
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Motoboy Selector (if multiple) */}
+        {activeMotoboys.length > 1 && (
+          <div className="absolute top-4 right-4 flex flex-col gap-2">
+            {activeMotoboys.map((motoboy) => (
+              <Button
+                key={motoboy.offer_id}
+                size="sm"
+                variant={selectedMotoboy?.offer_id === motoboy.offer_id ? 'default' : 'outline'}
+                className="shadow-lg"
+                onClick={() => setSelectedMotoboy(motoboy)}
+              >
+                <User className="w-4 h-4 mr-1" />
+                {motoboy.motoboy_name.split(' ')[0]}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default LiveMotoboy;
