@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2, Phone, MessageCircle } from "lucide-react";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { ChatBubble } from "@/components/ChatBubble";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 
 interface ChatModalProps {
   open: boolean;
@@ -40,6 +41,7 @@ export function ChatModal({
   const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { playNewMessage } = useNotificationSound();
 
   const {
     messages,
@@ -51,6 +53,7 @@ export function ChatModal({
     offerId: open ? offerId : null,
     userId,
     senderType,
+    onNewMessage: playNewMessage,
   });
 
   // Mark messages as read when modal opens

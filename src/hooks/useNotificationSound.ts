@@ -21,6 +21,11 @@ const NOTIFICATION_SOUNDS = {
     { frequency: 220, duration: 200 },    // A3
     { frequency: 196, duration: 300 },    // G3
   ],
+  // Som para nova mensagem no chat
+  newMessage: [
+    { frequency: 880, duration: 80 },     // A5
+    { frequency: 1108.73, duration: 120 }, // C#6
+  ],
   // Som muito alto e repetitivo para chegada do motoboy
   motoboyArrived: [
     { frequency: 1046.5, duration: 200 },  // C6
@@ -99,6 +104,7 @@ export const useNotificationSound = () => {
   const playNewOffer = useCallback(() => playSound("newOffer"), [playSound]);
   const playError = useCallback(() => playSound("error"), [playSound]);
   const playMotoboyArrived = useCallback(() => playSound("motoboyArrived"), [playSound]);
+  const playNewMessage = useCallback(() => playSound("newMessage"), [playSound]);
 
   return {
     playSound,
@@ -107,5 +113,6 @@ export const useNotificationSound = () => {
     playNewOffer,
     playError,
     playMotoboyArrived,
+    playNewMessage,
   };
 };

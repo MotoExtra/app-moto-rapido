@@ -78,7 +78,7 @@ interface Offer {
 const RestaurantHome = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { playAlert, playSuccess, playMotoboyArrived } = useNotificationSound();
+  const { playAlert, playSuccess, playMotoboyArrived, playNewMessage } = useNotificationSound();
   const [loading, setLoading] = useState(true);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -93,7 +93,7 @@ const RestaurantHome = () => {
     offers.filter(o => o.is_accepted).map(o => o.id), 
     [offers]
   );
-  const unreadCounts = useUnreadCounts(acceptedOfferIds, restaurant?.id || null);
+  const unreadCounts = useUnreadCounts(acceptedOfferIds, restaurant?.id || null, playNewMessage);
 
   useEffect(() => {
     const checkAuth = async () => {
