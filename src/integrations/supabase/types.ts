@@ -124,6 +124,44 @@ export type Database = {
         }
         Relationships: []
       }
+      motoboy_location_history: {
+        Row: {
+          accuracy: number | null
+          id: string
+          lat: number
+          lng: number
+          offer_id: string
+          recorded_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          id?: string
+          lat: number
+          lng: number
+          offer_id: string
+          recorded_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          id?: string
+          lat?: number
+          lng?: number
+          offer_id?: string
+          recorded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motoboy_location_history_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       motoboy_locations: {
         Row: {
           accuracy: number | null
