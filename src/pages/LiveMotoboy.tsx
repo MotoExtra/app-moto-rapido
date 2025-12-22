@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   ArrowLeft,
   Phone,
@@ -12,6 +14,7 @@ import {
   User,
   RefreshCw,
   AlertCircle,
+  Route,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +30,12 @@ interface MotoboyLocation {
   updated_at: string;
 }
 
+interface LocationHistoryPoint {
+  lat: number;
+  lng: number;
+  recorded_at: string;
+}
+
 interface ActiveMotoboy {
   id: string;
   offer_id: string;
@@ -40,6 +49,7 @@ interface ActiveMotoboy {
   time_end: string;
   location: MotoboyLocation | null;
   accepted_at: string;
+  routeHistory: LocationHistoryPoint[];
 }
 
 const LiveMotoboy = () => {
@@ -49,6 +59,7 @@ const LiveMotoboy = () => {
   const [activeMotoboys, setActiveMotoboys] = useState<ActiveMotoboy[]>([]);
   const [selectedMotoboy, setSelectedMotoboy] = useState<ActiveMotoboy | null>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [showRouteHistory, setShowRouteHistory] = useState(true);
 
   // Fetch active motoboys (status = in_progress)
   useEffect(() => {
@@ -108,11 +119,27 @@ const LiveMotoboy = () => {
 
         const locationsMap = new Map(locationsData?.map(l => [l.offer_id, l]) || []);
 
+        // Get route history for all offers
+        const { data: historyData } = await supabase
+          .from('motoboy_location_history')
+          .select('offer_id, lat, lng, recorded_at')
+          .in('offer_id', offerIds)
+          .order('recorded_at', { ascending: true });
+
+        // Group history by offer_id
+        const historyByOffer = new Map<string, LocationHistoryPoint[]>();
+        historyData?.forEach(h => {
+          const current = historyByOffer.get(h.offer_id) || [];
+          current.push({ lat: h.lat, lng: h.lng, recorded_at: h.recorded_at });
+          historyByOffer.set(h.offer_id, current);
+        });
+
         // Build active motoboys list
         const motoboys: ActiveMotoboy[] = acceptedData.map(accepted => {
           const offer = offersData.find(o => o.id === accepted.offer_id)!;
           const profile = profilesMap.get(accepted.user_id);
           const location = locationsMap.get(accepted.offer_id);
+          const routeHistory = historyByOffer.get(accepted.offer_id) || [];
 
           return {
             id: accepted.user_id,
@@ -127,6 +154,7 @@ const LiveMotoboy = () => {
             time_end: offer.time_end,
             location: location || null,
             accepted_at: accepted.accepted_at,
+            routeHistory,
           };
         });
 
@@ -149,7 +177,7 @@ const LiveMotoboy = () => {
     fetchActiveMotoboys();
 
     // Set up realtime listener for location updates
-    const channel = supabase
+    const locationChannel = supabase
       .channel('live-motoboy-locations')
       .on(
         'postgres_changes',
@@ -179,8 +207,52 @@ const LiveMotoboy = () => {
       )
       .subscribe();
 
+    // Set up realtime listener for history updates
+    const historyChannel = supabase
+      .channel('live-motoboy-history')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'motoboy_location_history',
+        },
+        (payload) => {
+          const newHistoryPoint = payload.new as { offer_id: string; lat: number; lng: number; recorded_at: string };
+          
+          setActiveMotoboys(current =>
+            current.map(m =>
+              m.offer_id === newHistoryPoint.offer_id
+                ? {
+                    ...m,
+                    routeHistory: [
+                      ...m.routeHistory,
+                      { lat: newHistoryPoint.lat, lng: newHistoryPoint.lng, recorded_at: newHistoryPoint.recorded_at }
+                    ]
+                  }
+                : m
+            )
+          );
+
+          // Update selected motoboy if it's the same
+          setSelectedMotoboy(current =>
+            current && current.offer_id === newHistoryPoint.offer_id
+              ? {
+                  ...current,
+                  routeHistory: [
+                    ...current.routeHistory,
+                    { lat: newHistoryPoint.lat, lng: newHistoryPoint.lng, recorded_at: newHistoryPoint.recorded_at }
+                  ]
+                }
+              : current
+          );
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(locationChannel);
+      supabase.removeChannel(historyChannel);
     };
   }, [navigate, toast]);
 
@@ -283,6 +355,16 @@ const LiveMotoboy = () => {
               {activeMotoboys.length} motoboy{activeMotoboys.length > 1 ? 's' : ''} em atividade
             </p>
           </div>
+          
+          {/* Route History Toggle */}
+          <div className="flex items-center gap-2">
+            <Route className={`w-4 h-4 ${showRouteHistory ? 'text-blue-500' : 'text-muted-foreground'}`} />
+            <Switch
+              id="show-route"
+              checked={showRouteHistory}
+              onCheckedChange={setShowRouteHistory}
+            />
+          </div>
         </div>
       </header>
 
@@ -296,6 +378,8 @@ const LiveMotoboy = () => {
             restaurantLng={selectedMotoboy.offer_lng}
             motoboyName={selectedMotoboy.motoboy_name}
             restaurantName={selectedMotoboy.offer_description}
+            routeHistory={selectedMotoboy.routeHistory}
+            showRouteHistory={showRouteHistory}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted/30">
