@@ -449,36 +449,6 @@ const AcceptedOffers = () => {
                   </div>
                 )}
 
-                {acceptedOffer.offer.phone && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => window.open(`tel:${acceptedOffer.offer.phone}`, "_blank")}
-                    >
-                      <Phone className="w-4 h-4 mr-1" />
-                      Ligar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={unreadCounts[acceptedOffer.offer.id] > 0 ? "default" : "outline"}
-                      className="flex-1 relative"
-                      onClick={() => setChatOffer(acceptedOffer)}
-                    >
-                      <MessageCircle className="w-4 h-4 mr-1" />
-                      Chat
-                      {unreadCounts[acceptedOffer.offer.id] > 0 && (
-                        <Badge 
-                          variant="destructive" 
-                          className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px] animate-pulse"
-                        >
-                          {unreadCounts[acceptedOffer.offer.id]}
-                        </Badge>
-                      )}
-                    </Button>
-                  </div>
-                )}
 
                 {acceptedOffer.offer.payment && (
                   <div className="pt-2 border-t">
@@ -530,6 +500,38 @@ const AcceptedOffers = () => {
                   restaurantName={acceptedOffer.offer.restaurant_name}
                   offerId={acceptedOffer.offer.id}
                 />
+
+                {/* Contact Buttons - at the end of the card */}
+                <div className="flex items-center gap-2 pt-3 border-t">
+                  {acceptedOffer.offer.phone && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => window.open(`tel:${acceptedOffer.offer.phone}`, "_blank")}
+                    >
+                      <Phone className="w-4 h-4 mr-1" />
+                      Ligar
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant={unreadCounts[acceptedOffer.offer.id] > 0 ? "default" : "outline"}
+                    className="flex-1 relative"
+                    onClick={() => setChatOffer(acceptedOffer)}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-1" />
+                    Chat
+                    {unreadCounts[acceptedOffer.offer.id] > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px] animate-pulse"
+                      >
+                        {unreadCounts[acceptedOffer.offer.id]}
+                      </Badge>
+                    )}
+                  </Button>
+                </div>
 
                 {acceptedOffer.status === "pending" && (() => {
                   const arrivalStatus = getArrivalStatus(acceptedOffer.offer);
