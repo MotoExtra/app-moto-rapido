@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { geocodeAddress } from "@/lib/geocoding";
 import AddressMapPreview from "@/components/AddressMapPreview";
 import PaymentFieldsStructured from "@/components/PaymentFieldsStructured";
 
@@ -157,6 +158,9 @@ const CreateOffer = () => {
     setLoading(true);
 
     try {
+      // Geocodificar o endereço para obter coordenadas
+      const coordinates = await geocodeAddress(fullAddress);
+      
       const { data: newOffer, error } = await supabase
         .from("offers")
         .insert({
@@ -179,6 +183,8 @@ const CreateOffer = () => {
           city: restaurant.city,
           radius: 5,
           is_accepted: false,
+          lat: coordinates?.lat || null,
+          lng: coordinates?.lng || null,
         })
         .select()
         .single();
