@@ -504,6 +504,34 @@ const RestaurantHome = () => {
           </button>
           
           <button 
+            onClick={() => navigate("/restaurante/motoboy-ao-vivo")}
+            className="relative flex flex-col items-center gap-1 px-4 py-1 group"
+          >
+            {/* Badge for active motoboys */}
+            {offers.some(o => o.is_accepted && o.motoboy_status === 'in_progress') && (
+              <div className="absolute -top-1 right-0 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-[10px] font-bold text-white animate-pulse shadow-lg shadow-red-500/50">
+                {offers.filter(o => o.is_accepted && o.motoboy_status === 'in_progress').length}
+              </div>
+            )}
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+              offers.some(o => o.is_accepted && o.motoboy_status === 'in_progress')
+                ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/30 animate-pulse'
+                : 'bg-muted/50 group-hover:bg-muted'
+            }`}>
+              <Navigation className={`w-5 h-5 ${
+                offers.some(o => o.is_accepted && o.motoboy_status === 'in_progress')
+                  ? 'text-white'
+                  : 'text-muted-foreground group-hover:text-foreground'
+              } transition-colors`} />
+            </div>
+            <span className={`text-xs font-medium transition-colors ${
+              offers.some(o => o.is_accepted && o.motoboy_status === 'in_progress')
+                ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                : 'text-muted-foreground group-hover:text-foreground'
+            }`}>Ao Vivo</span>
+          </button>
+          
+          <button 
             onClick={() => navigate("/restaurante/perfil")}
             className="relative flex flex-col items-center gap-1 px-4 py-1 group"
           >

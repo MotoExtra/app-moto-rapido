@@ -20,8 +20,8 @@ import { formatPayment } from "@/lib/utils";
 import RateRestaurantModal from "@/components/RateRestaurantModal";
 import OfferLocationMap from "@/components/OfferLocationMap";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useLiveLocationBroadcast } from "@/hooks/useLiveLocationBroadcast";
 import { isWithinRadius, isWithinTimeWindow, calculateDistance } from "@/lib/distance";
-
 interface AcceptedOffer {
   id: string;
   status: string;
@@ -68,6 +68,21 @@ const AcceptedOffers = () => {
   
   // Geolocation hook
   const geolocation = useGeolocation();
+  
+  // Find the active in_progress offer for live location broadcasting
+  const activeInProgressOffer = useMemo(() => {
+    return acceptedOffers.find(ao => ao.status === 'in_progress');
+  }, [acceptedOffers]);
+  
+  // Broadcast live location when motoboy is in_progress
+  useLiveLocationBroadcast({
+    userId: userId,
+    offerId: activeInProgressOffer?.offer.id || null,
+    isActive: !!activeInProgressOffer,
+    latitude: geolocation.latitude,
+    longitude: geolocation.longitude,
+    accuracy: geolocation.accuracy,
+  });
   
   // Force re-render every minute to update time-based conditions
   const [, setTick] = useState(0);
