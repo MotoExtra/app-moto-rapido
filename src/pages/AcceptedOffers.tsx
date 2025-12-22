@@ -146,6 +146,7 @@ const AcceptedOffers = () => {
               can_become_permanent,
               includes_meal,
               delivery_range,
+              delivery_quantity,
               experience,
               rating,
               review_count,
