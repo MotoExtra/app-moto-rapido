@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,32 +12,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Plus, 
   LogOut, 
   Store, 
   Package, 
-  Clock, 
   MapPin,
-  User,
   Settings,
   Loader2,
-  CheckCircle2,
-  Star,
-  Navigation,
-  Pencil,
   Trash2,
-  MoreVertical,
-  MessageCircle,
-  Phone,
-  ChevronRight
+  Navigation,
+  Clock,
+  Bike,
+  History
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
@@ -48,6 +35,11 @@ import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { ChatModal } from "@/components/ChatModal";
 import { useUnreadCounts } from "@/hooks/useChatMessages";
 import { AcceptedOfferDetailsModal } from "@/components/AcceptedOfferDetailsModal";
+import { RestaurantStats } from "@/components/restaurant/RestaurantStats";
+import { OfferCardAvailable } from "@/components/restaurant/OfferCardAvailable";
+import { OfferCardInProgress } from "@/components/restaurant/OfferCardInProgress";
+import { OfferCardHistory } from "@/components/restaurant/OfferCardHistory";
+import { EmptyState } from "@/components/restaurant/EmptyState";
 
 interface Restaurant {
   id: string;
@@ -85,10 +77,31 @@ interface Offer {
   radius?: number | null;
 }
 
+const isOfferInHistory = (offer: Offer): boolean => {
+  if (!offer.is_accepted) return false;
+  
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const offerDate = offer.offer_date || today;
+  
+  // If offer date is in the past
+  if (offerDate < today) return true;
+  
+  // If offer date is today, check if end time has passed
+  if (offerDate === today) {
+    const [endHours, endMinutes] = offer.time_end.split(':').map(Number);
+    const endTime = new Date(now);
+    endTime.setHours(endHours, endMinutes, 0, 0);
+    return now > endTime;
+  }
+  
+  return false;
+};
+
 const RestaurantHome = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { playAlert, playSuccess, playMotoboyArrived, playNewMessage } = useNotificationSound();
+  const { playAlert, playMotoboyArrived, playNewMessage } = useNotificationSound();
   const [loading, setLoading] = useState(true);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -98,6 +111,34 @@ const RestaurantHome = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [detailsModalOffer, setDetailsModalOffer] = useState<Offer | null>(null);
   const [chatOffer, setChatOffer] = useState<Offer | null>(null);
+  const [activeTab, setActiveTab] = useState("available");
+
+  // Categorize offers
+  const { availableOffers, inProgressOffers, historyOffers, uniqueMotoboys } = useMemo(() => {
+    const available: Offer[] = [];
+    const inProgress: Offer[] = [];
+    const history: Offer[] = [];
+    const motoboyIds = new Set<string>();
+
+    offers.forEach(offer => {
+      if (!offer.is_accepted) {
+        available.push(offer);
+      } else if (isOfferInHistory(offer)) {
+        history.push(offer);
+        if (offer.accepted_by) motoboyIds.add(offer.accepted_by);
+      } else {
+        inProgress.push(offer);
+        if (offer.accepted_by) motoboyIds.add(offer.accepted_by);
+      }
+    });
+
+    return {
+      availableOffers: available,
+      inProgressOffers: inProgress,
+      historyOffers: history,
+      uniqueMotoboys: motoboyIds.size
+    };
+  }, [offers]);
 
   // Get unread counts for all accepted offers
   const acceptedOfferIds = useMemo(() => 
@@ -105,6 +146,11 @@ const RestaurantHome = () => {
     [offers]
   );
   const unreadCounts = useUnreadCounts(acceptedOfferIds, restaurant?.id || null, playNewMessage);
+
+  // Calculate total unread for in-progress tab badge
+  const totalUnreadInProgress = useMemo(() => {
+    return inProgressOffers.reduce((sum, offer) => sum + (unreadCounts[offer.id] || 0), 0);
+  }, [inProgressOffers, unreadCounts]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -259,6 +305,9 @@ const RestaurantHome = () => {
                     : o
                 )
               );
+
+              // Switch to in-progress tab
+              setActiveTab("in_progress");
             }
           }
         }
@@ -313,7 +362,7 @@ const RestaurantHome = () => {
               toast({
                 title: "🏍️ MOTOBOY CHEGOU!",
                 description: `${motoboyProfile?.name || "O motoboy"} chegou e está pronto para trabalhar!`,
-                duration: 10000, // 10 seconds - longer duration
+                duration: 10000,
               });
             }
           }
@@ -335,10 +384,6 @@ const RestaurantHome = () => {
       description: "Até logo!",
     });
     navigate("/onboarding");
-  };
-
-  const formatTime = (time: string) => {
-    return time.slice(0, 5);
   };
 
   const handleDeleteOffer = async () => {
@@ -387,9 +432,6 @@ const RestaurantHome = () => {
     );
   }
 
-  const availableOffers = offers.filter(o => !o.is_accepted);
-  const acceptedOffers = offers.filter(o => o.is_accepted);
-
   return (
     <>
       {/* Delete Confirmation Dialog */}
@@ -434,261 +476,216 @@ const RestaurantHome = () => {
 
       <div className="min-h-screen bg-background pb-24">
         {/* Header */}
-      <header className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-4 pb-6">
-        <div className="flex items-center justify-between mb-4">
-          <img src={logo} alt="MotoExtra" className="h-10" />
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-primary-foreground hover:bg-primary-foreground/10"
-              onClick={() => navigate("/restaurante/perfil")}
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-primary-foreground hover:bg-primary-foreground/10"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-            <Store className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold">{restaurant?.fantasy_name}</h1>
-            <p className="text-sm text-primary-foreground/80 flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              {restaurant?.city}
-            </p>
-          </div>
-        </div>
-      </header>
-
-      {/* Stats */}
-      <div className="px-4 -mt-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-primary">{availableOffers.length}</p>
-                <p className="text-xs text-muted-foreground">Extras Disponíveis</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-green-600">{acceptedOffers.length}</p>
-                <p className="text-xs text-muted-foreground">Extras Aceitos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Content */}
-      <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Meus Extras</h2>
-          <Button onClick={() => navigate("/restaurante/criar-extra")} size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Criar Extra
-          </Button>
-        </div>
-
-        {offers.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-semibold mb-2">Nenhum extra criado</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Crie seu primeiro extra para encontrar motoboys disponíveis
-              </p>
-              <Button onClick={() => navigate("/restaurante/criar-extra")}>
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Extra
+        <header className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-4 pb-6">
+          <div className="flex items-center justify-between mb-4">
+            <img src={logo} alt="MotoExtra" className="h-10" />
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-primary-foreground hover:bg-primary-foreground/10"
+                onClick={() => navigate("/restaurante/perfil")}
+              >
+                <Settings className="w-5 h-5" />
               </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {offers.map((offer) => (
-              <Card key={offer.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0 pr-2">
-                      <h3 className="font-semibold">{offer.description}</h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">{offer.address}</span>
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={offer.is_accepted ? "default" : "secondary"}>
-                        {offer.is_accepted ? (
-                          <><CheckCircle2 className="w-3 h-3 mr-1" /> Aceito</>
-                        ) : (
-                          <><Clock className="w-3 h-3 mr-1" /> Disponível</>
-                        )}
-                      </Badge>
-                      
-                      {/* Actions Menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem 
-                            onClick={() => navigate(`/restaurante/editar-extra/${offer.id}`)}
-                            className="cursor-pointer"
-                          >
-                            <Pencil className="w-4 h-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => setOfferToDelete(offer)}
-                            className="cursor-pointer text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Apagar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatTime(offer.time_start)} - {formatTime(offer.time_end)}
-                    </span>
-                  </div>
-
-                  {offer.is_accepted && (
-                    <div 
-                      className="mt-3 pt-3 border-t cursor-pointer group"
-                      onClick={() => setDetailsModalOffer(offer)}
-                    >
-                      {/* Motoboy Card - Clickable */}
-                      <div className={`p-3 rounded-xl border transition-all group-hover:shadow-md ${
-                        offer.motoboy_status === "in_progress" 
-                          ? "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30 group-hover:border-emerald-500/50" 
-                          : "bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20 group-hover:border-blue-500/40"
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12 border-2 border-background">
-                            <AvatarImage src={offer.motoboy_avatar_url || undefined} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                              {offer.motoboy_name?.charAt(0).toUpperCase() || "M"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold truncate">{offer.motoboy_name}</p>
-                              {offer.motoboy_status === "in_progress" && (
-                                <Badge variant="default" className="bg-emerald-500 text-white text-[10px] px-1.5 py-0">
-                                  Chegou
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              {offer.motoboy_rating !== undefined && offer.motoboy_review_count && offer.motoboy_review_count > 0 && (
-                                <span className="flex items-center gap-0.5">
-                                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                                  {offer.motoboy_rating} ({offer.motoboy_review_count})
-                                </span>
-                              )}
-                              {unreadCounts[offer.id] > 0 && (
-                                <Badge 
-                                  variant="destructive" 
-                                  className="h-5 px-1.5 flex items-center justify-center text-[10px] animate-pulse"
-                                >
-                                  <MessageCircle className="w-3 h-3 mr-0.5" />
-                                  {unreadCounts[offer.id]} nova{unreadCounts[offer.id] > 1 ? 's' : ''}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                        </div>
-                        
-                        {/* Quick hint */}
-                        <p className="text-xs text-muted-foreground mt-2 text-center group-hover:text-foreground transition-colors">
-                          Toque para ver detalhes completos
-                        </p>
-                      </div>
-                      
-                      {/* Status Indicator */}
-                      {offer.motoboy_status !== "in_progress" && (
-                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 mt-2">
-                          <Clock className="w-3 h-3" />
-                          <span>Aguardando chegada do motoboy</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-primary-foreground hover:bg-primary-foreground/10"
+                onClick={handleLogout}
+              >
+                <LogOut className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
-        )}
-      </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+              <Store className="w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">{restaurant?.fantasy_name}</h1>
+              <p className="text-sm text-primary-foreground/80 flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                {restaurant?.city}
+              </p>
+            </div>
+          </div>
+        </header>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-background/95 backdrop-blur-lg border-t shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="flex items-center justify-around px-4 py-3 max-w-md mx-auto">
-          <button className="relative flex flex-col items-center gap-1 px-4 py-1 group">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-full" />
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
-              <Package className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xs font-semibold text-primary">Extras</span>
-          </button>
-          
-          <button 
-            onClick={() => navigate("/restaurante/motoboy-ao-vivo")}
-            className="relative flex flex-col items-center gap-1 px-4 py-1 group"
-          >
-            {/* Badge for active motoboys */}
-            {offers.some(o => o.is_accepted && o.motoboy_status === 'in_progress') && (
-              <div className="absolute -top-1 right-0 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-[10px] font-bold text-white animate-pulse shadow-lg shadow-red-500/50">
-                {offers.filter(o => o.is_accepted && o.motoboy_status === 'in_progress').length}
-              </div>
-            )}
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
-              offers.some(o => o.is_accepted && o.motoboy_status === 'in_progress')
-                ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/30 animate-pulse'
-                : 'bg-muted/50 group-hover:bg-muted'
-            }`}>
-              <Navigation className={`w-5 h-5 ${
-                offers.some(o => o.is_accepted && o.motoboy_status === 'in_progress')
-                  ? 'text-white'
-                  : 'text-muted-foreground group-hover:text-foreground'
-              } transition-colors`} />
-            </div>
-            <span className={`text-xs font-medium transition-colors ${
-              offers.some(o => o.is_accepted && o.motoboy_status === 'in_progress')
-                ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
-                : 'text-muted-foreground group-hover:text-foreground'
-            }`}>Ao Vivo</span>
-          </button>
-          
-          <button 
-            onClick={() => navigate("/restaurante/perfil")}
-            className="relative flex flex-col items-center gap-1 px-4 py-1 group"
-          >
-            <div className="w-11 h-11 rounded-2xl bg-muted/50 group-hover:bg-muted flex items-center justify-center transition-colors">
-              <Store className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Perfil</span>
-          </button>
+        {/* Stats Dashboard */}
+        <div className="px-4 -mt-4">
+          <RestaurantStats
+            availableCount={availableOffers.length}
+            inProgressCount={inProgressOffers.length}
+            historyCount={historyOffers.length}
+            uniqueMotoboys={uniqueMotoboys}
+          />
         </div>
-      </nav>
+
+        {/* Content with Tabs */}
+        <div className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Meus Extras</h2>
+            <Button onClick={() => navigate("/restaurante/criar-extra")} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Criar Extra
+            </Button>
+          </div>
+
+          {offers.length === 0 ? (
+            <EmptyState type="all" />
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="available" className="relative text-xs sm:text-sm">
+                  <Clock className="w-3 h-3 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Disponíveis</span>
+                  <span className="sm:hidden">Disp.</span>
+                  {availableOffers.length > 0 && (
+                    <Badge 
+                      variant="secondary" 
+                      className="ml-1 h-5 px-1.5 text-[10px] bg-amber-500/20 text-amber-600"
+                    >
+                      {availableOffers.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                
+                <TabsTrigger value="in_progress" className="relative text-xs sm:text-sm">
+                  <Bike className="w-3 h-3 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Em Andamento</span>
+                  <span className="sm:hidden">Andamento</span>
+                  {inProgressOffers.length > 0 && (
+                    <Badge 
+                      variant="secondary" 
+                      className={`ml-1 h-5 px-1.5 text-[10px] ${
+                        totalUnreadInProgress > 0 
+                          ? 'bg-red-500 text-white animate-pulse' 
+                          : 'bg-emerald-500/20 text-emerald-600'
+                      }`}
+                    >
+                      {totalUnreadInProgress > 0 ? totalUnreadInProgress : inProgressOffers.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                
+                <TabsTrigger value="history" className="relative text-xs sm:text-sm">
+                  <History className="w-3 h-3 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Histórico</span>
+                  <span className="sm:hidden">Hist.</span>
+                  {historyOffers.length > 0 && (
+                    <Badge 
+                      variant="secondary" 
+                      className="ml-1 h-5 px-1.5 text-[10px]"
+                    >
+                      {historyOffers.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="available" className="space-y-3 mt-0">
+                {availableOffers.length === 0 ? (
+                  <EmptyState type="available" />
+                ) : (
+                  availableOffers.map((offer) => (
+                    <OfferCardAvailable 
+                      key={offer.id} 
+                      offer={offer} 
+                      onDelete={() => setOfferToDelete(offer)} 
+                    />
+                  ))
+                )}
+              </TabsContent>
+
+              <TabsContent value="in_progress" className="space-y-3 mt-0">
+                {inProgressOffers.length === 0 ? (
+                  <EmptyState type="in_progress" />
+                ) : (
+                  inProgressOffers.map((offer) => (
+                    <OfferCardInProgress
+                      key={offer.id}
+                      offer={offer}
+                      unreadCount={unreadCounts[offer.id] || 0}
+                      onDetailsClick={() => setDetailsModalOffer(offer)}
+                      onChatClick={() => setChatOffer(offer)}
+                      onLiveClick={() => navigate("/restaurante/motoboy-ao-vivo")}
+                    />
+                  ))
+                )}
+              </TabsContent>
+
+              <TabsContent value="history" className="space-y-3 mt-0">
+                {historyOffers.length === 0 ? (
+                  <EmptyState type="history" />
+                ) : (
+                  historyOffers.map((offer) => (
+                    <OfferCardHistory
+                      key={offer.id}
+                      offer={offer}
+                      onRateClick={() => {
+                        setSelectedOffer(offer);
+                        setRatingModalOpen(true);
+                      }}
+                    />
+                  ))
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
+
+        {/* Bottom Navigation */}
+        <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-background/95 backdrop-blur-lg border-t shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="flex items-center justify-around px-4 py-3 max-w-md mx-auto">
+            <button className="relative flex flex-col items-center gap-1 px-4 py-1 group">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-full" />
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+                <Package className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-xs font-semibold text-primary">Extras</span>
+            </button>
+            
+            <button 
+              onClick={() => navigate("/restaurante/motoboy-ao-vivo")}
+              className="relative flex flex-col items-center gap-1 px-4 py-1 group"
+            >
+              {/* Badge for active motoboys */}
+              {inProgressOffers.some(o => o.motoboy_status === 'in_progress') && (
+                <div className="absolute -top-1 right-0 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-[10px] font-bold text-white animate-pulse shadow-lg shadow-red-500/50">
+                  {inProgressOffers.filter(o => o.motoboy_status === 'in_progress').length}
+                </div>
+              )}
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+                inProgressOffers.some(o => o.motoboy_status === 'in_progress')
+                  ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/30 animate-pulse'
+                  : 'bg-muted/50 group-hover:bg-muted'
+              }`}>
+                <Navigation className={`w-5 h-5 ${
+                  inProgressOffers.some(o => o.motoboy_status === 'in_progress')
+                    ? 'text-white'
+                    : 'text-muted-foreground group-hover:text-foreground'
+                } transition-colors`} />
+              </div>
+              <span className={`text-xs font-medium transition-colors ${
+                inProgressOffers.some(o => o.motoboy_status === 'in_progress')
+                  ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                  : 'text-muted-foreground group-hover:text-foreground'
+              }`}>Ao Vivo</span>
+            </button>
+            
+            <button 
+              onClick={() => navigate("/restaurante/perfil")}
+              className="relative flex flex-col items-center gap-1 px-4 py-1 group"
+            >
+              <div className="w-11 h-11 rounded-2xl bg-muted/50 group-hover:bg-muted flex items-center justify-center transition-colors">
+                <Store className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Perfil</span>
+            </button>
+          </div>
+        </nav>
 
         {/* Rating Modal */}
         {selectedOffer && restaurant && (
