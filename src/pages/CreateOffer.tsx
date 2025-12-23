@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -52,8 +52,23 @@ const parseAddress = (address: string) => {
   return { rua: address, numero: "", bairro: "" };
 };
 
+interface DuplicateData {
+  description: string;
+  address: string;
+  time_start: string;
+  time_end: string;
+  payment?: string | null;
+  delivery_range?: string;
+  delivery_quantity?: string | null;
+  needs_bag?: boolean;
+  can_become_permanent?: boolean;
+  includes_meal?: boolean;
+  observations?: string | null;
+}
+
 const CreateOffer = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { playSuccess, playError } = useNotificationSound();
   const [loading, setLoading] = useState(false);
@@ -74,6 +89,40 @@ const CreateOffer = () => {
     payment: "",
     observations: "",
   });
+
+  // Check for duplicate data from navigation state
+  useEffect(() => {
+    const state = location.state as { duplicate?: DuplicateData } | null;
+    if (state?.duplicate) {
+      const duplicate = state.duplicate;
+      const parsedAddress = parseAddress(duplicate.address);
+      
+      setFormData(prev => ({
+        ...prev,
+        rua: parsedAddress.rua,
+        numero: parsedAddress.numero,
+        bairro: parsedAddress.bairro,
+        timeStart: duplicate.time_start?.slice(0, 5) || "",
+        timeEnd: duplicate.time_end?.slice(0, 5) || "",
+        deliveryRange: duplicate.delivery_range || "",
+        deliveryQuantity: duplicate.delivery_quantity || "",
+        needsBag: duplicate.needs_bag || false,
+        canBecomePermanent: duplicate.can_become_permanent || false,
+        includesMeal: duplicate.includes_meal || false,
+        payment: duplicate.payment || "",
+        observations: duplicate.observations || "",
+        offerDate: new Date(), // Always set to today for duplicates
+      }));
+
+      toast({
+        title: "Extra duplicado!",
+        description: "Ajuste a data e confira os detalhes antes de criar.",
+      });
+
+      // Clear the state to prevent re-applying on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, toast]);
 
   useEffect(() => {
     const fetchRestaurantAndLastOffer = async () => {

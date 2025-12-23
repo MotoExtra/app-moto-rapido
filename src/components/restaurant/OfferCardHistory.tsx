@@ -25,6 +25,12 @@ interface Offer {
   has_rating?: boolean;
   payment?: string | null;
   accepted_by?: string | null;
+  delivery_range?: string;
+  delivery_quantity?: string | null;
+  needs_bag?: boolean;
+  can_become_permanent?: boolean;
+  includes_meal?: boolean;
+  observations?: string | null;
 }
 
 interface OfferCardHistoryProps {
@@ -52,7 +58,13 @@ export const OfferCardHistory = ({ offer, onRateClick }: OfferCardHistoryProps) 
           address: offer.address,
           time_start: offer.time_start,
           time_end: offer.time_end,
-          payment: offer.payment
+          payment: offer.payment,
+          delivery_range: offer.delivery_range,
+          delivery_quantity: offer.delivery_quantity,
+          needs_bag: offer.needs_bag,
+          can_become_permanent: offer.can_become_permanent,
+          includes_meal: offer.includes_meal,
+          observations: offer.observations,
         }
       }
     });
