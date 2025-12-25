@@ -520,6 +520,8 @@ const RestaurantHome = () => {
             inProgressCount={inProgressOffers.length}
             historyCount={historyOffers.length}
             uniqueMotoboys={uniqueMotoboys}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
           />
         </div>
 
