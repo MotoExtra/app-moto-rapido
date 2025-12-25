@@ -503,6 +503,51 @@ export type Database = {
         }
         Relationships: []
       }
+      snack_exchanges: {
+        Row: {
+          city: string
+          created_at: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          matched_at: string | null
+          matched_by: string | null
+          offering: string
+          phone: string
+          status: string | null
+          user_id: string
+          wanting: string
+        }
+        Insert: {
+          city: string
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          matched_at?: string | null
+          matched_by?: string | null
+          offering: string
+          phone: string
+          status?: string | null
+          user_id: string
+          wanting: string
+        }
+        Update: {
+          city?: string
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          matched_at?: string | null
+          matched_by?: string | null
+          offering?: string
+          phone?: string
+          status?: string | null
+          user_id?: string
+          wanting?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
