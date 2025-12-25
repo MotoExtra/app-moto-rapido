@@ -663,6 +663,19 @@ const Home = () => {
                         <p className="text-xs text-muted-foreground">Extras que você ofertou</p>
                       </div>
                     </button>
+
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate("/troca-lanche"); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors text-left"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-lg">
+                        🍔
+                      </div>
+                      <div>
+                        <p className="font-medium">Troca de Lanche</p>
+                        <p className="text-xs text-muted-foreground">Troque lanches com motoboys</p>
+                      </div>
+                    </button>
                     
                     {isAdmin && (
                       <button
@@ -798,6 +811,29 @@ const Home = () => {
           </div>
           <span className="text-lg font-semibold">Ofertar Extra para Motoboys</span>
         </Button>
+      </div>
+
+      {/* Snack Exchange Card */}
+      <div className="px-4 pt-3">
+        <button
+          onClick={() => navigate("/troca-lanche")}
+          className="w-full"
+        >
+          <Card className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-orange-500/30 hover:border-orange-500/50 transition-all cursor-pointer">
+            <CardContent className="flex items-center justify-between py-4 px-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-lg">
+                  🍔
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-foreground">Troca de Lanche</p>
+                  <p className="text-xs text-muted-foreground">Troque lanches com outros motoboys</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-orange-500" />
+            </CardContent>
+          </Card>
+        </button>
       </div>
 
       {/* City Filter Section */}

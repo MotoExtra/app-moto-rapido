@@ -24,6 +24,7 @@ import Profile from "./pages/Profile";
 import OfferExtra from "./pages/OfferExtra";
 import EditExtra from "./pages/EditExtra";
 import MyExtras from "./pages/MyExtras";
+import SnackExchange from "./pages/SnackExchange";
 import Install from "./pages/Install";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -74,6 +75,7 @@ const App = () => {
               <Route path="/ofertar-extra" element={<ProtectedRoute allowedUserType="motoboy"><OfferExtra /></ProtectedRoute>} />
               <Route path="/editar-extra/:id" element={<ProtectedRoute allowedUserType="motoboy"><EditExtra /></ProtectedRoute>} />
               <Route path="/meus-extras" element={<ProtectedRoute allowedUserType="motoboy"><MyExtras /></ProtectedRoute>} />
+              <Route path="/troca-lanche" element={<ProtectedRoute allowedUserType="motoboy"><SnackExchange /></ProtectedRoute>} />
               
               {/* Rotas protegidas de restaurante */}
               <Route path="/restaurante/home" element={<ProtectedRoute allowedUserType="restaurant"><RestaurantHome /></ProtectedRoute>} />
