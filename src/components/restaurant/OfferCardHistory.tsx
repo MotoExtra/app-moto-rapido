@@ -4,12 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Clock, 
-  MapPin, 
   Star,
-  CheckCircle,
-  Copy
+  CheckCircle
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 interface Offer {
   id: string;
@@ -25,12 +22,6 @@ interface Offer {
   has_rating?: boolean;
   payment?: string | null;
   accepted_by?: string | null;
-  delivery_range?: string;
-  delivery_quantity?: string | null;
-  needs_bag?: boolean;
-  can_become_permanent?: boolean;
-  includes_meal?: boolean;
-  observations?: string | null;
 }
 
 interface OfferCardHistoryProps {
@@ -47,29 +38,6 @@ const formatDate = (dateStr: string | null | undefined) => {
 };
 
 export const OfferCardHistory = ({ offer, onRateClick }: OfferCardHistoryProps) => {
-  const navigate = useNavigate();
-
-  const handleDuplicate = () => {
-    // Navigate to create extra with prefilled data
-    navigate("/restaurante/criar-extra", {
-      state: {
-        duplicate: {
-          description: offer.description,
-          address: offer.address,
-          time_start: offer.time_start,
-          time_end: offer.time_end,
-          payment: offer.payment,
-          delivery_range: offer.delivery_range,
-          delivery_quantity: offer.delivery_quantity,
-          needs_bag: offer.needs_bag,
-          can_become_permanent: offer.can_become_permanent,
-          includes_meal: offer.includes_meal,
-          observations: offer.observations,
-        }
-      }
-    });
-  };
-
   return (
     <Card className="overflow-hidden bg-muted/30 border-muted">
       <CardContent className="p-4">
@@ -137,16 +105,6 @@ export const OfferCardHistory = ({ offer, onRateClick }: OfferCardHistoryProps) 
                   Avaliado
                 </Badge>
               )}
-              
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={handleDuplicate}
-                className="text-xs"
-              >
-                <Copy className="w-3 h-3 mr-1" />
-                Duplicar
-              </Button>
             </div>
           </div>
         )}

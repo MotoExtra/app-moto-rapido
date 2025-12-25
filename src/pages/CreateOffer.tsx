@@ -88,6 +88,7 @@ const CreateOffer = () => {
     includesMeal: false,
     payment: "",
     observations: "",
+    numberOfSlots: "1",
   });
 
   // Check for duplicate data from navigation state
@@ -210,11 +211,16 @@ const CreateOffer = () => {
       // Geocodificar o endereço para obter coordenadas
       const coordinates = await geocodeAddress(fullAddress);
       
-      const { data: newOffer, error } = await supabase
-        .from("offers")
-        .insert({
+      const numberOfSlots = parseInt(formData.numberOfSlots) || 1;
+      const offersToCreate = [];
+      
+      // Create multiple offers based on numberOfSlots
+      for (let i = 0; i < numberOfSlots; i++) {
+        offersToCreate.push({
           restaurant_name: restaurant.fantasy_name,
-          description: `Extra de ${restaurant.fantasy_name}`,
+          description: numberOfSlots > 1 
+            ? `Extra de ${restaurant.fantasy_name} - Vaga ${i + 1}`
+            : `Extra de ${restaurant.fantasy_name}`,
           address: fullAddress,
           offer_date: format(formData.offerDate!, "yyyy-MM-dd"),
           time_start: formData.timeStart,
@@ -234,9 +240,12 @@ const CreateOffer = () => {
           is_accepted: false,
           lat: coordinates?.lat || null,
           lng: coordinates?.lng || null,
-        })
-        .select()
-        .single();
+        });
+      }
+      
+      const { error } = await supabase
+        .from("offers")
+        .insert(offersToCreate);
 
       if (error) {
         toast({
@@ -251,7 +260,9 @@ const CreateOffer = () => {
       supabase.functions.invoke("notify-new-offer", {
         body: {
           restaurant_name: restaurant.fantasy_name,
-          description: `Extra de ${restaurant.fantasy_name}`,
+          description: numberOfSlots > 1 
+            ? `${numberOfSlots} vagas de Extra em ${restaurant.fantasy_name}`
+            : `Extra de ${restaurant.fantasy_name}`,
           time_start: formData.timeStart,
           time_end: formData.timeEnd,
           city: restaurant.city,
@@ -264,8 +275,10 @@ const CreateOffer = () => {
 
       playSuccess();
       toast({
-        title: "Extra criado!",
-        description: "Seu extra está disponível para motoboys.",
+        title: numberOfSlots > 1 ? `${numberOfSlots} vagas criadas!` : "Extra criado!",
+        description: numberOfSlots > 1 
+          ? `Suas ${numberOfSlots} vagas estão disponíveis para motoboys.`
+          : "Seu extra está disponível para motoboys.",
       });
       navigate("/restaurante/home");
     } catch (error) {
@@ -459,6 +472,33 @@ const CreateOffer = () => {
                     value={formData.timeEnd}
                     onChange={(e) => setFormData({ ...formData, timeEnd: e.target.value })}
                   />
+                </div>
+              </div>
+
+              {/* Number of Slots */}
+              <div className="rounded-xl border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <span>👥</span>
+                  <span>Quantidade de Vagas</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Quantos motoboys você precisa para este mesmo horário?
+                </p>
+                <div className="flex gap-2">
+                  {["1", "2", "3"].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, numberOfSlots: num })}
+                      className={`flex-1 py-3 px-4 rounded-xl text-lg font-bold transition-all ${
+                        formData.numberOfSlots === num
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                      }`}
+                    >
+                      {num} {num === "1" ? "vaga" : "vagas"}
+                    </button>
+                  ))}
                 </div>
               </div>
 
