@@ -743,59 +743,43 @@ const Home = () => {
         </div>
       )}
 
-      {/* Location Status Indicator */}
+      {/* Location Status Indicator - Compact */}
       <div className="px-4 pt-4">
-        <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-          geolocation.error 
-            ? 'bg-destructive/10 border-destructive/30' 
-            : geolocation.loading
-              ? 'bg-amber-500/10 border-amber-500/30'
-              : 'bg-emerald-500/10 border-emerald-500/30'
-        }`}>
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-            geolocation.error 
-              ? 'bg-destructive/20' 
-              : geolocation.loading
-                ? 'bg-amber-500/20'
-                : 'bg-emerald-500/20'
-          }`}>
-            <Navigation className={`w-5 h-5 ${
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${
               geolocation.error 
-                ? 'text-destructive' 
-                : geolocation.loading 
-                  ? 'text-amber-500 animate-pulse' 
-                  : 'text-emerald-500'
+                ? 'bg-destructive' 
+                : geolocation.loading
+                  ? 'bg-amber-500 animate-pulse'
+                  : 'bg-emerald-500'
             }`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium ${
+            <span className={`text-xs font-medium ${
               geolocation.error 
                 ? 'text-destructive' 
                 : geolocation.loading 
                   ? 'text-amber-600 dark:text-amber-400' 
-                  : 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-muted-foreground'
             }`}>
               {geolocation.error 
-                ? geolocation.error 
+                ? 'GPS inativo' 
                 : geolocation.loading 
-                  ? 'Obtendo localização...' 
-                  : 'GPS ativo'}
-            </p>
-            {geolocation.latitude && geolocation.longitude && !geolocation.loading && !geolocation.error && (
-              <p className="text-xs text-muted-foreground">
-                Precisão: ~{Math.round(geolocation.accuracy || 0)}m
-              </p>
+                  ? 'Localizando...' 
+                  : 'GPS'}
+            </span>
+            {geolocation.latitude && !geolocation.loading && !geolocation.error && (
+              <span className="text-xs text-muted-foreground">
+                • ~{Math.round(geolocation.accuracy || 0)}m
+              </span>
             )}
           </div>
           {geolocation.error && (
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <button 
               onClick={handleRequestLocation}
-              className="flex-shrink-0 border-destructive/30 text-destructive hover:bg-destructive/10"
+              className="text-xs text-primary hover:underline"
             >
               Ativar
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -813,28 +797,6 @@ const Home = () => {
         </Button>
       </div>
 
-      {/* Snack Exchange Card */}
-      <div className="px-4 pt-3">
-        <button
-          onClick={() => navigate("/troca-lanche")}
-          className="w-full"
-        >
-          <Card className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-orange-500/30 hover:border-orange-500/50 transition-all cursor-pointer">
-            <CardContent className="flex items-center justify-between py-4 px-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-lg">
-                  🍔
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-foreground">Troca de Lanche</p>
-                  <p className="text-xs text-muted-foreground">Troque lanches com outros motoboys</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-orange-500" />
-            </CardContent>
-          </Card>
-        </button>
-      </div>
 
       {/* City Filter Section */}
       <div className="px-4 pt-4">
