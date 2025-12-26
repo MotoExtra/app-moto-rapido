@@ -15,6 +15,8 @@ import {
   RefreshCw,
   AlertCircle,
   Route,
+  WifiOff,
+  Signal,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +38,8 @@ interface LocationHistoryPoint {
   recorded_at: string;
 }
 
+type GpsStatus = 'active' | 'inactive' | 'unknown';
+
 interface ActiveMotoboy {
   id: string;
   offer_id: string;
@@ -51,6 +55,18 @@ interface ActiveMotoboy {
   accepted_at: string;
   routeHistory: LocationHistoryPoint[];
 }
+
+// Check if GPS is active based on last update time (inactive if > 2 minutes)
+const getGpsStatus = (location: MotoboyLocation | null): GpsStatus => {
+  if (!location) return 'unknown';
+  
+  const now = new Date();
+  const lastUpdate = new Date(location.updated_at);
+  const diffMs = now.getTime() - lastUpdate.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  return diffMins <= 2 ? 'active' : 'inactive';
+};
 
 const LiveMotoboy = () => {
   const navigate = useNavigate();
@@ -250,9 +266,48 @@ const LiveMotoboy = () => {
       )
       .subscribe();
 
+    // Set up realtime listener for accepted_offers status changes
+    const statusChannel = supabase
+      .channel('live-motoboy-status')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'accepted_offers',
+        },
+        (payload) => {
+          const updated = payload.new as { offer_id: string; status: string };
+          
+          // If status is no longer 'in_progress', remove from list
+          if (updated.status !== 'in_progress') {
+            setActiveMotoboys(current => {
+              const filtered = current.filter(m => m.offer_id !== updated.offer_id);
+              
+              // Update selected motoboy if needed
+              setSelectedMotoboy(selected => {
+                if (selected?.offer_id === updated.offer_id) {
+                  return filtered.length > 0 ? filtered[0] : null;
+                }
+                return selected;
+              });
+              
+              return filtered;
+            });
+            
+            toast({
+              title: 'Serviço finalizado',
+              description: 'O motoboy finalizou o serviço e foi removido do rastreamento.',
+            });
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(locationChannel);
       supabase.removeChannel(historyChannel);
+      supabase.removeChannel(statusChannel);
     };
   }, [navigate, toast]);
 
@@ -399,9 +454,43 @@ const LiveMotoboy = () => {
         {selectedMotoboy && (
           <Card className="absolute bottom-4 left-4 right-4 shadow-2xl border-0 bg-background/95 backdrop-blur-sm">
             <CardContent className="p-4">
+              {/* GPS Status Alert */}
+              {(() => {
+                const gpsStatus = getGpsStatus(selectedMotoboy.location);
+                if (gpsStatus === 'inactive') {
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                      <WifiOff className="w-4 h-4 text-amber-500" />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-amber-600 dark:text-amber-400">GPS desativado</p>
+                        <p className="text-[10px] text-amber-500/80">Última posição há mais de 2 minutos</p>
+                      </div>
+                    </div>
+                  );
+                }
+                if (gpsStatus === 'unknown') {
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-muted/50 border border-border/50">
+                      <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-muted-foreground">Sem dados de GPS</p>
+                        <p className="text-[10px] text-muted-foreground/80">Aguardando motoboy ativar localização</p>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              
               <div className="flex items-start gap-3">
                 {/* Motoboy Avatar */}
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg ${
+                  getGpsStatus(selectedMotoboy.location) === 'active'
+                    ? 'bg-gradient-to-br from-emerald-500 to-green-600'
+                    : getGpsStatus(selectedMotoboy.location) === 'inactive'
+                      ? 'bg-gradient-to-br from-amber-500 to-orange-600'
+                      : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                }`}>
                   <User className="w-7 h-7 text-white" />
                 </div>
 
@@ -409,10 +498,22 @@ const LiveMotoboy = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-bold text-lg truncate">{selectedMotoboy.motoboy_name}</h3>
-                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
-                      <Navigation className="w-3 h-3 mr-1" />
-                      Em rota
-                    </Badge>
+                    {getGpsStatus(selectedMotoboy.location) === 'active' ? (
+                      <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+                        <Signal className="w-3 h-3 mr-1" />
+                        GPS ativo
+                      </Badge>
+                    ) : getGpsStatus(selectedMotoboy.location) === 'inactive' ? (
+                      <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                        <WifiOff className="w-3 h-3 mr-1" />
+                        GPS inativo
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-muted text-muted-foreground border-muted">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Sem GPS
+                      </Badge>
+                    )}
                   </div>
 
                   {/* Extra info */}
@@ -443,6 +544,7 @@ const LiveMotoboy = () => {
                     </div>
                   </div>
 
+
                   {/* Horário */}
                   <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
                     <Clock className="w-3 h-3" />
@@ -470,18 +572,29 @@ const LiveMotoboy = () => {
         {/* Motoboy Selector (if multiple) */}
         {activeMotoboys.length > 1 && (
           <div className="absolute top-4 right-4 flex flex-col gap-2">
-            {activeMotoboys.map((motoboy) => (
-              <Button
-                key={motoboy.offer_id}
-                size="sm"
-                variant={selectedMotoboy?.offer_id === motoboy.offer_id ? 'default' : 'outline'}
-                className="shadow-lg"
-                onClick={() => setSelectedMotoboy(motoboy)}
-              >
-                <User className="w-4 h-4 mr-1" />
-                {motoboy.motoboy_name.split(' ')[0]}
-              </Button>
-            ))}
+            {activeMotoboys.map((motoboy) => {
+              const gpsStatus = getGpsStatus(motoboy.location);
+              return (
+                <Button
+                  key={motoboy.offer_id}
+                  size="sm"
+                  variant={selectedMotoboy?.offer_id === motoboy.offer_id ? 'default' : 'outline'}
+                  className={`shadow-lg gap-2 ${
+                    gpsStatus === 'inactive' ? 'border-amber-500/50' : ''
+                  }`}
+                  onClick={() => setSelectedMotoboy(motoboy)}
+                >
+                  <div className="relative">
+                    <User className="w-4 h-4" />
+                    <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background ${
+                      gpsStatus === 'active' ? 'bg-emerald-500' :
+                      gpsStatus === 'inactive' ? 'bg-amber-500' : 'bg-gray-400'
+                    }`} />
+                  </div>
+                  {motoboy.motoboy_name.split(' ')[0]}
+                </Button>
+              );
+            })}
           </div>
         )}
       </div>
