@@ -419,16 +419,56 @@ const Home = () => {
       return;
     }
 
-    if (hasActiveOffer) {
-      toast({
-        title: "Limite atingido",
-        description: "Você já possui um extra aceito. Finalize ou cancele antes de aceitar outro.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
+      // Check for time conflicts with existing accepted offers
+      const { data: existingOffers, error: conflictError } = await supabase
+        .from("accepted_offers")
+        .select(`
+          id,
+          offer_id,
+          status,
+          offers!inner (
+            offer_date,
+            time_start,
+            time_end
+          )
+        `)
+        .eq("user_id", user.id)
+        .in("status", ["pending", "arrived"]);
+
+      if (conflictError) throw conflictError;
+
+      // Check for time overlap
+      if (existingOffers && existingOffers.length > 0) {
+        const newOfferDate = offer.offer_date;
+        const newStart = offer.time_start;
+        const newEnd = offer.time_end;
+
+        const hasConflict = existingOffers.some((existing: any) => {
+          const existingOffer = existing.offers;
+          if (!existingOffer) return false;
+
+          // Only check same day
+          if (existingOffer.offer_date !== newOfferDate) return false;
+
+          const existingStart = existingOffer.time_start;
+          const existingEnd = existingOffer.time_end;
+
+          // Check if time ranges overlap
+          // Overlap occurs if: newStart < existingEnd AND newEnd > existingStart
+          return newStart < existingEnd && newEnd > existingStart;
+        });
+
+        if (hasConflict) {
+          toast({
+            title: "Conflito de horário",
+            description: "Você já tem um extra aceito que coincide com este horário. Finalize ou cancele antes de aceitar outro no mesmo período.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       // Update offer as accepted
       const { error: updateError } = await supabase
         .from("offers")
