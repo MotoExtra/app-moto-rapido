@@ -743,40 +743,34 @@ const Home = () => {
         </div>
       )}
 
-      {/* Location Status Indicator - Compact */}
+      {/* Location Status Indicator - Elegant */}
       <div className="px-4 pt-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${
-              geolocation.error 
-                ? 'bg-destructive' 
-                : geolocation.loading
-                  ? 'bg-amber-500 animate-pulse'
-                  : 'bg-emerald-500'
-            }`} />
-            <span className={`text-xs font-medium ${
-              geolocation.error 
-                ? 'text-destructive' 
-                : geolocation.loading 
-                  ? 'text-amber-600 dark:text-amber-400' 
-                  : 'text-muted-foreground'
-            }`}>
-              {geolocation.error 
-                ? 'GPS inativo' 
-                : geolocation.loading 
-                  ? 'Localizando...' 
-                  : 'GPS'}
-            </span>
-            {geolocation.latitude && !geolocation.loading && !geolocation.error && (
-              <span className="text-xs text-muted-foreground">
-                • ~{Math.round(geolocation.accuracy || 0)}m
-              </span>
-            )}
-          </div>
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+          geolocation.error 
+            ? 'bg-destructive/10 text-destructive border border-destructive/20' 
+            : geolocation.loading
+              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+        }`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${
+            geolocation.error 
+              ? 'bg-destructive' 
+              : geolocation.loading
+                ? 'bg-amber-500 animate-pulse'
+                : 'bg-emerald-500 animate-pulse'
+          }`} />
+          <Navigation className="w-3 h-3" />
+          <span>
+            {geolocation.error 
+              ? 'GPS inativo' 
+              : geolocation.loading 
+                ? 'Localizando...' 
+                : `GPS ativo • ${Math.round(geolocation.accuracy || 0)}m`}
+          </span>
           {geolocation.error && (
             <button 
               onClick={handleRequestLocation}
-              className="text-xs text-primary hover:underline"
+              className="ml-1 underline hover:no-underline"
             >
               Ativar
             </button>
