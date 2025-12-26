@@ -783,23 +783,23 @@ const Home = () => {
         </div>
       )}
 
-      {/* Location Status Indicator - Elegant */}
+      {/* Location Status Indicator - Elegant with Glow */}
       <div className="px-4 pt-4">
         <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
           geolocation.error 
             ? 'bg-destructive/10 text-destructive border border-destructive/20' 
             : geolocation.loading
-              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.5)]'
         }`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${
+          <div className={`w-2 h-2 rounded-full ${
             geolocation.error 
               ? 'bg-destructive' 
               : geolocation.loading
-                ? 'bg-amber-500 animate-pulse'
-                : 'bg-emerald-500 animate-pulse'
+                ? 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.8)]'
+                : 'bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.9)]'
           }`} />
-          <Navigation className="w-3 h-3" />
+          <Navigation className="w-3.5 h-3.5" />
           <span>
             {geolocation.error 
               ? 'GPS inativo' 
