@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, FileCheck, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -17,6 +17,7 @@ const SignupMotoboy = () => {
   const [experience, setExperience] = useState([2]);
   const [hasBag, setHasBag] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [cnhFile, setCnhFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -24,7 +25,6 @@ const SignupMotoboy = () => {
     phone: "",
     city: "",
     neighborhood: "",
-    cnh: "",
     plate: "",
   });
 
@@ -45,6 +45,33 @@ const SignupMotoboy = () => {
     }
   };
 
+  const handleCnhChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+      
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Formato inválido",
+          description: "Envie um arquivo PDF ou imagem (JPG, PNG, WEBP)",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast({
+          title: "Arquivo muito grande",
+          description: "O arquivo deve ter no máximo 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setCnhFile(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -52,6 +79,15 @@ const SignupMotoboy = () => {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!cnhFile) {
+      toast({
+        title: "Erro",
+        description: "Por favor, envie o documento da CNH",
         variant: "destructive",
       });
       return;
@@ -105,6 +141,27 @@ const SignupMotoboy = () => {
         }
       }
 
+      // Upload CNH document
+      let cnhUrl = null;
+      if (cnhFile) {
+        const cnhExt = cnhFile.name.split('.').pop();
+        const cnhFileName = `${authData.user.id}/cnh.${cnhExt}`;
+
+        const { error: cnhUploadError } = await supabase.storage
+          .from('cnh-documents')
+          .upload(cnhFileName, cnhFile, { upsert: true });
+
+        if (cnhUploadError) {
+          console.error("Erro ao fazer upload da CNH:", cnhUploadError);
+          throw new Error("Erro ao enviar documento da CNH. Tente novamente.");
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('cnh-documents')
+            .getPublicUrl(cnhFileName);
+          cnhUrl = publicUrl;
+        }
+      }
+
       // Create profile
       const { error: profileError } = await supabase
         .from('profiles')
@@ -115,7 +172,7 @@ const SignupMotoboy = () => {
           city: formData.city,
           experience_years: experience[0],
           has_thermal_bag: hasBag,
-          cnh: formData.cnh || null,
+          cnh: cnhUrl,
           vehicle_plate: formData.plate || null,
           avatar_url: avatarUrl,
           user_type: 'motoboy',
@@ -246,25 +303,75 @@ const SignupMotoboy = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cnh">CNH (opcional)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="cnh" className="flex items-center gap-2">
+                  Documento da CNH *
+                  {cnhFile ? (
+                    <span className="text-xs text-emerald-600 flex items-center gap-1">
+                      <FileCheck className="w-3 h-3" />
+                      Arquivo selecionado
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Obrigatório
+                    </span>
+                  )}
+                </Label>
+                <div className="relative">
                   <Input
                     id="cnh"
-                    value={formData.cnh}
-                    onChange={(e) => setFormData({ ...formData, cnh: e.target.value })}
-                    placeholder="Número da CNH"
+                    type="file"
+                    accept=".pdf,image/jpeg,image/png,image/webp"
+                    onChange={handleCnhChange}
+                    className="hidden"
                   />
+                  <label
+                    htmlFor="cnh"
+                    className={`flex items-center justify-center gap-3 w-full p-4 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
+                      cnhFile 
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20' 
+                        : 'border-border hover:border-primary hover:bg-accent/50'
+                    }`}
+                  >
+                    {cnhFile ? (
+                      <>
+                        <FileCheck className="w-5 h-5 text-emerald-600" />
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                            {cnhFile.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {(cnhFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 text-muted-foreground" />
+                        <div className="text-left">
+                          <p className="text-sm font-medium">Clique para enviar sua CNH</p>
+                          <p className="text-xs text-muted-foreground">
+                            PDF ou imagem (máx. 10MB)
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </label>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="plate">Placa (opcional)</Label>
-                  <Input
-                    id="plate"
-                    value={formData.plate}
-                    onChange={(e) => setFormData({ ...formData, plate: e.target.value })}
-                    placeholder="ABC-1234"
-                  />
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Envie uma foto ou PDF da sua CNH para validação. Este documento será analisado pela nossa equipe.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="plate">Placa do veículo (opcional)</Label>
+                <Input
+                  id="plate"
+                  value={formData.plate}
+                  onChange={(e) => setFormData({ ...formData, plate: e.target.value })}
+                  placeholder="ABC-1234"
+                />
               </div>
 
               <div className="space-y-2">
