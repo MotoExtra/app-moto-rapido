@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, RefreshCw, Trash2, CheckCircle, XCircle, Calendar, Clock, MapPin, User, BarChart3, TrendingUp } from "lucide-react";
+import { LogOut, RefreshCw, Trash2, CheckCircle, XCircle, Calendar, Clock, MapPin, User, BarChart3, TrendingUp, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format, parseISO, subDays, startOfDay, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -290,6 +290,19 @@ const AdminDashboard = () => {
       </header>
 
       <main className="max-w-7xl mx-auto p-4 space-y-6">
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Ações Rápidas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate("/admin/cnh")} variant="outline" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Revisar CNH de Motoboys
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
