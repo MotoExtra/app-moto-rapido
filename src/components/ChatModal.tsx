@@ -117,18 +117,23 @@ export function ChatModal({
                 </span>
               </div>
             </div>
-            {contactPhone && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="text-primary-foreground hover:bg-primary-foreground/10"
-                onClick={() => window.open(`tel:${contactPhone}`, "_blank")}
-              >
-                <Phone className="w-5 h-5" />
-              </Button>
-            )}
           </div>
         </DialogHeader>
+
+        {/* Action buttons below header */}
+        {contactPhone && (
+          <div className="px-4 pb-3 -mt-1">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="w-full"
+              onClick={() => window.open(`tel:${contactPhone}`, "_blank")}
+            >
+              <Phone className="w-4 h-4 mr-2" />
+              Ligar para {senderType === "restaurant" ? "motoboy" : "restaurante"}
+            </Button>
+          </div>
+        )}
 
         {/* Messages Area */}
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
