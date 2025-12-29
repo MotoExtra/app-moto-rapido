@@ -40,6 +40,7 @@ import { OfferCardAvailable } from "@/components/restaurant/OfferCardAvailable";
 import { OfferCardInProgress } from "@/components/restaurant/OfferCardInProgress";
 import { OfferCardHistory } from "@/components/restaurant/OfferCardHistory";
 import { ArchivedOfferCard } from "@/components/restaurant/ArchivedOfferCard";
+import { ExpiredOfferCard } from "@/components/restaurant/ExpiredOfferCard";
 import { EmptyState } from "@/components/restaurant/EmptyState";
 
 interface Restaurant {
@@ -93,9 +94,7 @@ interface ArchivedOffer {
   offer_type: string | null;
 }
 
-const isOfferInHistory = (offer: Offer): boolean => {
-  if (!offer.is_accepted) return false;
-  
+const isOfferExpired = (offer: Offer): boolean => {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   const offerDate = offer.offer_date || today;
@@ -112,6 +111,28 @@ const isOfferInHistory = (offer: Offer): boolean => {
   }
   
   return false;
+};
+
+const isOfferInProgress = (offer: Offer): boolean => {
+  if (!offer.is_accepted) return false;
+  
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const offerDate = offer.offer_date || today;
+  
+  // If offer date is in the past, it's history
+  if (offerDate < today) return false;
+  
+  // If offer date is today, check if end time has passed
+  if (offerDate === today) {
+    const [endHours, endMinutes] = offer.time_end.split(':').map(Number);
+    const endTime = new Date(now);
+    endTime.setHours(endHours, endMinutes, 0, 0);
+    return now <= endTime;
+  }
+  
+  // Future date, still in progress
+  return true;
 };
 
 const RestaurantHome = () => {
@@ -131,21 +152,33 @@ const RestaurantHome = () => {
   const [archivedOffers, setArchivedOffers] = useState<ArchivedOffer[]>([]);
 
   // Categorize offers
-  const { availableOffers, inProgressOffers, historyOffers, uniqueMotoboys } = useMemo(() => {
+  const { availableOffers, inProgressOffers, historyOffers, expiredOffers, uniqueMotoboys } = useMemo(() => {
     const available: Offer[] = [];
     const inProgress: Offer[] = [];
     const history: Offer[] = [];
+    const expired: Offer[] = [];
     const motoboyIds = new Set<string>();
 
     offers.forEach(offer => {
-      if (!offer.is_accepted) {
-        available.push(offer);
-      } else if (isOfferInHistory(offer)) {
-        history.push(offer);
-        if (offer.accepted_by) motoboyIds.add(offer.accepted_by);
+      if (offer.is_accepted) {
+        // Accepted offers
+        if (isOfferInProgress(offer)) {
+          inProgress.push(offer);
+          if (offer.accepted_by) motoboyIds.add(offer.accepted_by);
+        } else {
+          // Accepted but ended - goes to history
+          history.push(offer);
+          if (offer.accepted_by) motoboyIds.add(offer.accepted_by);
+        }
       } else {
-        inProgress.push(offer);
-        if (offer.accepted_by) motoboyIds.add(offer.accepted_by);
+        // Not accepted
+        if (isOfferExpired(offer)) {
+          // Expired without acceptance - goes to expired section
+          expired.push(offer);
+        } else {
+          // Still available
+          available.push(offer);
+        }
       }
     });
 
@@ -153,6 +186,7 @@ const RestaurantHome = () => {
       availableOffers: available,
       inProgressOffers: inProgress,
       historyOffers: history,
+      expiredOffers: expired,
       uniqueMotoboys: motoboyIds.size
     };
   }, [offers]);
@@ -546,7 +580,7 @@ const RestaurantHome = () => {
           <RestaurantStats
             availableCount={availableOffers.length}
             inProgressCount={inProgressOffers.length}
-            historyCount={historyOffers.length + archivedOffers.length}
+            historyCount={historyOffers.length + expiredOffers.length + archivedOffers.length}
             uniqueMotoboys={uniqueMotoboys}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -604,12 +638,12 @@ const RestaurantHome = () => {
                   <Archive className="w-3 h-3 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Histórico</span>
                   <span className="sm:hidden">Hist.</span>
-                  {(historyOffers.length + archivedOffers.length) > 0 && (
+                  {(historyOffers.length + expiredOffers.length + archivedOffers.length) > 0 && (
                     <Badge 
                       variant="secondary" 
                       className="ml-1 h-5 px-1.5 text-[10px]"
                     >
-                      {historyOffers.length + archivedOffers.length}
+                      {historyOffers.length + expiredOffers.length + archivedOffers.length}
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -647,7 +681,7 @@ const RestaurantHome = () => {
               </TabsContent>
 
               <TabsContent value="history" className="space-y-3 mt-0">
-                {historyOffers.length === 0 && archivedOffers.length === 0 ? (
+                {historyOffers.length === 0 && expiredOffers.length === 0 && archivedOffers.length === 0 ? (
                   <EmptyState type="history" />
                 ) : (
                   <>
@@ -663,8 +697,25 @@ const RestaurantHome = () => {
                       />
                     ))}
                     
+                    {/* Expired offers (not accepted) separator */}
+                    {expiredOffers.length > 0 && historyOffers.length > 0 && (
+                      <div className="flex items-center gap-2 py-2">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-xs text-muted-foreground">Não aceitos</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                    )}
+                    
+                    {/* Expired offers (not accepted) */}
+                    {expiredOffers.map((offer) => (
+                      <ExpiredOfferCard
+                        key={offer.id}
+                        offer={offer}
+                      />
+                    ))}
+                    
                     {/* Archived offers separator */}
-                    {historyOffers.length > 0 && archivedOffers.length > 0 && (
+                    {(historyOffers.length > 0 || expiredOffers.length > 0) && archivedOffers.length > 0 && (
                       <div className="flex items-center gap-2 py-2">
                         <div className="flex-1 h-px bg-border" />
                         <span className="text-xs text-muted-foreground">Anteriores</span>
