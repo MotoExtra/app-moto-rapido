@@ -69,7 +69,7 @@ export const RestaurantStats = ({
               <CheckCircle className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold text-muted-foreground">{historyCount}</p>
-            <p className="text-[10px] text-muted-foreground font-medium">Finalizados</p>
+            <p className="text-[10px] text-muted-foreground font-medium">Histórico</p>
           </button>
         </div>
 

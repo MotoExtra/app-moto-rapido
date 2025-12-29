@@ -546,7 +546,7 @@ const RestaurantHome = () => {
           <RestaurantStats
             availableCount={availableOffers.length}
             inProgressCount={inProgressOffers.length}
-            historyCount={historyOffers.length}
+            historyCount={historyOffers.length + archivedOffers.length}
             uniqueMotoboys={uniqueMotoboys}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -602,8 +602,8 @@ const RestaurantHome = () => {
                 
                 <TabsTrigger value="history" className="relative text-xs sm:text-sm">
                   <Archive className="w-3 h-3 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Finalizados</span>
-                  <span className="sm:hidden">Finaliz.</span>
+                  <span className="hidden sm:inline">Histórico</span>
+                  <span className="sm:hidden">Hist.</span>
                   {(historyOffers.length + archivedOffers.length) > 0 && (
                     <Badge 
                       variant="secondary" 
