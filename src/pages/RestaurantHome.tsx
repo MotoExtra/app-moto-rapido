@@ -150,8 +150,18 @@ const RestaurantHome = () => {
   const [chatOffer, setChatOffer] = useState<Offer | null>(null);
   const [activeTab, setActiveTab] = useState("available");
   const [archivedOffers, setArchivedOffers] = useState<ArchivedOffer[]>([]);
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
-  // Categorize offers
+  // Timer to update categorization every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Categorize offers (recalculates when offers change or timer triggers)
   const { availableOffers, inProgressOffers, historyOffers, expiredOffers, uniqueMotoboys } = useMemo(() => {
     const available: Offer[] = [];
     const inProgress: Offer[] = [];
@@ -189,7 +199,7 @@ const RestaurantHome = () => {
       expiredOffers: expired,
       uniqueMotoboys: motoboyIds.size
     };
-  }, [offers]);
+  }, [offers, currentTime]);
 
   // Get unread counts for all accepted offers
   const acceptedOfferIds = useMemo(() => 
