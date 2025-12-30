@@ -94,9 +94,17 @@ interface ArchivedOffer {
   offer_type: string | null;
 }
 
+// Helper to get local date in YYYY-MM-DD format
+const getLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const isOfferExpired = (offer: Offer): boolean => {
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
+  const today = getLocalDateString(now);
   const offerDate = offer.offer_date || today;
   
   // If offer date is in the past
@@ -117,7 +125,7 @@ const isOfferInProgress = (offer: Offer): boolean => {
   if (!offer.is_accepted) return false;
   
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
+  const today = getLocalDateString(now);
   const offerDate = offer.offer_date || today;
   
   // If offer date is in the past, it's history
