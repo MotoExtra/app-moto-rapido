@@ -505,7 +505,10 @@ export type Database = {
       }
       snack_exchanges: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
           city: string
+          confirmed_at: string | null
           created_at: string | null
           description: string | null
           expires_at: string | null
@@ -519,7 +522,10 @@ export type Database = {
           wanting: string
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           city: string
+          confirmed_at?: string | null
           created_at?: string | null
           description?: string | null
           expires_at?: string | null
@@ -533,7 +539,10 @@ export type Database = {
           wanting: string
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           city?: string
+          confirmed_at?: string | null
           created_at?: string | null
           description?: string | null
           expires_at?: string | null
@@ -546,7 +555,15 @@ export type Database = {
           user_id?: string
           wanting?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "snack_exchanges_accepted_by_fkey"
+            columns: ["accepted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
