@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.notify-motoboy-arrived]
 verify_jwt = false
+
+[functions.notify-snack-exchange]
+verify_jwt = false

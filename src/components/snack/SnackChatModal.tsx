@@ -199,6 +199,34 @@ export function SnackChatModal({
     }
   };
 
+  const sendNotification = async (action: 'accepted' | 'confirmed' | 'rejected', actorName: string) => {
+    try {
+      await supabase.functions.invoke('notify-snack-exchange', {
+        body: {
+          exchange_id: exchange.id,
+          action,
+          actor_name: actorName,
+        },
+      });
+      console.log(`Notification sent for action: ${action}`);
+    } catch (error) {
+      console.error('Error sending notification:', error);
+    }
+  };
+
+  const getCurrentUserName = async (): Promise<string> => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', currentUserId)
+        .single();
+      return data?.name || 'Motoboy';
+    } catch {
+      return 'Motoboy';
+    }
+  };
+
   const handleAccept = async () => {
     setActionLoading(true);
     try {
@@ -212,6 +240,10 @@ export function SnackChatModal({
         .eq('id', exchange.id);
 
       if (error) throw error;
+      
+      // Send notification to the owner
+      const actorName = await getCurrentUserName();
+      await sendNotification('accepted', actorName);
       
       toast.success('Proposta de troca enviada! Aguarde a confirmação.');
       loadExchangeDetails();
@@ -237,6 +269,10 @@ export function SnackChatModal({
 
       if (error) throw error;
       
+      // Send notification to the accepter
+      const actorName = await getCurrentUserName();
+      await sendNotification('confirmed', actorName);
+      
       toast.success('Troca confirmada com sucesso!');
       loadExchangeDetails();
       onStatusChange?.();
@@ -252,6 +288,10 @@ export function SnackChatModal({
   const handleReject = async () => {
     setActionLoading(true);
     try {
+      // Send notification before clearing accepted_by
+      const actorName = await getCurrentUserName();
+      await sendNotification('rejected', actorName);
+
       const { error } = await supabase
         .from('snack_exchanges')
         .update({

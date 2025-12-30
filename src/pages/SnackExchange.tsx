@@ -218,6 +218,22 @@ export default function SnackExchange() {
 
       if (error) throw error;
       
+      // Get current user name for notification
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', userId)
+        .single();
+      
+      // Send push notification to owner
+      await supabase.functions.invoke('notify-snack-exchange', {
+        body: {
+          exchange_id: exchange.id,
+          action: 'accepted',
+          actor_name: profile?.name || 'Motoboy',
+        },
+      });
+      
       toast.success('Proposta de troca enviada! Aguarde a confirmação.');
       loadExchanges();
     } catch (error) {
