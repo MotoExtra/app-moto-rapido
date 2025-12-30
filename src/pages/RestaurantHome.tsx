@@ -317,10 +317,11 @@ const RestaurantHome = () => {
         setOffers(enrichedOffers);
       }
 
-      // Fetch archived offers
+      // Fetch archived offers (only for this restaurant)
       const { data: archivedData } = await supabase
         .from("expired_offers_archive")
         .select("*")
+        .eq("created_by", session.user.id)
         .order("archived_at", { ascending: false })
         .limit(50);
 
@@ -659,7 +660,11 @@ const RestaurantHome = () => {
                   {(historyOffers.length + expiredOffers.length + archivedOffers.length) > 0 && (
                     <Badge 
                       variant="secondary" 
-                      className="ml-1 h-5 px-1.5 text-[10px]"
+                      className={`ml-1 h-5 px-1.5 text-[10px] ${
+                        historyOffers.some(o => !o.has_rating) 
+                          ? 'bg-amber-500/20 text-amber-600' 
+                          : ''
+                      }`}
                     >
                       {historyOffers.length + expiredOffers.length + archivedOffers.length}
                     </Badge>

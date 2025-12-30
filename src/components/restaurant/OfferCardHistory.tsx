@@ -38,17 +38,25 @@ const formatDate = (dateStr: string | null | undefined) => {
 };
 
 export const OfferCardHistory = ({ offer, onRateClick }: OfferCardHistoryProps) => {
+  const needsRating = offer.accepted_by && !offer.has_rating;
+  
   return (
-    <Card className="overflow-hidden bg-muted/30 border-muted">
+    <Card className={`overflow-hidden border-muted ${needsRating ? 'bg-amber-500/5 border-amber-500/20' : 'bg-muted/30'}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0 pr-2">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="font-medium text-muted-foreground truncate">{offer.description}</h3>
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-600 border-0">
                 <CheckCircle className="w-3 h-3 mr-0.5" />
                 Concluído
               </Badge>
+              {needsRating && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-500/20 text-amber-600 border-0">
+                  <Star className="w-3 h-3 mr-0.5" />
+                  Avaliar
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
