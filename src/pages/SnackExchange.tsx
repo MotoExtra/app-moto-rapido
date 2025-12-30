@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Loader2, RefreshCw } from "lucide-react";
 import { SnackExchangeCard } from "@/components/snack/SnackExchangeCard";
 import { CreateSnackModal } from "@/components/snack/CreateSnackModal";
+import { SnackChatModal } from "@/components/snack/SnackChatModal";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -33,6 +34,7 @@ export default function SnackExchange() {
   const [userCity, setUserCity] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [chatExchange, setChatExchange] = useState<SnackExchange | null>(null);
 
   useEffect(() => {
     loadUserAndExchanges();
@@ -157,8 +159,8 @@ export default function SnackExchange() {
     }
   };
 
-  const handleContact = (phone: string) => {
-    toast.info(`Contato: ${phone}`);
+  const handleOpenChat = (exchange: SnackExchange) => {
+    setChatExchange(exchange);
   };
 
   return (
@@ -236,7 +238,7 @@ export default function SnackExchange() {
                   key={exchange.id}
                   exchange={exchange}
                   currentUserId={userId || undefined}
-                  onContact={handleContact}
+                  onContact={() => handleOpenChat(exchange)}
                 />
               ))
             )}
@@ -284,6 +286,17 @@ export default function SnackExchange() {
           userCity={userCity}
           userPhone={userPhone}
           onSuccess={loadExchanges}
+        />
+      )}
+
+      {/* Chat Modal */}
+      {userId && chatExchange && (
+        <SnackChatModal
+          open={!!chatExchange}
+          onOpenChange={(open) => !open && setChatExchange(null)}
+          exchangeId={chatExchange.id}
+          currentUserId={userId}
+          otherUserName={chatExchange.profiles?.name || 'Motoboy'}
         />
       )}
     </div>
