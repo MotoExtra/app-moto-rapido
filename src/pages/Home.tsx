@@ -568,36 +568,6 @@ const Home = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              {/* Notification Toggle */}
-              {isSupported && (
-                <motion.button
-                  onClick={subscribe}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all duration-300 ${
-                    isSubscribed 
-                      ? 'bg-primary/15 border-primary/30 text-primary' 
-                      : 'bg-muted/50 border-border text-muted-foreground'
-                  }`}
-                >
-                  <motion.div
-                    animate={isSubscribed ? { rotate: [0, 15, -15, 0] } : {}}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <Bell className={`w-3.5 h-3.5 ${isSubscribed ? 'fill-primary/30' : ''}`} />
-                  </motion.div>
-                  <span className="text-[10px] font-medium">Notificações</span>
-                  <div className={`w-6 h-3 rounded-full relative transition-colors duration-300 ${
-                    isSubscribed ? 'bg-primary' : 'bg-muted-foreground/30'
-                  }`}>
-                    <motion.div
-                      className="absolute top-0.5 w-2 h-2 rounded-full bg-white shadow-sm"
-                      animate={{ left: isSubscribed ? '12px' : '2px' }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  </div>
-                </motion.button>
-              )}
               
               {/* Score Card */}
               <motion.div 
