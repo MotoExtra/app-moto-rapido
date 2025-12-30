@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -18,6 +18,10 @@ interface LiveMotoboyMapProps {
   routeHistory?: LocationPoint[];
   showRouteHistory?: boolean;
   hasMotoboyLocation?: boolean;
+}
+
+export interface LiveMotoboyMapRef {
+  centerOnMotoboy: () => void;
 }
 
 // Custom motorcycle icon for motoboy
@@ -62,7 +66,7 @@ const startIcon = L.divIcon({
   iconAnchor: [12, 12],
 });
 
-const LiveMotoboyMap = ({
+const LiveMotoboyMap = forwardRef<LiveMotoboyMapRef, LiveMotoboyMapProps>(({
   motoboyLat,
   motoboyLng,
   restaurantLat,
@@ -72,7 +76,7 @@ const LiveMotoboyMap = ({
   routeHistory = [],
   showRouteHistory = true,
   hasMotoboyLocation = true
-}: LiveMotoboyMapProps) => {
+}, ref) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const motoboyMarkerRef = useRef<L.Marker | null>(null);
@@ -80,6 +84,15 @@ const LiveMotoboyMap = ({
   const routePolylineRef = useRef<L.Polyline | null>(null);
   const startMarkerRef = useRef<L.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
+
+  // Expose centerOnMotoboy method via ref
+  useImperativeHandle(ref, () => ({
+    centerOnMotoboy: () => {
+      if (mapInstanceRef.current && hasMotoboyLocation) {
+        mapInstanceRef.current.setView([motoboyLat, motoboyLng], 17, { animate: true });
+      }
+    }
+  }), [motoboyLat, motoboyLng, hasMotoboyLocation]);
 
   // Initialize map
   useEffect(() => {
@@ -273,6 +286,8 @@ const LiveMotoboyMap = ({
       )}
     </div>
   );
-};
+});
+
+LiveMotoboyMap.displayName = 'LiveMotoboyMap';
 
 export default LiveMotoboyMap;
