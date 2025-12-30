@@ -20,7 +20,13 @@ interface SnackExchange {
   status: string;
   expires_at: string;
   created_at: string;
+  accepted_by?: string | null;
+  accepted_at?: string | null;
+  confirmed_at?: string | null;
   profiles?: {
+    name: string;
+  };
+  accepter_profile?: {
     name: string;
   };
 }
@@ -88,7 +94,7 @@ export default function SnackExchange() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Load all available exchanges
+      // Load all available exchanges (not mine, status = available)
       const { data: allExchanges, error: allError } = await supabase
         .from('snack_exchanges')
         .select('*')
@@ -121,20 +127,53 @@ export default function SnackExchange() {
       }));
       setExchanges(exchangesWithProfiles);
 
-      // Load my exchanges
+      // Load my exchanges (created by me OR I'm the accepter)
       const { data: mine, error: mineError } = await supabase
         .from('snack_exchanges')
         .select('*')
-        .eq('user_id', user.id)
+        .or(`user_id.eq.${user.id},accepted_by.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
       if (mineError) throw mineError;
+
+      // Get all user ids for profiles (owners and accepters)
+      const allUserIds = new Set<string>();
+      (mine || []).forEach(e => {
+        if (e.user_id) allUserIds.add(e.user_id);
+        if (e.accepted_by) allUserIds.add(e.accepted_by);
+      });
+
+      let allProfilesMap: Record<string, string> = {};
+      if (allUserIds.size > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', Array.from(allUserIds));
+        
+        allProfilesMap = (profiles || []).reduce((acc, p) => {
+          acc[p.id] = p.name;
+          return acc;
+        }, {} as Record<string, string>);
+      }
       
       const myExchangesWithProfiles = (mine || []).map(e => ({
         ...e,
-        profiles: { name: profilesMap[e.user_id] || 'Você' }
+        profiles: { name: allProfilesMap[e.user_id] || 'Motoboy' },
+        accepter_profile: e.accepted_by ? { name: allProfilesMap[e.accepted_by] || 'Interessado' } : undefined
       }));
-      setMyExchanges(myExchangesWithProfiles);
+      
+      // Filter out confirmed exchanges that are older than 24 hours
+      const filteredMyExchanges = myExchangesWithProfiles.filter(e => {
+        if (e.status === 'confirmed' && e.confirmed_at) {
+          const confirmedAt = new Date(e.confirmed_at);
+          const now = new Date();
+          const diffHours = (now.getTime() - confirmedAt.getTime()) / (1000 * 60 * 60);
+          return diffHours < 24;
+        }
+        return true;
+      });
+
+      setMyExchanges(filteredMyExchanges);
     } catch (error) {
       console.error('Error loading exchanges:', error);
       toast.error('Erro ao carregar trocas');
@@ -162,6 +201,11 @@ export default function SnackExchange() {
   const handleOpenChat = (exchange: SnackExchange) => {
     setChatExchange(exchange);
   };
+
+  // Count pending offers that need attention
+  const pendingCount = myExchanges.filter(e => 
+    e.status === 'pending' && e.user_id === userId
+  ).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -212,8 +256,13 @@ export default function SnackExchange() {
             <TabsTrigger value="available">
               Disponíveis ({exchanges.length})
             </TabsTrigger>
-            <TabsTrigger value="mine">
+            <TabsTrigger value="mine" className="relative">
               Minhas ({myExchanges.length})
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+                  {pendingCount}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -270,6 +319,7 @@ export default function SnackExchange() {
                   exchange={exchange}
                   currentUserId={userId || undefined}
                   onDelete={handleDelete}
+                  onContact={() => handleOpenChat(exchange)}
                 />
               ))
             )}
@@ -294,9 +344,9 @@ export default function SnackExchange() {
         <SnackChatModal
           open={!!chatExchange}
           onOpenChange={(open) => !open && setChatExchange(null)}
-          exchangeId={chatExchange.id}
+          exchange={chatExchange}
           currentUserId={userId}
-          otherUserName={chatExchange.profiles?.name || 'Motoboy'}
+          onStatusChange={loadExchanges}
         />
       )}
     </div>
