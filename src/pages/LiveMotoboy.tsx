@@ -424,27 +424,28 @@ const LiveMotoboy = () => {
       </header>
 
       {/* Map Container */}
-      <div className="flex-1 relative">
-        {selectedMotoboy?.location && selectedMotoboy.offer_lat && selectedMotoboy.offer_lng ? (
+      <div className="flex-1 relative min-h-[300px]">
+        {selectedMotoboy && selectedMotoboy.offer_lat && selectedMotoboy.offer_lng ? (
           <LiveMotoboyMap
-            motoboyLat={selectedMotoboy.location.lat}
-            motoboyLng={selectedMotoboy.location.lng}
+            motoboyLat={selectedMotoboy.location?.lat || selectedMotoboy.offer_lat}
+            motoboyLng={selectedMotoboy.location?.lng || selectedMotoboy.offer_lng}
             restaurantLat={selectedMotoboy.offer_lat}
             restaurantLng={selectedMotoboy.offer_lng}
             motoboyName={selectedMotoboy.motoboy_name}
             restaurantName={selectedMotoboy.offer_description}
             routeHistory={selectedMotoboy.routeHistory}
             showRouteHistory={showRouteHistory}
+            hasMotoboyLocation={!!selectedMotoboy.location}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted/30">
             <div className="text-center p-8">
               <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">
-                Aguardando posição do motoboy...
+                Sem coordenadas do local do extra
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                A localização será atualizada automaticamente
+                O extra não possui localização cadastrada
               </p>
             </div>
           </div>
