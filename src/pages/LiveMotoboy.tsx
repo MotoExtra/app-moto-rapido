@@ -423,22 +423,24 @@ const LiveMotoboy = () => {
         </div>
       </header>
 
-      {/* Map Container */}
-      <div className="flex-1 relative min-h-[300px]">
+      {/* Map Container - needs explicit height for Leaflet */}
+      <div className="flex-1 relative" style={{ minHeight: '400px' }}>
         {selectedMotoboy && selectedMotoboy.offer_lat && selectedMotoboy.offer_lng ? (
-          <LiveMotoboyMap
-            motoboyLat={selectedMotoboy.location?.lat || selectedMotoboy.offer_lat}
-            motoboyLng={selectedMotoboy.location?.lng || selectedMotoboy.offer_lng}
-            restaurantLat={selectedMotoboy.offer_lat}
-            restaurantLng={selectedMotoboy.offer_lng}
-            motoboyName={selectedMotoboy.motoboy_name}
-            restaurantName={selectedMotoboy.offer_description}
-            routeHistory={selectedMotoboy.routeHistory}
-            showRouteHistory={showRouteHistory}
-            hasMotoboyLocation={!!selectedMotoboy.location}
-          />
+          <div className="absolute inset-0">
+            <LiveMotoboyMap
+              motoboyLat={selectedMotoboy.location?.lat || selectedMotoboy.offer_lat}
+              motoboyLng={selectedMotoboy.location?.lng || selectedMotoboy.offer_lng}
+              restaurantLat={selectedMotoboy.offer_lat}
+              restaurantLng={selectedMotoboy.offer_lng}
+              motoboyName={selectedMotoboy.motoboy_name}
+              restaurantName={selectedMotoboy.offer_description}
+              routeHistory={selectedMotoboy.routeHistory}
+              showRouteHistory={showRouteHistory}
+              hasMotoboyLocation={!!selectedMotoboy.location}
+            />
+          </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted/30">
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
             <div className="text-center p-8">
               <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">
