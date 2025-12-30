@@ -231,46 +231,6 @@ export default function SnackExchange() {
     setChatExchange(exchange);
   };
 
-  const handleAcceptExchange = async (exchange: SnackExchange) => {
-    if (!userId) return;
-    
-    try {
-      const { error } = await supabase
-        .from('snack_exchanges')
-        .update({
-          status: 'pending',
-          accepted_by: userId,
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', exchange.id)
-        .eq('status', 'available');
-
-      if (error) throw error;
-      
-      // Get current user name for notification
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', userId)
-        .single();
-      
-      // Send push notification to owner
-      await supabase.functions.invoke('notify-snack-exchange', {
-        body: {
-          exchange_id: exchange.id,
-          action: 'accepted',
-          actor_name: profile?.name || 'Motoboy',
-        },
-      });
-      
-      toast.success('Proposta de troca enviada! Aguarde a confirmação.');
-      loadExchanges();
-    } catch (error) {
-      console.error('Error accepting exchange:', error);
-      toast.error('Erro ao aceitar troca');
-    }
-  };
-
   // Count pending offers that need attention
   const pendingCount = myExchanges.filter(e => 
     e.status === 'pending' && e.user_id === userId
@@ -360,7 +320,6 @@ export default function SnackExchange() {
                   exchange={exchange}
                   currentUserId={userId || undefined}
                   onContact={() => handleOpenChat(exchange)}
-                  onAccept={() => handleAcceptExchange(exchange)}
                 />
               ))
             )}

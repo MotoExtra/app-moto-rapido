@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Phone, Clock, MapPin, Trash2, Check, Loader2, Handshake } from "lucide-react";
+import { MessageCircle, Phone, Clock, MapPin, Trash2, Check, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -29,15 +29,13 @@ interface SnackExchangeCardProps {
   currentUserId?: string;
   onDelete?: (id: string) => void;
   onContact?: () => void;
-  onAccept?: () => void;
 }
 
 export function SnackExchangeCard({ 
   exchange, 
   currentUserId,
   onDelete,
-  onContact,
-  onAccept
+  onContact
 }: SnackExchangeCardProps) {
   const isOwner = currentUserId === exchange.user_id;
   const isAccepter = currentUserId === exchange.accepted_by;
@@ -136,7 +134,7 @@ export function SnackExchangeCard({
             <span>Expira em {timeLeft}</span>
           </div>
 
-          {/* Show buttons for non-owner on available cards OR for participants on pending/confirmed cards */}
+          {/* Show buttons for non-owner on available cards */}
           {(!isOwner && exchange.status === 'available') && (
             <div className="flex gap-2">
               <Button
@@ -147,14 +145,6 @@ export function SnackExchangeCard({
               >
                 <MessageCircle className="w-3 h-3 mr-1" />
                 Chat
-              </Button>
-              <Button
-                size="sm"
-                className="h-8 text-xs bg-primary hover:bg-primary/90"
-                onClick={onAccept}
-              >
-                <Handshake className="w-3 h-3 mr-1" />
-                Aceitar
               </Button>
               <Button
                 size="sm"
