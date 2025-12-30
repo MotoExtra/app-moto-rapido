@@ -202,6 +202,30 @@ export default function SnackExchange() {
     setChatExchange(exchange);
   };
 
+  const handleAcceptExchange = async (exchange: SnackExchange) => {
+    if (!userId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('snack_exchanges')
+        .update({
+          status: 'pending',
+          accepted_by: userId,
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', exchange.id)
+        .eq('status', 'available');
+
+      if (error) throw error;
+      
+      toast.success('Proposta de troca enviada! Aguarde a confirmação.');
+      loadExchanges();
+    } catch (error) {
+      console.error('Error accepting exchange:', error);
+      toast.error('Erro ao aceitar troca');
+    }
+  };
+
   // Count pending offers that need attention
   const pendingCount = myExchanges.filter(e => 
     e.status === 'pending' && e.user_id === userId
@@ -288,6 +312,7 @@ export default function SnackExchange() {
                   exchange={exchange}
                   currentUserId={userId || undefined}
                   onContact={() => handleOpenChat(exchange)}
+                  onAccept={() => handleAcceptExchange(exchange)}
                 />
               ))
             )}
