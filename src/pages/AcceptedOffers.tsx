@@ -95,7 +95,15 @@ const AcceptedOffers = () => {
   // Geolocation hook
   const geolocation = useGeolocation();
   
+  // Force re-render every minute to update time-based conditions
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
+  
   // Categorize offers into active and completed based on time
+  // Include tick in dependencies so offers are recategorized every minute
   const { activeOffers, completedOffers } = useMemo(() => {
     const active: AcceptedOffer[] = [];
     const completed: AcceptedOffer[] = [];
@@ -109,7 +117,7 @@ const AcceptedOffers = () => {
     });
     
     return { activeOffers: active, completedOffers: completed };
-  }, [acceptedOffers]);
+  }, [acceptedOffers, tick]);
   
   // Find the active in_progress offer for live location broadcasting
   const activeInProgressOffer = useMemo(() => {
@@ -125,13 +133,6 @@ const AcceptedOffers = () => {
     longitude: geolocation.longitude,
     accuracy: geolocation.accuracy,
   });
-  
-  // Force re-render every minute to update time-based conditions
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const fetchAcceptedOffers = async () => {
