@@ -503,6 +503,41 @@ export type Database = {
         }
         Relationships: []
       }
+      snack_chat_messages: {
+        Row: {
+          created_at: string
+          exchange_id: string
+          id: string
+          message: string
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          exchange_id: string
+          id?: string
+          message: string
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          exchange_id?: string
+          id?: string
+          message?: string
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snack_chat_messages_exchange_id_fkey"
+            columns: ["exchange_id"]
+            isOneToOne: false
+            referencedRelation: "snack_exchanges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       snack_exchanges: {
         Row: {
           accepted_at: string | null

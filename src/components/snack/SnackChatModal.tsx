@@ -76,14 +76,14 @@ export function SnackChatModal({
   const loadMessages = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('snack_chat_messages')
+      const { data, error } = await (supabase
+        .from('snack_chat_messages' as any)
         .select('*')
         .eq('exchange_id', exchangeId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }) as any);
 
       if (error) throw error;
-      setMessages(data || []);
+      setMessages((data as Message[]) || []);
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
@@ -97,11 +97,11 @@ export function SnackChatModal({
 
     setSending(true);
     try {
-      const { error } = await supabase.from('snack_chat_messages').insert({
+      const { error } = await (supabase.from('snack_chat_messages' as any).insert({
         exchange_id: exchangeId,
         sender_id: currentUserId,
         message: newMessage.trim(),
-      });
+      }) as any);
 
       if (error) throw error;
       setNewMessage("");
