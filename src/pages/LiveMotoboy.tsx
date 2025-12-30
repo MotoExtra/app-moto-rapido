@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import {
   MapPin,
   Clock,
   Navigation,
+  Crosshair,
   User,
   RefreshCw,
   AlertCircle,
@@ -21,7 +22,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDistance } from '@/lib/distance';
-import LiveMotoboyMap from '@/components/LiveMotoboyMap';
+import LiveMotoboyMap, { LiveMotoboyMapRef } from '@/components/LiveMotoboyMap';
 
 interface MotoboyLocation {
   user_id: string;
@@ -71,6 +72,7 @@ const getGpsStatus = (location: MotoboyLocation | null): GpsStatus => {
 const LiveMotoboy = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const mapRef = useRef<LiveMotoboyMapRef>(null);
   const [loading, setLoading] = useState(true);
   const [activeMotoboys, setActiveMotoboys] = useState<ActiveMotoboy[]>([]);
   const [selectedMotoboy, setSelectedMotoboy] = useState<ActiveMotoboy | null>(null);
@@ -428,6 +430,7 @@ const LiveMotoboy = () => {
         {selectedMotoboy && selectedMotoboy.offer_lat && selectedMotoboy.offer_lng ? (
           <div className="w-full h-full">
             <LiveMotoboyMap
+              ref={mapRef}
               motoboyLat={selectedMotoboy.location?.lat || selectedMotoboy.offer_lat}
               motoboyLng={selectedMotoboy.location?.lng || selectedMotoboy.offer_lng}
               restaurantLat={selectedMotoboy.offer_lat}
@@ -438,6 +441,18 @@ const LiveMotoboy = () => {
               showRouteHistory={showRouteHistory}
               hasMotoboyLocation={!!selectedMotoboy.location}
             />
+            {/* Center on motoboy button */}
+            {selectedMotoboy.location && (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="absolute bottom-3 right-3 shadow-lg gap-1.5 z-10"
+                onClick={() => mapRef.current?.centerOnMotoboy()}
+              >
+                <Crosshair className="w-4 h-4" />
+                Centralizar
+              </Button>
+            )}
           </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-lg">
