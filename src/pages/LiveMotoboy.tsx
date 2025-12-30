@@ -423,10 +423,10 @@ const LiveMotoboy = () => {
         </div>
       </header>
 
-      {/* Map Container - needs explicit height for Leaflet */}
-      <div className="flex-1 relative" style={{ minHeight: '400px' }}>
+      {/* Map Container - fixed height for Leaflet */}
+      <div className="relative h-[250px] rounded-lg overflow-hidden mx-4 mt-2">
         {selectedMotoboy && selectedMotoboy.offer_lat && selectedMotoboy.offer_lng ? (
-          <div className="absolute inset-0">
+          <div className="w-full h-full">
             <LiveMotoboyMap
               motoboyLat={selectedMotoboy.location?.lat || selectedMotoboy.offer_lat}
               motoboyLng={selectedMotoboy.location?.lng || selectedMotoboy.offer_lng}
@@ -440,7 +440,7 @@ const LiveMotoboy = () => {
             />
           </div>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+          <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-lg">
             <div className="text-center p-8">
               <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">
@@ -452,10 +452,11 @@ const LiveMotoboy = () => {
             </div>
           </div>
         )}
+      </div>
 
-        {/* Floating Card with Motoboy Info */}
-        {selectedMotoboy && (
-          <Card className="absolute bottom-4 left-4 right-4 shadow-2xl border-0 bg-background/95 backdrop-blur-sm">
+      {/* Card with Motoboy Info */}
+      {selectedMotoboy && (
+        <Card className="mx-4 mt-4 shadow-lg border-0 bg-background/95 backdrop-blur-sm">
             <CardContent className="p-4">
               {/* GPS Status Alert */}
               {(() => {
@@ -570,37 +571,36 @@ const LiveMotoboy = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+      )}
 
-        {/* Motoboy Selector (if multiple) */}
-        {activeMotoboys.length > 1 && (
-          <div className="absolute top-4 right-4 flex flex-col gap-2">
-            {activeMotoboys.map((motoboy) => {
-              const gpsStatus = getGpsStatus(motoboy.location);
-              return (
-                <Button
-                  key={motoboy.offer_id}
-                  size="sm"
-                  variant={selectedMotoboy?.offer_id === motoboy.offer_id ? 'default' : 'outline'}
-                  className={`shadow-lg gap-2 ${
-                    gpsStatus === 'inactive' ? 'border-amber-500/50' : ''
-                  }`}
-                  onClick={() => setSelectedMotoboy(motoboy)}
-                >
-                  <div className="relative">
-                    <User className="w-4 h-4" />
-                    <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background ${
-                      gpsStatus === 'active' ? 'bg-emerald-500' :
-                      gpsStatus === 'inactive' ? 'bg-amber-500' : 'bg-gray-400'
-                    }`} />
-                  </div>
-                  {motoboy.motoboy_name.split(' ')[0]}
-                </Button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      {/* Motoboy Selector (if multiple) */}
+      {activeMotoboys.length > 1 && (
+        <div className="flex gap-2 px-4 mt-4 overflow-x-auto">
+          {activeMotoboys.map((motoboy) => {
+            const gpsStatus = getGpsStatus(motoboy.location);
+            return (
+              <Button
+                key={motoboy.offer_id}
+                size="sm"
+                variant={selectedMotoboy?.offer_id === motoboy.offer_id ? 'default' : 'outline'}
+                className={`shadow-lg gap-2 shrink-0 ${
+                  gpsStatus === 'inactive' ? 'border-amber-500/50' : ''
+                }`}
+                onClick={() => setSelectedMotoboy(motoboy)}
+              >
+                <div className="relative">
+                  <User className="w-4 h-4" />
+                  <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background ${
+                    gpsStatus === 'active' ? 'bg-emerald-500' :
+                    gpsStatus === 'inactive' ? 'bg-amber-500' : 'bg-gray-400'
+                  }`} />
+                </div>
+                {motoboy.motoboy_name.split(' ')[0]}
+              </Button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
