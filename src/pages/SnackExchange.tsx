@@ -35,6 +35,7 @@ export default function SnackExchange() {
   const navigate = useNavigate();
   const [exchanges, setExchanges] = useState<SnackExchange[]>([]);
   const [myExchanges, setMyExchanges] = useState<SnackExchange[]>([]);
+  const [historyExchanges, setHistoryExchanges] = useState<SnackExchange[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [userCity, setUserCity] = useState("");
@@ -162,18 +163,18 @@ export default function SnackExchange() {
         accepter_profile: e.accepted_by ? { name: allProfilesMap[e.accepted_by] || 'Interessado' } : undefined
       }));
       
-      // Filter out confirmed exchanges that are older than 24 hours
-      const filteredMyExchanges = myExchangesWithProfiles.filter(e => {
-        if (e.status === 'confirmed' && e.confirmed_at) {
-          const confirmedAt = new Date(e.confirmed_at);
-          const now = new Date();
-          const diffHours = (now.getTime() - confirmedAt.getTime()) / (1000 * 60 * 60);
-          return diffHours < 24;
+      // Separate confirmed (history) from active exchanges
+      const activeExchanges = myExchangesWithProfiles.filter(e => {
+        if (e.status === 'confirmed') {
+          return false; // Move to history
         }
         return true;
       });
 
-      setMyExchanges(filteredMyExchanges);
+      const confirmedExchanges = myExchangesWithProfiles.filter(e => e.status === 'confirmed');
+
+      setMyExchanges(activeExchanges);
+      setHistoryExchanges(confirmedExchanges);
     } catch (error) {
       console.error('Error loading exchanges:', error);
       toast.error('Erro ao carregar trocas');
@@ -292,7 +293,7 @@ export default function SnackExchange() {
       {/* Content */}
       <div className="p-4">
         <Tabs defaultValue="available" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="available">
               Disponíveis ({exchanges.length})
             </TabsTrigger>
@@ -303,6 +304,9 @@ export default function SnackExchange() {
                   {pendingCount}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="history">
+              Histórico ({historyExchanges.length})
             </TabsTrigger>
           </TabsList>
 
@@ -360,6 +364,33 @@ export default function SnackExchange() {
                   exchange={exchange}
                   currentUserId={userId || undefined}
                   onDelete={handleDelete}
+                  onContact={() => handleOpenChat(exchange)}
+                />
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-3">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : historyExchanges.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-4xl mb-3">📋</div>
+                <p className="text-muted-foreground">
+                  Nenhuma troca concluída ainda
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Suas trocas confirmadas aparecerão aqui
+                </p>
+              </div>
+            ) : (
+              historyExchanges.map((exchange) => (
+                <SnackExchangeCard
+                  key={exchange.id}
+                  exchange={exchange}
+                  currentUserId={userId || undefined}
                   onContact={() => handleOpenChat(exchange)}
                 />
               ))
