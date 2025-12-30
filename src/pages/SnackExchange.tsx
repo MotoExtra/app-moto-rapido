@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { SnackExchangeCard } from "@/components/snack/SnackExchangeCard";
 import { CreateSnackModal } from "@/components/snack/CreateSnackModal";
 import { SnackChatModal } from "@/components/snack/SnackChatModal";
@@ -199,6 +199,34 @@ export default function SnackExchange() {
     }
   };
 
+  const handleClearHistory = async () => {
+    if (!userId) return;
+    
+    const myHistoryIds = historyExchanges
+      .filter(e => e.user_id === userId)
+      .map(e => e.id);
+    
+    if (myHistoryIds.length === 0) {
+      toast.info('Nenhuma troca sua para limpar');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('snack_exchanges')
+        .delete()
+        .in('id', myHistoryIds);
+
+      if (error) throw error;
+      
+      toast.success('Histórico limpo com sucesso');
+      loadExchanges();
+    } catch (error) {
+      console.error('Error clearing history:', error);
+      toast.error('Erro ao limpar histórico');
+    }
+  };
+
   const handleOpenChat = (exchange: SnackExchange) => {
     setChatExchange(exchange);
   };
@@ -371,6 +399,19 @@ export default function SnackExchange() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-3">
+            {historyExchanges.length > 0 && (
+              <div className="flex justify-end mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={handleClearHistory}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Limpar Histórico
+                </Button>
+              </div>
+            )}
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
