@@ -17,6 +17,7 @@ interface LiveMotoboyMapProps {
   restaurantName: string;
   routeHistory?: LocationPoint[];
   showRouteHistory?: boolean;
+  hasMotoboyLocation?: boolean;
 }
 
 // Custom motorcycle icon for motoboy
@@ -69,7 +70,8 @@ const LiveMotoboyMap = ({
   motoboyName,
   restaurantName,
   routeHistory = [],
-  showRouteHistory = true
+  showRouteHistory = true,
+  hasMotoboyLocation = true
 }: LiveMotoboyMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -113,43 +115,49 @@ const LiveMotoboyMap = ({
     }).addTo(map);
     restaurantMarker.bindPopup(`<strong>${restaurantName}</strong><br/>📍 Local do extra`);
 
-    // Add motoboy marker (will be updated)
-    if (motoboyMarkerRef.current) {
-      motoboyMarkerRef.current.remove();
-    }
-    motoboyMarkerRef.current = L.marker([motoboyLat, motoboyLng], {
-      icon: motoboyIcon,
-    }).addTo(map);
-    motoboyMarkerRef.current.bindPopup(`<strong>${motoboyName}</strong><br/>🏍️ Em movimento`);
-
-    // Add polyline between motoboy and restaurant (direct line)
-    if (polylineRef.current) {
-      polylineRef.current.remove();
-    }
-    polylineRef.current = L.polyline(
-      [
-        [motoboyLat, motoboyLng],
-        [restaurantLat, restaurantLng],
-      ],
-      {
-        color: '#10b981',
-        weight: 3,
-        opacity: 0.5,
-        dashArray: '10, 10',
+    // Only add motoboy marker if we have their location
+    if (hasMotoboyLocation) {
+      // Add motoboy marker (will be updated)
+      if (motoboyMarkerRef.current) {
+        motoboyMarkerRef.current.remove();
       }
-    ).addTo(map);
+      motoboyMarkerRef.current = L.marker([motoboyLat, motoboyLng], {
+        icon: motoboyIcon,
+      }).addTo(map);
+      motoboyMarkerRef.current.bindPopup(`<strong>${motoboyName}</strong><br/>🏍️ Em movimento`);
 
-    // Fit bounds to show both markers
-    const bounds = L.latLngBounds(
-      [motoboyLat, motoboyLng],
-      [restaurantLat, restaurantLng]
-    );
-    map.fitBounds(bounds, { padding: [50, 50] });
+      // Add polyline between motoboy and restaurant (direct line)
+      if (polylineRef.current) {
+        polylineRef.current.remove();
+      }
+      polylineRef.current = L.polyline(
+        [
+          [motoboyLat, motoboyLng],
+          [restaurantLat, restaurantLng],
+        ],
+        {
+          color: '#10b981',
+          weight: 3,
+          opacity: 0.5,
+          dashArray: '10, 10',
+        }
+      ).addTo(map);
+
+      // Fit bounds to show both markers
+      const bounds = L.latLngBounds(
+        [motoboyLat, motoboyLng],
+        [restaurantLat, restaurantLng]
+      );
+      map.fitBounds(bounds, { padding: [50, 50] });
+    } else {
+      // Just center on restaurant when no motoboy location
+      map.setView([restaurantLat, restaurantLng], 15);
+    }
 
     return () => {
       restaurantMarker.remove();
     };
-  }, [mapReady, restaurantLat, restaurantLng, restaurantName]);
+  }, [mapReady, restaurantLat, restaurantLng, restaurantName, hasMotoboyLocation]);
 
   // Update motoboy position with smooth animation
   useEffect(() => {
@@ -236,14 +244,23 @@ const LiveMotoboyMap = ({
       {/* Gradient overlay at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
       
-      {/* Live indicator */}
+      {/* Live indicator or waiting indicator */}
       <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/95 backdrop-blur-sm border border-border shadow-lg">
-        <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-xs font-bold text-foreground">AO VIVO</span>
+        {hasMotoboyLocation ? (
+          <>
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-xs font-bold text-foreground">AO VIVO</span>
+          </>
+        ) : (
+          <>
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-xs font-medium text-foreground">Aguardando GPS do motoboy</span>
+          </>
+        )}
       </div>
 
       {/* Route stats */}
-      {showRouteHistory && routeHistory.length > 1 && (
+      {showRouteHistory && routeHistory.length > 1 && hasMotoboyLocation && (
         <div className="absolute top-4 right-4 flex flex-col gap-1 px-3 py-2 rounded-lg bg-background/95 backdrop-blur-sm border border-border shadow-lg">
           <div className="flex items-center gap-2">
             <div className="w-3 h-0.5 bg-blue-500 rounded" />
