@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Phone, Clock, MapPin, Trash2 } from "lucide-react";
+import { MessageCircle, Phone, Clock, MapPin, Trash2, Check, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -15,7 +15,11 @@ interface SnackExchange {
   status: string;
   expires_at: string;
   created_at: string;
+  accepted_by?: string | null;
   profiles?: {
+    name: string;
+  };
+  accepter_profile?: {
     name: string;
   };
 }
@@ -24,7 +28,7 @@ interface SnackExchangeCardProps {
   exchange: SnackExchange;
   currentUserId?: string;
   onDelete?: (id: string) => void;
-  onContact?: (phone: string) => void;
+  onContact?: () => void;
 }
 
 export function SnackExchangeCard({ 
@@ -34,6 +38,9 @@ export function SnackExchangeCard({
   onContact 
 }: SnackExchangeCardProps) {
   const isOwner = currentUserId === exchange.user_id;
+  const isAccepter = currentUserId === exchange.accepted_by;
+  const isPending = exchange.status === 'pending';
+  const isConfirmed = exchange.status === 'confirmed';
   const expiresAt = new Date(exchange.expires_at);
   const timeLeft = formatDistanceToNow(expiresAt, { locale: ptBR, addSuffix: false });
   
@@ -43,6 +50,36 @@ export function SnackExchangeCard({
     );
     const phone = exchange.phone.replace(/\D/g, '');
     window.open(`https://wa.me/55${phone}?text=${message}`, '_blank');
+  };
+
+  const getStatusBadge = () => {
+    if (isConfirmed) {
+      return (
+        <div className="flex items-center gap-1 text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded-full">
+          <Check className="w-3 h-3" />
+          Confirmada
+        </div>
+      );
+    }
+    if (isPending) {
+      if (isOwner) {
+        return (
+          <div className="flex items-center gap-1 text-xs bg-yellow-500/20 text-yellow-600 px-2 py-1 rounded-full animate-pulse">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Alguém quer trocar!
+          </div>
+        );
+      }
+      if (isAccepter) {
+        return (
+          <div className="flex items-center gap-1 text-xs bg-blue-500/20 text-blue-600 px-2 py-1 rounded-full">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Aguardando confirmação
+          </div>
+        );
+      }
+    }
+    return null;
   };
 
   return (
@@ -62,16 +99,19 @@ export function SnackExchangeCard({
             </div>
           </div>
           
-          {isOwner && onDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              onClick={() => onDelete(exchange.id)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {getStatusBadge()}
+            {isOwner && onDelete && !isPending && !isConfirmed && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                onClick={() => onDelete(exchange.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2 py-2 border-y border-border/30">
@@ -94,13 +134,14 @@ export function SnackExchangeCard({
             <span>Expira em {timeLeft}</span>
           </div>
 
-          {!isOwner && (
+          {/* Show buttons for non-owner on available cards OR for participants on pending/confirmed cards */}
+          {(!isOwner && exchange.status === 'available') && (
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 className="h-8 text-xs"
-                onClick={() => onContact?.(exchange.phone)}
+                onClick={onContact}
               >
                 <MessageCircle className="w-3 h-3 mr-1" />
                 Chat
@@ -114,6 +155,19 @@ export function SnackExchangeCard({
                 WhatsApp
               </Button>
             </div>
+          )}
+
+          {/* Show chat button for pending/confirmed exchanges for participants */}
+          {(isPending || isConfirmed) && (isOwner || isAccepter) && (
+            <Button
+              variant={isPending && isOwner ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={onContact}
+            >
+              <MessageCircle className="w-3 h-3 mr-1" />
+              {isPending && isOwner ? 'Ver proposta' : 'Chat'}
+            </Button>
           )}
         </div>
       </CardContent>
