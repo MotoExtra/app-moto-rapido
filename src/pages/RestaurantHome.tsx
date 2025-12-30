@@ -721,6 +721,7 @@ const RestaurantHome = () => {
                       <ExpiredOfferCard
                         key={offer.id}
                         offer={offer}
+                        onDelete={() => setOfferToDelete(offer)}
                       />
                     ))}
                     
