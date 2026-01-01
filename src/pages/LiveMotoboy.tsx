@@ -18,7 +18,14 @@ import {
   Route,
   WifiOff,
   Signal,
+  HelpCircle,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDistance } from '@/lib/distance';
@@ -443,15 +450,26 @@ const LiveMotoboy = () => {
             />
             {/* Center on motoboy button */}
             {selectedMotoboy.location && (
-              <Button
-                size="sm"
-                variant="secondary"
-                className="absolute bottom-3 right-3 shadow-lg gap-1.5 z-10"
-                onClick={() => mapRef.current?.centerOnMotoboy()}
-              >
-                <Crosshair className="w-4 h-4" />
-                Centralizar
-              </Button>
+              <div className="absolute bottom-3 right-3 flex items-center gap-2 z-10">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="shadow-lg gap-1.5"
+                        onClick={() => mapRef.current?.centerOnMotoboy()}
+                      >
+                        <Crosshair className="w-4 h-4" />
+                        Centralizar
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px] text-center">
+                      <p>Centraliza o mapa na posição atual do motoboy</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             )}
           </div>
         ) : (
