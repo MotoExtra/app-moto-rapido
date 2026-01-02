@@ -142,7 +142,7 @@ export const OfferCardInProgress = ({
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="grid grid-cols-4 gap-2 mt-3">
+        <div className="grid grid-cols-3 gap-2 mt-3">
           <Button 
             size="sm" 
             variant={unreadCount > 0 ? "default" : "outline"}
@@ -190,20 +190,6 @@ export const OfferCardInProgress = ({
             </>
           )}
           
-          {hasArrived && (
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={(e) => {
-                e.stopPropagation();
-                onLiveClick();
-              }}
-              className="text-xs bg-emerald-500/10 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/20"
-            >
-              <Navigation className="w-3 h-3 mr-1" />
-              Ao Vivo
-            </Button>
-          )}
         </div>
 
         {/* Status Indicator */}
