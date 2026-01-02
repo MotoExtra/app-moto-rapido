@@ -27,6 +27,7 @@ import {
   Navigation,
   User,
 } from "lucide-react";
+import { MotoboyRatingsModal } from "./MotoboyRatingsModal";
 
 interface Offer {
   id: string;
@@ -88,6 +89,7 @@ export function AcceptedOfferDetailsModal({
   onRateClick,
   onLiveTrackClick,
 }: AcceptedOfferDetailsModalProps) {
+  const [showRatingsModal, setShowRatingsModal] = useState(false);
   const isArrived = offer.motoboy_status === "in_progress";
 
   return (
@@ -157,13 +159,16 @@ export function AcceptedOfferDetailsModal({
                     {offer.motoboy_rating !== undefined &&
                       offer.motoboy_review_count &&
                       offer.motoboy_review_count > 0 && (
-                        <span className="flex items-center gap-1">
+                        <button
+                          onClick={() => setShowRatingsModal(true)}
+                          className="flex items-center gap-1 hover:text-amber-600 transition-colors cursor-pointer"
+                        >
                           <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                           <span className="font-semibold text-foreground">
                             {offer.motoboy_rating}
                           </span>
-                          <span>({offer.motoboy_review_count} avaliações)</span>
-                        </span>
+                          <span className="underline underline-offset-2">({offer.motoboy_review_count} avaliações)</span>
+                        </button>
                       )}
                   </div>
                   {offer.motoboy_phone && (
@@ -385,6 +390,16 @@ export function AcceptedOfferDetailsModal({
           )}
         </div>
       </DialogContent>
+
+      {offer.accepted_by && (
+        <MotoboyRatingsModal
+          open={showRatingsModal}
+          onOpenChange={setShowRatingsModal}
+          motoboyId={offer.accepted_by}
+          motoboyName={offer.motoboy_name || "Motoboy"}
+          motoboyAvatarUrl={offer.motoboy_avatar_url}
+        />
+      )}
     </Dialog>
   );
 }

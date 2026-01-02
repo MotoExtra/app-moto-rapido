@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ import {
   ChevronRight,
   CheckCircle2
 } from "lucide-react";
+import { MotoboyRatingsModal } from "@/components/MotoboyRatingsModal";
 
 interface Offer {
   id: string;
@@ -27,6 +29,7 @@ interface Offer {
   motoboy_review_count?: number;
   motoboy_status?: string;
   payment?: string | null;
+  accepted_by?: string | null;
 }
 
 interface OfferCardInProgressProps {
@@ -46,9 +49,11 @@ export const OfferCardInProgress = ({
   onChatClick,
   onLiveClick
 }: OfferCardInProgressProps) => {
+  const [showRatingsModal, setShowRatingsModal] = useState(false);
   const hasArrived = offer.motoboy_status === "in_progress";
 
   return (
+    <>
     <Card className={`overflow-hidden transition-all ${
       hasArrived 
         ? 'border-emerald-500/50 bg-gradient-to-r from-emerald-500/5 to-green-500/5 shadow-lg shadow-emerald-500/10' 
@@ -117,14 +122,18 @@ export const OfferCardInProgress = ({
               <div className="flex items-center gap-2">
                 <p className="font-semibold truncate text-base">{offer.motoboy_name}</p>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {offer.motoboy_rating !== undefined && offer.motoboy_review_count && offer.motoboy_review_count > 0 && (
-                  <span className="flex items-center gap-0.5">
-                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                    {offer.motoboy_rating} ({offer.motoboy_review_count})
-                  </span>
-                )}
-              </div>
+              {offer.motoboy_rating !== undefined && offer.motoboy_review_count && offer.motoboy_review_count > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowRatingsModal(true);
+                  }}
+                  className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-amber-600 transition-colors cursor-pointer"
+                >
+                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                  {offer.motoboy_rating} ({offer.motoboy_review_count})
+                </button>
+              )}
             </div>
             
             {unreadCount > 0 && (
@@ -201,5 +210,16 @@ export const OfferCardInProgress = ({
         )}
       </CardContent>
     </Card>
+
+    {offer.accepted_by && (
+      <MotoboyRatingsModal
+        open={showRatingsModal}
+        onOpenChange={setShowRatingsModal}
+        motoboyId={offer.accepted_by}
+        motoboyName={offer.motoboy_name || "Motoboy"}
+        motoboyAvatarUrl={offer.motoboy_avatar_url}
+      />
+    )}
+    </>
   );
 };
