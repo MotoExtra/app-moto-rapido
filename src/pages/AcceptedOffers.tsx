@@ -25,6 +25,7 @@ import { isWithinRadius, isWithinTimeWindow, calculateDistance } from "@/lib/dis
 import { ChatModal } from "@/components/ChatModal";
 import { useUnreadCounts } from "@/hooks/useChatMessages";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { isRatingPromptTime, hasShownRatingPrompt, markRatingPromptShown } from "@/lib/ratingPrompt";
 interface AcceptedOffer {
   id: string;
   status: string;
@@ -235,6 +236,24 @@ const AcceptedOffers = () => {
 
     return () => subscription.unsubscribe();
   }, [toast, navigate]);
+
+  // Auto-trigger rating modal 3 minutes after offer end time
+  useEffect(() => {
+    if (!userId) return;
+
+    const offerToRate = completedOffers.find(ao => 
+      ao.offer.created_by &&
+      !ao.has_rating &&
+      isRatingPromptTime(ao.offer.offer_date, ao.offer.time_end) &&
+      !hasShownRatingPrompt(ao.offer.id, 'motoboy')
+    );
+
+    if (offerToRate) {
+      setSelectedOffer(offerToRate);
+      setRatingModalOpen(true);
+      markRatingPromptShown(offerToRate.offer.id, 'motoboy');
+    }
+  }, [completedOffers, tick, userId]);
 
   const handleConfirmCancel = async () => {
     if (!offerToCancel) return;
