@@ -403,6 +403,30 @@ export type Database = {
         }
         Relationships: []
       }
+      rating_notifications_sent: {
+        Row: {
+          id: string
+          offer_id: string
+          sent_at: string
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          id?: string
+          offer_id: string
+          sent_at?: string
+          user_id: string
+          user_type: string
+        }
+        Update: {
+          id?: string
+          offer_id?: string
+          sent_at?: string
+          user_id?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
       ratings: {
         Row: {
           comment: string | null
