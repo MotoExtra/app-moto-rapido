@@ -202,7 +202,7 @@ export function useUnreadCounts(offerIds: string[], userId: string | null, onNew
 
     // Subscribe to new messages and read updates
     const channel = supabase
-      .channel("unread-counts")
+      .channel(`unread-counts-${userId}`)
       .on(
         "postgres_changes",
         {
@@ -230,16 +230,12 @@ export function useUnreadCounts(offerIds: string[], userId: string | null, onNew
         },
         (payload) => {
           const updatedMessage = payload.new as ChatMessage;
-          const oldMessage = payload.old as { read_at: string | null };
           
-          // If read_at changed from null to a value (message was read)
-          if (!oldMessage.read_at && updatedMessage.read_at) {
-            if (offerIds.includes(updatedMessage.offer_id) && updatedMessage.sender_id !== userId) {
-              setUnreadCounts(c => ({
-                ...c,
-                [updatedMessage.offer_id]: Math.max(0, (c[updatedMessage.offer_id] || 0) - 1),
-              }));
-            }
+          // If this message was marked as read (read_at is now set)
+          // and it's a message from someone else, refetch to update counts
+          if (updatedMessage.read_at && offerIds.includes(updatedMessage.offer_id)) {
+            // Refetch counts to ensure accuracy
+            fetchUnreadCounts();
           }
         }
       )
