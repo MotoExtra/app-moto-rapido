@@ -42,6 +42,7 @@ import { OfferCardHistory } from "@/components/restaurant/OfferCardHistory";
 import { ArchivedOfferCard } from "@/components/restaurant/ArchivedOfferCard";
 import { ExpiredOfferCard } from "@/components/restaurant/ExpiredOfferCard";
 import { EmptyState } from "@/components/restaurant/EmptyState";
+import { isRatingPromptTime, hasShownRatingPrompt, markRatingPromptShown } from "@/lib/ratingPrompt";
 
 interface Restaurant {
   id: string;
@@ -457,6 +458,25 @@ const RestaurantHome = () => {
       supabase.removeChannel(arrivalChannel);
     };
   }, [navigate, playAlert, playMotoboyArrived, toast]);
+
+  // Auto-trigger rating modal 3 minutes after offer end time
+  useEffect(() => {
+    if (!restaurant) return;
+
+    const offerToRate = historyOffers.find(offer => 
+      offer.is_accepted &&
+      offer.accepted_by &&
+      !offer.has_rating &&
+      isRatingPromptTime(offer.offer_date || null, offer.time_end) &&
+      !hasShownRatingPrompt(offer.id, 'restaurant')
+    );
+
+    if (offerToRate) {
+      setSelectedOffer(offerToRate);
+      setRatingModalOpen(true);
+      markRatingPromptShown(offerToRate.id, 'restaurant');
+    }
+  }, [historyOffers, currentTime, restaurant]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
