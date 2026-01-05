@@ -14,6 +14,7 @@ import { Send, Loader2, Phone, MessageCircle } from "lucide-react";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { ChatBubble } from "@/components/ChatBubble";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 
 interface ChatModalProps {
   open: boolean;
@@ -56,6 +57,12 @@ export function ChatModal({
     onNewMessage: playNewMessage,
   });
 
+  const { isContactTyping, broadcastTyping } = useTypingIndicator({
+    offerId: open ? offerId : null,
+    userId,
+    contactName,
+  });
+
   // Mark messages as read when modal opens
   useEffect(() => {
     if (open) {
@@ -64,12 +71,19 @@ export function ChatModal({
     }
   }, [open, markAsRead]);
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom when new messages arrive or typing indicator appears
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isContactTyping]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    if (e.target.value.trim()) {
+      broadcastTyping();
+    }
+  };
 
   const handleSend = async () => {
     if (!inputValue.trim() || sending) return;
@@ -112,9 +126,15 @@ export function ChatModal({
                     ⭐ {contactRating}
                   </Badge>
                 )}
-                <span className="text-xs text-primary-foreground/70">
-                  {senderType === "restaurant" ? "Motoboy" : "Restaurante"}
-                </span>
+                {isContactTyping ? (
+                  <span className="text-xs text-primary-foreground/90 animate-pulse">
+                    digitando...
+                  </span>
+                ) : (
+                  <span className="text-xs text-primary-foreground/70">
+                    {senderType === "restaurant" ? "Motoboy" : "Restaurante"}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -162,6 +182,18 @@ export function ChatModal({
                   isRead={!!msg.read_at}
                 />
               ))}
+              {/* Typing indicator bubble */}
+              {isContactTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-2">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </ScrollArea>
@@ -173,7 +205,7 @@ export function ChatModal({
               ref={inputRef}
               placeholder="Digite sua mensagem..."
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               disabled={sending}
               className="flex-1"
