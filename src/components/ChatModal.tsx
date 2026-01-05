@@ -106,7 +106,7 @@ export function ChatModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md h-[85vh] max-h-[600px] p-0 flex flex-col overflow-hidden">
+      <DialogContent className="max-w-md h-[85vh] max-h-[600px] p-0 flex flex-col overflow-hidden z-[9999]">
         {/* Header */}
         <DialogHeader className="p-4 pb-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-t-lg">
           <div className="flex items-center gap-3">
