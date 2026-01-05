@@ -434,7 +434,7 @@ const Home = () => {
           )
         `)
         .eq("user_id", user.id)
-        .in("status", ["pending", "arrived"]);
+        .in("status", ["pending", "arrived", "in_progress"]);
 
       if (conflictError) throw conflictError;
 
