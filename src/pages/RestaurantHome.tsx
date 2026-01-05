@@ -42,7 +42,7 @@ import { OfferCardHistory } from "@/components/restaurant/OfferCardHistory";
 import { ArchivedOfferCard } from "@/components/restaurant/ArchivedOfferCard";
 import { ExpiredOfferCard } from "@/components/restaurant/ExpiredOfferCard";
 import { EmptyState } from "@/components/restaurant/EmptyState";
-import { isRatingPromptTime, hasShownRatingPrompt, markRatingPromptShown } from "@/lib/ratingPrompt";
+import { isRatingPromptTime, hasShownRatingPrompt, markRatingPromptShown, sendRatingPushNotification, hasSentRatingPushNotification } from "@/lib/ratingPrompt";
 
 interface Restaurant {
   id: string;
@@ -476,6 +476,36 @@ const RestaurantHome = () => {
       setRatingModalOpen(true);
       markRatingPromptShown(offerToRate.id, 'restaurant');
     }
+  }, [historyOffers, currentTime, restaurant]);
+
+  // Send push notification for rating 3 minutes after offer end time
+  useEffect(() => {
+    if (!restaurant) return;
+
+    historyOffers.forEach(async (offer) => {
+      if (
+        offer.is_accepted &&
+        offer.accepted_by &&
+        !offer.has_rating &&
+        isRatingPromptTime(offer.offer_date || null, offer.time_end) &&
+        !hasSentRatingPushNotification(offer.id, 'restaurant')
+      ) {
+        // Get motoboy name for the notification
+        const { data: motoboyProfile } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("id", offer.accepted_by)
+          .single();
+
+        await sendRatingPushNotification({
+          offerId: offer.id,
+          restaurantName: restaurant.fantasy_name,
+          motoboyName: motoboyProfile?.name || "o motoboy",
+          targetUserId: restaurant.id,
+          targetType: 'restaurant',
+        });
+      }
+    });
   }, [historyOffers, currentTime, restaurant]);
 
   const handleLogout = async () => {

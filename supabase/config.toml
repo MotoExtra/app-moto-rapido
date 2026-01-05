@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.notify-snack-exchange]
 verify_jwt = false
+
+[functions.notify-rating-reminder]
+verify_jwt = false
