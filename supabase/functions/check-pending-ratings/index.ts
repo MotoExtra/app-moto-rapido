@@ -19,11 +19,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Verificando ofertas pendentes de avaliação...");
 
-    // Get current time minus 3 minutes (rating prompt time)
     const now = new Date();
     const today = now.toISOString().split('T')[0];
 
-    // Find accepted offers that ended 3+ minutes ago and need rating
+    // Find accepted offers that ended 3+ minutes ago
     const { data: completedOffers, error: offersError } = await supabase
       .from("offers")
       .select(`
@@ -55,7 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Check if the offer has ended (3+ minutes ago)
       const offerDate = offer.offer_date || today;
       const [hours, minutes] = offer.time_end.split(':').map(Number);
-      const endTime = new Date(`${offerDate}T${offer.time_end}:00`);
+      const endTime = new Date(`${offerDate}T00:00:00`);
       endTime.setHours(hours, minutes, 0, 0);
       
       const promptTime = new Date(endTime.getTime() + 3 * 60 * 1000);
@@ -71,7 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
         .eq("offer_id", offer.id)
         .eq("restaurant_id", offer.created_by)
         .eq("rating_type", "motoboy")
-        .single();
+        .maybeSingle();
 
       // Check if motoboy has already rated this offer
       const { data: motoboyRating } = await supabase
@@ -80,61 +79,82 @@ const handler = async (req: Request): Promise<Response> => {
         .eq("offer_id", offer.id)
         .eq("motoboy_id", offer.accepted_by)
         .eq("rating_type", "restaurant")
-        .single();
+        .maybeSingle();
 
       // Get motoboy name
       const { data: motoboyProfile } = await supabase
         .from("profiles")
         .select("name")
         .eq("id", offer.accepted_by)
-        .single();
+        .maybeSingle();
 
       // Get restaurant info
       const { data: restaurantInfo } = await supabase
         .from("restaurants")
         .select("fantasy_name")
         .eq("id", offer.created_by)
-        .single();
+        .maybeSingle();
 
-      // Send notification to restaurant if not rated
+      // Check if notification was already sent to restaurant
       if (!restaurantRating) {
-        // Check if we already sent a notification (using a simple check table or timestamp)
-        const { data: existingNotif } = await supabase
-          .from("push_subscriptions")
+        const { data: alreadySent } = await supabase
+          .from("rating_notifications_sent")
           .select("id")
-          .eq("user_id", offer.created_by);
+          .eq("offer_id", offer.id)
+          .eq("user_id", offer.created_by)
+          .eq("user_type", "restaurant")
+          .maybeSingle();
 
-        if (existingNotif && existingNotif.length > 0) {
-          // Send push to restaurant
-          await sendPushNotification(supabase, {
+        if (!alreadySent) {
+          const sent = await sendPushNotification(supabase, {
             offer_id: offer.id,
             restaurant_name: restaurantInfo?.fantasy_name || offer.restaurant_name,
             motoboy_name: motoboyProfile?.name,
             target_user_id: offer.created_by,
             target_type: "restaurant",
           });
-          notificationsSent++;
-          processedOffers.push(`restaurant:${offer.id}`);
+
+          if (sent) {
+            // Record that notification was sent
+            await supabase.from("rating_notifications_sent").insert({
+              offer_id: offer.id,
+              user_id: offer.created_by,
+              user_type: "restaurant",
+            });
+            notificationsSent++;
+            processedOffers.push(`restaurant:${offer.id}`);
+          }
         }
       }
 
-      // Send notification to motoboy if not rated
+      // Check if notification was already sent to motoboy
       if (!motoboyRating) {
-        const { data: motoboySubscriptions } = await supabase
-          .from("push_subscriptions")
+        const { data: alreadySent } = await supabase
+          .from("rating_notifications_sent")
           .select("id")
-          .eq("user_id", offer.accepted_by);
+          .eq("offer_id", offer.id)
+          .eq("user_id", offer.accepted_by)
+          .eq("user_type", "motoboy")
+          .maybeSingle();
 
-        if (motoboySubscriptions && motoboySubscriptions.length > 0) {
-          // Send push to motoboy
-          await sendPushNotification(supabase, {
+        if (!alreadySent) {
+          const sent = await sendPushNotification(supabase, {
             offer_id: offer.id,
             restaurant_name: restaurantInfo?.fantasy_name || offer.restaurant_name,
             target_user_id: offer.accepted_by,
             target_type: "motoboy",
           });
-          notificationsSent++;
-          processedOffers.push(`motoboy:${offer.id}`);
+
+          if (sent) {
+            // Record that notification was sent
+            await supabase.from("rating_notifications_sent").insert({
+              offer_id: offer.id,
+              user_id: offer.accepted_by,
+              user_type: "motoboy",
+            });
+            notificationsSent++;
+            processedOffers.push(`motoboy:${offer.id}`);
+          }
         }
       }
     }
@@ -167,7 +187,7 @@ interface NotifyParams {
   target_type: "restaurant" | "motoboy";
 }
 
-async function sendPushNotification(supabase: any, params: NotifyParams) {
+async function sendPushNotification(supabase: any, params: NotifyParams): Promise<boolean> {
   const { offer_id, restaurant_name, motoboy_name, target_user_id, target_type } = params;
 
   console.log(`Enviando push de avaliação para ${target_type}: ${target_user_id}`);
@@ -180,7 +200,7 @@ async function sendPushNotification(supabase: any, params: NotifyParams) {
 
   if (subError || !subscriptions || subscriptions.length === 0) {
     console.log(`Nenhuma subscription encontrada para ${target_user_id}`);
-    return;
+    return false;
   }
 
   const isRestaurant = target_type === "restaurant";
@@ -190,6 +210,7 @@ async function sendPushNotification(supabase: any, params: NotifyParams) {
     : `Como foi trabalhar no ${restaurant_name}? Deixe sua avaliação!`;
 
   const failedSubscriptions: string[] = [];
+  let anySent = false;
 
   for (const sub of subscriptions) {
     try {
@@ -203,6 +224,7 @@ async function sendPushNotification(supabase: any, params: NotifyParams) {
 
       if (response.ok || response.status === 201) {
         console.log(`Push enviado para ${target_type} ${sub.user_id}`);
+        anySent = true;
       } else if (response.status === 404 || response.status === 410) {
         failedSubscriptions.push(sub.id);
       }
@@ -218,6 +240,8 @@ async function sendPushNotification(supabase: any, params: NotifyParams) {
       .delete()
       .in("id", failedSubscriptions);
   }
+
+  return anySent;
 }
 
 serve(handler);
