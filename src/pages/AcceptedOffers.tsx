@@ -25,7 +25,7 @@ import { isWithinRadius, isWithinTimeWindow, calculateDistance } from "@/lib/dis
 import { ChatModal } from "@/components/ChatModal";
 import { useUnreadCounts } from "@/hooks/useChatMessages";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
-import { isRatingPromptTime, hasShownRatingPrompt, markRatingPromptShown } from "@/lib/ratingPrompt";
+import { isRatingPromptTime, hasShownRatingPrompt, markRatingPromptShown, sendRatingPushNotification, hasSentRatingPushNotification } from "@/lib/ratingPrompt";
 interface AcceptedOffer {
   id: string;
   status: string;
@@ -253,6 +253,27 @@ const AcceptedOffers = () => {
       setRatingModalOpen(true);
       markRatingPromptShown(offerToRate.offer.id, 'motoboy');
     }
+  }, [completedOffers, tick, userId]);
+
+  // Send push notification for rating 3 minutes after offer end time
+  useEffect(() => {
+    if (!userId) return;
+
+    completedOffers.forEach(async (ao) => {
+      if (
+        ao.offer.created_by &&
+        !ao.has_rating &&
+        isRatingPromptTime(ao.offer.offer_date, ao.offer.time_end) &&
+        !hasSentRatingPushNotification(ao.offer.id, 'motoboy')
+      ) {
+        await sendRatingPushNotification({
+          offerId: ao.offer.id,
+          restaurantName: ao.offer.restaurant_name,
+          targetUserId: userId,
+          targetType: 'motoboy',
+        });
+      }
+    });
   }, [completedOffers, tick, userId]);
 
   const handleConfirmCancel = async () => {
