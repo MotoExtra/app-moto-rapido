@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatPayment } from "@/lib/utils";
 import RateRestaurantModal from "@/components/RateRestaurantModal";
+import RateExternalRestaurantModal from "@/components/RateExternalRestaurantModal";
 import OfferLocationMap from "@/components/OfferLocationMap";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useLiveLocationBroadcast } from "@/hooks/useLiveLocationBroadcast";
@@ -53,8 +54,11 @@ interface AcceptedOffer {
     created_by: string | null;
     lat: number | null;
     lng: number | null;
+    offer_type?: string | null;
+    external_restaurant_id?: string | null;
   };
   has_rating?: boolean;
+  has_external_rating?: boolean;
 }
 
 // Helper function to check if offer period has expired
@@ -191,14 +195,16 @@ const AcceptedOffers = () => {
               payment,
               created_by,
               lat,
-              lng
+              lng,
+              offer_type,
+              external_restaurant_id
             )
           `)
           .order("accepted_at", { ascending: false });
 
         if (error) throw error;
 
-        // Check which offers already have ratings from this motoboy
+        // Check which offers already have ratings from this motoboy (restaurant offers)
         const { data: ratingsData } = await supabase
           .from("ratings")
           .select("offer_id")
@@ -207,9 +213,18 @@ const AcceptedOffers = () => {
 
         const ratedOfferIds = new Set(ratingsData?.map(r => r.offer_id) || []);
 
+        // Check which offers already have external restaurant ratings
+        const { data: externalRatingsData } = await supabase
+          .from("external_restaurant_ratings")
+          .select("offer_id")
+          .eq("motoboy_id", user.id);
+
+        const externalRatedOfferIds = new Set(externalRatingsData?.map(r => r.offer_id) || []);
+
         const enrichedOffers = (data as AcceptedOffer[]).map(ao => ({
           ...ao,
-          has_rating: ratedOfferIds.has(ao.offer.id)
+          has_rating: ratedOfferIds.has(ao.offer.id),
+          has_external_rating: externalRatedOfferIds.has(ao.offer.id),
         }));
 
         setAcceptedOffers(enrichedOffers);
@@ -241,12 +256,23 @@ const AcceptedOffers = () => {
   useEffect(() => {
     if (!userId) return;
 
-    const offerToRate = completedOffers.find(ao => 
-      ao.offer.created_by &&
-      !ao.has_rating &&
-      isRatingPromptTime(ao.offer.offer_date, ao.offer.time_end) &&
-      !hasShownRatingPrompt(ao.offer.id, 'motoboy')
-    );
+    const offerToRate = completedOffers.find(ao => {
+      const isMotoboyOffer = ao.offer.offer_type === 'motoboy';
+      const hasExternalRestaurant = !!ao.offer.external_restaurant_id;
+      
+      // For motoboy offers with external restaurant
+      if (isMotoboyOffer && hasExternalRestaurant) {
+        return !ao.has_external_rating &&
+          isRatingPromptTime(ao.offer.offer_date, ao.offer.time_end) &&
+          !hasShownRatingPrompt(ao.offer.id, 'motoboy');
+      }
+      
+      // For restaurant offers
+      return ao.offer.created_by &&
+        !ao.has_rating &&
+        isRatingPromptTime(ao.offer.offer_date, ao.offer.time_end) &&
+        !hasShownRatingPrompt(ao.offer.id, 'motoboy');
+    });
 
     if (offerToRate) {
       setSelectedOffer(offerToRate);
@@ -699,7 +725,8 @@ const AcceptedOffers = () => {
                             
                             {/* Other action buttons */}
                             <div className="flex gap-2">
-                              {!acceptedOffer.has_rating && acceptedOffer.offer.created_by && (
+                              {/* Show rating button for restaurant offers */}
+                              {acceptedOffer.offer.offer_type !== 'motoboy' && !acceptedOffer.has_rating && acceptedOffer.offer.created_by && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -713,7 +740,30 @@ const AcceptedOffers = () => {
                                   Avaliar Restaurante
                                 </Button>
                               )}
-                              {acceptedOffer.has_rating && (
+                              {/* Show rating button for motoboy offers with external restaurant */}
+                              {acceptedOffer.offer.offer_type === 'motoboy' && !acceptedOffer.has_external_rating && acceptedOffer.offer.external_restaurant_id && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    setSelectedOffer(acceptedOffer);
+                                    setRatingModalOpen(true);
+                                  }}
+                                >
+                                  <Star className="w-4 h-4 mr-2" />
+                                  Avaliar Estabelecimento
+                                </Button>
+                              )}
+                              {/* Show "Avaliado" badge for restaurant offers */}
+                              {acceptedOffer.offer.offer_type !== 'motoboy' && acceptedOffer.has_rating && (
+                                <Badge variant="secondary" className="gap-1 flex-1 justify-center py-2">
+                                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                  Avaliado
+                                </Badge>
+                              )}
+                              {/* Show "Avaliado" badge for motoboy offers */}
+                              {acceptedOffer.offer.offer_type === 'motoboy' && acceptedOffer.has_external_rating && (
                                 <Badge variant="secondary" className="gap-1 flex-1 justify-center py-2">
                                   <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                                   Avaliado
@@ -818,7 +868,8 @@ const AcceptedOffers = () => {
                           <MessageCircle className="w-4 h-4 mr-1" />
                           Ver Chat
                         </Button>
-                        {!acceptedOffer.has_rating && acceptedOffer.offer.created_by && (
+                        {/* Show rating button for restaurant offers */}
+                        {acceptedOffer.offer.offer_type !== 'motoboy' && !acceptedOffer.has_rating && acceptedOffer.offer.created_by && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -832,7 +883,30 @@ const AcceptedOffers = () => {
                             Avaliar
                           </Button>
                         )}
-                        {acceptedOffer.has_rating && (
+                        {/* Show rating button for motoboy offers with external restaurant */}
+                        {acceptedOffer.offer.offer_type === 'motoboy' && !acceptedOffer.has_external_rating && acceptedOffer.offer.external_restaurant_id && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              setSelectedOffer(acceptedOffer);
+                              setRatingModalOpen(true);
+                            }}
+                          >
+                            <Star className="w-4 h-4 mr-1" />
+                            Avaliar
+                          </Button>
+                        )}
+                        {/* Show "Avaliado" badge for restaurant offers */}
+                        {acceptedOffer.offer.offer_type !== 'motoboy' && acceptedOffer.has_rating && (
+                          <Badge variant="secondary" className="gap-1 flex-1 justify-center py-2">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            Avaliado
+                          </Badge>
+                        )}
+                        {/* Show "Avaliado" badge for motoboy offers */}
+                        {acceptedOffer.offer.offer_type === 'motoboy' && acceptedOffer.has_external_rating && (
                           <Badge variant="secondary" className="gap-1 flex-1 justify-center py-2">
                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                             Avaliado
@@ -867,8 +941,8 @@ const AcceptedOffers = () => {
       </nav>
       </div>
 
-      {/* Rating Modal */}
-      {selectedOffer && userId && (
+      {/* Rating Modal - for restaurant offers */}
+      {selectedOffer && userId && selectedOffer.offer.offer_type !== 'motoboy' && (
         <RateRestaurantModal
           open={ratingModalOpen}
           onOpenChange={setRatingModalOpen}
@@ -880,6 +954,26 @@ const AcceptedOffers = () => {
             setAcceptedOffers(current =>
               current.map(ao =>
                 ao.id === selectedOffer.id ? { ...ao, has_rating: true } : ao
+              )
+            );
+            setSelectedOffer(null);
+          }}
+        />
+      )}
+
+      {/* Rating Modal - for motoboy offers (external restaurants) */}
+      {selectedOffer && userId && selectedOffer.offer.offer_type === 'motoboy' && selectedOffer.offer.external_restaurant_id && (
+        <RateExternalRestaurantModal
+          open={ratingModalOpen}
+          onOpenChange={setRatingModalOpen}
+          offerId={selectedOffer.offer.id}
+          externalRestaurantId={selectedOffer.offer.external_restaurant_id}
+          restaurantName={selectedOffer.offer.restaurant_name}
+          motoboyId={userId}
+          onRatingComplete={() => {
+            setAcceptedOffers(current =>
+              current.map(ao =>
+                ao.id === selectedOffer.id ? { ...ao, has_external_rating: true } : ao
               )
             );
             setSelectedOffer(null);
