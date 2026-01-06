@@ -196,6 +196,23 @@ const OfferExtra = () => {
       // Geocodificar o endereço para obter coordenadas
       const coordinates = await geocodeAddress(fullAddress);
 
+      // Find or create external restaurant
+      let externalRestaurantId: string | null = null;
+      if (formData.restaurant_name.trim()) {
+        const { data: extRestData, error: extRestError } = await supabase
+          .rpc('find_or_create_external_restaurant', {
+            p_name: formData.restaurant_name,
+            p_city: formData.city,
+            p_address: fullAddress,
+          });
+
+        if (extRestError) {
+          console.error("Erro ao criar restaurante externo:", extRestError);
+        } else {
+          externalRestaurantId = extRestData;
+        }
+      }
+
       const { error } = await supabase.from("offers").insert({
         restaurant_name: formData.restaurant_name,
         description: formData.description,
@@ -220,6 +237,7 @@ const OfferExtra = () => {
         review_count: 0,
         lat: coordinates?.lat || null,
         lng: coordinates?.lng || null,
+        external_restaurant_id: externalRestaurantId,
       });
 
       if (error) throw error;

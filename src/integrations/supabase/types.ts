@@ -141,6 +141,84 @@ export type Database = {
         }
         Relationships: []
       }
+      external_restaurant_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          external_restaurant_id: string
+          id: string
+          motoboy_id: string
+          offer_id: string
+          rating: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          external_restaurant_id: string
+          id?: string
+          motoboy_id: string
+          offer_id: string
+          rating: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          external_restaurant_id?: string
+          id?: string
+          motoboy_id?: string
+          offer_id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_restaurant_ratings_external_restaurant_id_fkey"
+            columns: ["external_restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "external_restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_restaurant_ratings_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_restaurants: {
+        Row: {
+          address: string | null
+          avg_rating: number | null
+          city: string | null
+          created_at: string | null
+          id: string
+          name: string
+          normalized_name: string
+          review_count: number | null
+        }
+        Insert: {
+          address?: string | null
+          avg_rating?: number | null
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          normalized_name: string
+          review_count?: number | null
+        }
+        Update: {
+          address?: string | null
+          avg_rating?: number | null
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          normalized_name?: string
+          review_count?: number | null
+        }
+        Relationships: []
+      }
       motoboy_city_preferences: {
         Row: {
           city: string
@@ -250,6 +328,7 @@ export type Database = {
           delivery_range: string
           description: string
           experience: string | null
+          external_restaurant_id: string | null
           id: string
           includes_meal: boolean | null
           is_accepted: boolean | null
@@ -280,6 +359,7 @@ export type Database = {
           delivery_range: string
           description: string
           experience?: string | null
+          external_restaurant_id?: string | null
           id?: string
           includes_meal?: boolean | null
           is_accepted?: boolean | null
@@ -310,6 +390,7 @@ export type Database = {
           delivery_range?: string
           description?: string
           experience?: string | null
+          external_restaurant_id?: string | null
           id?: string
           includes_meal?: boolean | null
           is_accepted?: boolean | null
@@ -329,7 +410,15 @@ export type Database = {
           time_start?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "offers_external_restaurant_id_fkey"
+            columns: ["external_restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "external_restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -651,6 +740,10 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_offers: { Args: never; Returns: number }
+      find_or_create_external_restaurant: {
+        Args: { p_address?: string; p_city: string; p_name: string }
+        Returns: string
+      }
       grant_admin_role: { Args: { target_user_id: string }; Returns: undefined }
       has_role: {
         Args: {
@@ -659,6 +752,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"
