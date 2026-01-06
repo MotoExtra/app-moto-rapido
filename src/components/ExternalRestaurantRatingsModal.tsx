@@ -48,23 +48,39 @@ const ExternalRestaurantRatingsModal = ({
       
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch ratings first
+        const { data: ratingsData, error: ratingsError } = await supabase
           .from("external_restaurant_ratings")
-          .select(`
-            id,
-            rating,
-            comment,
-            created_at,
-            motoboy:profiles!external_restaurant_ratings_motoboy_id_fkey(
-              name,
-              avatar_url
-            )
-          `)
+          .select("id, rating, comment, created_at, motoboy_id")
           .eq("external_restaurant_id", externalRestaurantId)
           .order("created_at", { ascending: false });
 
-        if (error) throw error;
-        setRatings(data || []);
+        if (ratingsError) throw ratingsError;
+
+        if (!ratingsData || ratingsData.length === 0) {
+          setRatings([]);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch profiles for all motoboys
+        const motoboyIds = ratingsData.map(r => r.motoboy_id);
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, name, avatar_url")
+          .in("id", motoboyIds);
+
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+        const enrichedRatings: Rating[] = ratingsData.map(r => ({
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment,
+          created_at: r.created_at,
+          motoboy: profilesMap.get(r.motoboy_id) || null,
+        }));
+
+        setRatings(enrichedRatings);
       } catch (error) {
         console.error("Erro ao buscar avaliações:", error);
       } finally {
