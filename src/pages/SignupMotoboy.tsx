@@ -4,18 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, FileCheck, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ES_CITIES } from "@/lib/cities";
 
 const SignupMotoboy = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [experience, setExperience] = useState([2]);
-  const [hasBag, setHasBag] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [cnhFile, setCnhFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
@@ -24,8 +22,6 @@ const SignupMotoboy = () => {
     password: "",
     phone: "",
     city: "",
-    neighborhood: "",
-    plate: "",
   });
 
   useEffect(() => {
@@ -170,10 +166,7 @@ const SignupMotoboy = () => {
           name: formData.name,
           phone: formData.phone,
           city: formData.city,
-          experience_years: experience[0],
-          has_thermal_bag: hasBag,
           cnh: cnhUrl,
-          vehicle_plate: formData.plate || null,
           avatar_url: avatarUrl,
           user_type: 'motoboy',
         });
@@ -281,26 +274,21 @@ const SignupMotoboy = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">Cidade *</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Sua cidade"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="neighborhood">Bairro</Label>
-                  <Input
-                    id="neighborhood"
-                    value={formData.neighborhood}
-                    onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
-                    placeholder="Seu bairro"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade *</Label>
+                <Select 
+                  value={formData.city} 
+                  onValueChange={(value) => setFormData({ ...formData, city: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a cidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ES_CITIES.map((city) => (
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -362,42 +350,6 @@ const SignupMotoboy = () => {
                 <p className="text-xs text-muted-foreground">
                   Envie uma foto ou PDF da sua CNH para validação. Este documento será analisado pela nossa equipe.
                 </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="plate">Placa do veículo (opcional)</Label>
-                <Input
-                  id="plate"
-                  value={formData.plate}
-                  onChange={(e) => setFormData({ ...formData, plate: e.target.value })}
-                  placeholder="ABC-1234"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Anos de experiência: {experience[0]} anos</Label>
-                <Slider
-                  value={experience}
-                  onValueChange={setExperience}
-                  max={20}
-                  min={0}
-                  step={1}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-secondary rounded-lg">
-                <div className="space-y-1">
-                  <Label htmlFor="bag">Possui bag térmica?</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Isso aumenta suas chances de conseguir trabalhos
-                  </p>
-                </div>
-                <Switch
-                  id="bag"
-                  checked={hasBag}
-                  onCheckedChange={setHasBag}
-                />
               </div>
 
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
