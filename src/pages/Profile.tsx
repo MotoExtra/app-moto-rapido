@@ -11,6 +11,7 @@ import { ArrowLeft, Camera, Package, Clock, Save, Loader2, MapPin, Star } from "
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ES_CITIES } from "@/lib/cities";
+import { formatPhone } from "@/lib/masks";
 import type { User } from "@supabase/supabase-js";
 
 interface ProfileData {
@@ -381,8 +382,9 @@ const Profile = () => {
               <Input
                 id="phone"
                 value={profile.phone}
-                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                onChange={(e) => setProfile({ ...profile, phone: formatPhone(e.target.value) })}
                 placeholder="(00) 00000-0000"
+                maxLength={15}
               />
             </div>
 

@@ -9,6 +9,7 @@ import { ArrowLeft, Loader2, Store, Save } from "lucide-react";
 import { ES_CITIES } from "@/lib/cities";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { formatPhone, formatCNPJ } from "@/lib/masks";
 
 interface Restaurant {
   id: string;
@@ -161,8 +162,9 @@ const RestaurantProfile = () => {
                 <Input
                   id="cnpj"
                   value={formData.cnpj || ""}
-                  onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, cnpj: formatCNPJ(e.target.value) })}
                   placeholder="00.000.000/0000-00"
+                  maxLength={18}
                 />
               </div>
 
@@ -200,8 +202,9 @@ const RestaurantProfile = () => {
                     id="phone"
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
                     placeholder="(00) 0000-0000"
+                    maxLength={15}
                   />
                 </div>
                 <div className="space-y-2">
@@ -210,8 +213,9 @@ const RestaurantProfile = () => {
                     id="whatsapp"
                     type="tel"
                     value={formData.whatsapp || ""}
-                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, whatsapp: formatPhone(e.target.value) })}
                     placeholder="(00) 00000-0000"
+                    maxLength={15}
                   />
                 </div>
               </div>

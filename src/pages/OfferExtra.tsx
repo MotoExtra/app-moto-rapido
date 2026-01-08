@@ -18,6 +18,7 @@ import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 import { ES_CITIES } from "@/lib/cities";
 import { geocodeAddress } from "@/lib/geocoding";
+import { formatPhone } from "@/lib/masks";
 import AddressMapPreview from "@/components/AddressMapPreview";
 import PaymentFieldsStructured from "@/components/PaymentFieldsStructured";
 
@@ -597,8 +598,9 @@ const OfferExtra = () => {
                 id="phone"
                 placeholder="(00) 00000-0000"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
                 required
+                maxLength={15}
               />
             </div>
 

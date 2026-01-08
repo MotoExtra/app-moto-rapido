@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import { ES_CITIES } from "@/lib/cities";
+import { formatPhone } from "@/lib/masks";
 import PaymentFieldsStructured from "@/components/PaymentFieldsStructured";
 
 // Helper to parse address into structured fields
@@ -475,8 +476,9 @@ const EditExtra = () => {
                 id="phone"
                 placeholder="(00) 00000-0000"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
                 required
+                maxLength={15}
               />
             </div>
 

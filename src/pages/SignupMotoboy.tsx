@@ -10,6 +10,7 @@ import { ArrowLeft, Upload, FileCheck, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ES_CITIES } from "@/lib/cities";
+import { formatPhone } from "@/lib/masks";
 
 const SignupMotoboy = () => {
   const navigate = useNavigate();
@@ -268,9 +269,10 @@ const SignupMotoboy = () => {
                   id="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
                   placeholder="(00) 00000-0000"
                   required
+                  maxLength={15}
                 />
               </div>
 
