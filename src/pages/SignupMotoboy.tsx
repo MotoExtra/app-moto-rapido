@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, FileCheck, AlertCircle } from "lucide-react";
@@ -251,9 +252,8 @@ const SignupMotoboy = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha *</Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   placeholder="Mínimo 6 caracteres"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
