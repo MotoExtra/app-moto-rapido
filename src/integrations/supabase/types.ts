@@ -430,12 +430,16 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          blocked_at: string | null
+          blocked_reason: string | null
           city: string
           cnh: string | null
+          cnh_status: string | null
           created_at: string
           experience_years: number | null
           has_thermal_bag: boolean | null
           id: string
+          is_blocked: boolean | null
           name: string
           phone: string
           updated_at: string
@@ -444,12 +448,16 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           city: string
           cnh?: string | null
+          cnh_status?: string | null
           created_at?: string
           experience_years?: number | null
           has_thermal_bag?: boolean | null
           id: string
+          is_blocked?: boolean | null
           name: string
           phone: string
           updated_at?: string
@@ -458,12 +466,16 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           city?: string
           cnh?: string | null
+          cnh_status?: string | null
           created_at?: string
           experience_years?: number | null
           has_thermal_bag?: boolean | null
           id?: string
+          is_blocked?: boolean | null
           name?: string
           phone?: string
           updated_at?: string
