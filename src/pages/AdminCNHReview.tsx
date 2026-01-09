@@ -71,13 +71,18 @@ const AdminCNHReview = () => {
   const [filteredMotoboys, setFilteredMotoboys] = useState<MotoboyProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  
+
   // Modal states
   const [selectedMotoboy, setSelectedMotoboy] = useState<MotoboyProfile | null>(null);
   const [showCNHModal, setShowCNHModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [blockReason, setBlockReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+
+  // CNH signed URL (bucket privado)
+  const [cnhSignedUrl, setCnhSignedUrl] = useState<string | null>(null);
+  const [cnhSignedLoading, setCnhSignedLoading] = useState(false);
+  const [cnhSignedError, setCnhSignedError] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAndFetch();
@@ -86,6 +91,64 @@ const AdminCNHReview = () => {
   useEffect(() => {
     filterMotoboys();
   }, [motoboys, searchTerm, statusFilter]);
+
+  const isImageFile = (value: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(value.split("?")[0]);
+
+  const getCnhStoragePath = (cnhValue: string) => {
+    const raw = cnhValue.trim();
+    if (!raw) return null;
+
+    // Já é um path tipo: userId/cnh.pdf
+    if (!raw.startsWith("http")) {
+      const noQuery = raw.split("?")[0];
+      if (noQuery.includes("/") && /\.[a-z0-9]+$/i.test(noQuery)) return noQuery;
+      return null;
+    }
+
+    // URL pública/assinada: extrair o path após /cnh-documents/
+    const noQuery = raw.split("?")[0];
+    const match = noQuery.match(/\/cnh-documents\/(.+)$/);
+    return match?.[1] ?? null;
+  };
+
+  useEffect(() => {
+    const loadSignedUrl = async () => {
+      setCnhSignedError(null);
+
+      if (!showCNHModal || !selectedMotoboy?.cnh) {
+        setCnhSignedUrl(null);
+        setCnhSignedLoading(false);
+        return;
+      }
+
+      const storagePath = getCnhStoragePath(selectedMotoboy.cnh);
+      if (!storagePath) {
+        setCnhSignedUrl(null);
+        setCnhSignedLoading(false);
+        setCnhSignedError(
+          "Documento inválido ou não encontrado. Peça para o motoboy reenviar a CNH."
+        );
+        return;
+      }
+
+      setCnhSignedLoading(true);
+      const { data, error } = await supabase.storage
+        .from("cnh-documents")
+        .createSignedUrl(storagePath, 60 * 10);
+
+      if (error) {
+        console.error("Erro ao gerar link assinado da CNH:", error);
+        setCnhSignedUrl(null);
+        setCnhSignedError("Não foi possível gerar o acesso ao documento agora.");
+      } else {
+        setCnhSignedUrl(data.signedUrl);
+      }
+
+      setCnhSignedLoading(false);
+    };
+
+    loadSignedUrl();
+  }, [showCNHModal, selectedMotoboy]);
 
   const checkAdminAndFetch = async () => {
     try {
@@ -497,20 +560,39 @@ const AdminCNHReview = () => {
               {/* CNH Document */}
               <div className="space-y-2">
                 <div className="text-sm font-medium">Documento CNH:</div>
-                {selectedMotoboy.cnh ? (
+
+                {!selectedMotoboy.cnh ? (
+                  <div className="p-8 text-center bg-muted rounded-lg">
+                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Nenhum documento enviado</p>
+                  </div>
+                ) : cnhSignedLoading ? (
+                  <div className="p-8 text-center bg-muted rounded-lg">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">Carregando documento...</p>
+                  </div>
+                ) : cnhSignedError ? (
+                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <div className="text-sm font-medium text-destructive mb-1">
+                      Não foi possível abrir o documento
+                    </div>
+                    <div className="text-sm text-muted-foreground">{cnhSignedError}</div>
+                  </div>
+                ) : cnhSignedUrl ? (
                   <div className="border rounded-lg overflow-hidden">
-                    {selectedMotoboy.cnh.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                      <img 
-                        src={selectedMotoboy.cnh} 
-                        alt="CNH" 
+                    {isImageFile(cnhSignedUrl) ? (
+                      <img
+                        src={cnhSignedUrl}
+                        alt="Documento CNH do motoboy"
                         className="w-full max-h-96 object-contain bg-muted"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="p-8 text-center bg-muted">
                         <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                         <p className="text-sm text-muted-foreground mb-3">Documento PDF</p>
                         <Button asChild variant="outline">
-                          <a href={selectedMotoboy.cnh} target="_blank" rel="noopener noreferrer">
+                          <a href={cnhSignedUrl} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Abrir documento
                           </a>
@@ -519,9 +601,8 @@ const AdminCNHReview = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="p-8 text-center bg-muted rounded-lg">
-                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">Nenhum documento enviado</p>
+                  <div className="p-4 bg-muted rounded-lg text-sm text-muted-foreground">
+                    Documento enviado, mas não foi possível gerar acesso agora.
                   </div>
                 )}
               </div>
