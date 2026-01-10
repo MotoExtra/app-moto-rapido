@@ -139,8 +139,8 @@ const SignupMotoboy = () => {
         }
       }
 
-      // Upload CNH document
-      let cnhUrl = null;
+      // Upload CNH document - salva apenas o path, não a URL pública
+      let cnhPath = null;
       if (cnhFile) {
         const cnhExt = cnhFile.name.split('.').pop();
         const cnhFileName = `${authData.user.id}/cnh.${cnhExt}`;
@@ -153,10 +153,8 @@ const SignupMotoboy = () => {
           console.error("Erro ao fazer upload da CNH:", cnhUploadError);
           throw new Error("Erro ao enviar documento da CNH. Tente novamente.");
         } else {
-          const { data: { publicUrl } } = supabase.storage
-            .from('cnh-documents')
-            .getPublicUrl(cnhFileName);
-          cnhUrl = publicUrl;
+          // Salva apenas o path (ex: userId/cnh.pdf) em vez da URL pública
+          cnhPath = cnhFileName;
         }
       }
 
@@ -168,7 +166,7 @@ const SignupMotoboy = () => {
           name: formData.name,
           phone: formData.phone,
           city: formData.city,
-          cnh: cnhUrl,
+          cnh: cnhPath,
           avatar_url: avatarUrl,
           user_type: 'motoboy',
         });
