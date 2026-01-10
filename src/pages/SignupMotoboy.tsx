@@ -82,6 +82,15 @@ const SignupMotoboy = () => {
       return;
     }
 
+    if (!avatarFile) {
+      toast({
+        title: "Erro",
+        description: "Por favor, envie uma foto de perfil",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!cnhFile) {
       toast({
         title: "Erro",
@@ -214,7 +223,20 @@ const SignupMotoboy = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="avatar">Foto de perfil</Label>
+                <Label htmlFor="avatar" className="flex items-center gap-2">
+                  Foto de perfil *
+                  {avatarFile ? (
+                    <span className="text-xs text-emerald-600 flex items-center gap-1">
+                      <FileCheck className="w-3 h-3" />
+                      Foto selecionada
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Obrigatório
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="avatar"
                   type="file"
