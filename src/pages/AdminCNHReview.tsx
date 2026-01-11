@@ -83,7 +83,8 @@ const AdminCNHReview = () => {
   const [cnhSignedUrl, setCnhSignedUrl] = useState<string | null>(null);
   const [cnhSignedLoading, setCnhSignedLoading] = useState(false);
   const [cnhSignedError, setCnhSignedError] = useState<string | null>(null);
-
+  const [cnhPreviewError, setCnhPreviewError] = useState<string | null>(null);
+  const [cnhObjectUrl, setCnhObjectUrl] = useState<string | null>(null);
   useEffect(() => {
     checkAdminAndFetch();
   }, []);
@@ -98,10 +99,11 @@ const AdminCNHReview = () => {
     const raw = cnhValue.trim();
     if (!raw) return null;
 
-    // Já é um path tipo: userId/cnh.pdf
+    // Path salvo direto (ex: userId/cnh.pdf) ou com prefixo do bucket (ex: cnh-documents/userId/cnh.pdf)
     if (!raw.startsWith("http")) {
       const noQuery = raw.split("?")[0];
-      if (noQuery.includes("/") && /\.[a-z0-9]+$/i.test(noQuery)) return noQuery;
+      const withoutBucket = noQuery.replace(/^cnh-documents\//, "");
+      if (withoutBucket.includes("/") && /\.[a-z0-9]+$/i.test(withoutBucket)) return withoutBucket;
       return null;
     }
 
@@ -110,17 +112,17 @@ const AdminCNHReview = () => {
     const match = noQuery.match(/\/cnh-documents\/(.+)$/);
     return match?.[1] ?? null;
   };
-
   useEffect(() => {
     const loadSignedUrl = async () => {
       setCnhSignedError(null);
+      setCnhPreviewError(null);
+      setCnhObjectUrl(null);
 
       if (!showCNHModal || !selectedMotoboy?.cnh) {
         setCnhSignedUrl(null);
         setCnhSignedLoading(false);
         return;
       }
-
       const storagePath = getCnhStoragePath(selectedMotoboy.cnh);
       if (!storagePath) {
         setCnhSignedUrl(null);
@@ -140,8 +142,21 @@ const AdminCNHReview = () => {
         console.error("Erro ao gerar link assinado da CNH:", error);
         setCnhSignedUrl(null);
         setCnhSignedError("Não foi possível gerar o acesso ao documento agora.");
-      } else {
+      } else if (data?.signedUrl) {
         setCnhSignedUrl(data.signedUrl);
+
+        // Alguns navegadores não renderizam PDF direto do link assinado; baixar e usar blob URL melhora a visualização.
+        const ext = storagePath.split("?")[0].split(".").pop()?.toLowerCase();
+        if (ext === "pdf") {
+          const { data: blob, error: downloadError } = await supabase.storage
+            .from("cnh-documents")
+            .download(storagePath);
+
+          if (!downloadError && blob) {
+            const normalized = blob.type ? blob : new Blob([blob], { type: "application/pdf" });
+            setCnhObjectUrl(URL.createObjectURL(normalized));
+          }
+        }
       }
 
       setCnhSignedLoading(false);
@@ -149,6 +164,12 @@ const AdminCNHReview = () => {
 
     loadSignedUrl();
   }, [showCNHModal, selectedMotoboy]);
+
+  useEffect(() => {
+    return () => {
+      if (cnhObjectUrl) URL.revokeObjectURL(cnhObjectUrl);
+    };
+  }, [cnhObjectUrl]);
 
   const checkAdminAndFetch = async () => {
     try {
@@ -579,26 +600,47 @@ const AdminCNHReview = () => {
                     <div className="text-sm text-muted-foreground">{cnhSignedError}</div>
                   </div>
                 ) : cnhSignedUrl ? (
-                  <div className="border rounded-lg overflow-hidden">
-                    {isImageFile(cnhSignedUrl) ? (
-                      <img
-                        src={cnhSignedUrl}
-                        alt="Documento CNH do motoboy"
-                        className="w-full max-h-96 object-contain bg-muted"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="p-8 text-center bg-muted">
-                        <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground mb-3">Documento PDF</p>
-                        <Button asChild variant="outline">
-                          <a href={cnhSignedUrl} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Abrir documento
-                          </a>
-                        </Button>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs text-muted-foreground truncate">
+                        {getCnhStoragePath(selectedMotoboy.cnh) ?? "documento"}
                       </div>
-                    )}
+                      <Button asChild variant="outline" size="sm">
+                        <a href={cnhSignedUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Abrir
+                        </a>
+                      </Button>
+                    </div>
+
+                    <div className="border rounded-lg overflow-hidden bg-muted">
+                      {isImageFile(cnhSignedUrl) ? (
+                        cnhPreviewError ? (
+                          <div className="p-6 text-center">
+                            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground">{cnhPreviewError}</p>
+                          </div>
+                        ) : (
+                          <img
+                            src={cnhSignedUrl}
+                            alt="Documento CNH do motoboy"
+                            className="w-full max-h-[60vh] object-contain"
+                            loading="lazy"
+                            onError={() =>
+                              setCnhPreviewError(
+                                "Não foi possível pré-visualizar aqui. Use o botão 'Abrir' para ver em nova aba."
+                              )
+                            }
+                          />
+                        )
+                      ) : (
+                        <iframe
+                          src={cnhObjectUrl ?? cnhSignedUrl}
+                          title="Documento CNH do motoboy"
+                          className="w-full h-[60vh] bg-muted"
+                        />
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="p-4 bg-muted rounded-lg text-sm text-muted-foreground">
