@@ -182,12 +182,17 @@ const SignupMotoboy = () => {
 
       if (profileError) throw profileError;
 
+      // Fazer logout imediato - conta só pode ser usada após 15 minutos
+      await supabase.auth.signOut();
+
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Bem-vindo ao MotoExtra",
+        description: "Sua conta está em análise. Você poderá fazer login em 15 minutos.",
+        duration: 10000,
       });
       
-      navigate("/home");
+      // Redirecionar para a tela de login onde mostrará o status de análise
+      navigate("/login/motoboy");
     } catch (error: any) {
       console.error("Erro no cadastro:", error);
       toast({
