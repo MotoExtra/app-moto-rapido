@@ -25,7 +25,7 @@ import OfferExtra from "./pages/OfferExtra";
 import EditExtra from "./pages/EditExtra";
 import MyExtras from "./pages/MyExtras";
 import SnackExchange from "./pages/SnackExchange";
-import Install from "./pages/Install";
+
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCNHReview from "./pages/AdminCNHReview";
 import NotFound from "./pages/NotFound";
@@ -85,7 +85,6 @@ const App = () => {
               <Route path="/restaurante/editar-extra/:id" element={<ProtectedRoute allowedUserType="restaurant"><EditRestaurantOffer /></ProtectedRoute>} />
               <Route path="/restaurante/motoboy-ao-vivo" element={<ProtectedRoute allowedUserType="restaurant"><LiveMotoboy /></ProtectedRoute>} />
               
-              <Route path="/install" element={<Install />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/cnh" element={<AdminCNHReview />} />
               <Route path="*" element={<NotFound />} />
