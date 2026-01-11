@@ -8,6 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+import { Clock, Loader2 } from "lucide-react";
+
+const ACTIVATION_WAIT_MINUTES = 15;
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,6 +18,8 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingActivation, setPendingActivation] = useState(false);
+  const [remainingMinutes, setRemainingMinutes] = useState(0);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -26,6 +31,14 @@ const Login = () => {
     };
     checkAuth();
   }, [navigate]);
+
+  const calculateRemainingTime = (createdAt: string): number => {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const activationTime = new Date(created.getTime() + ACTIVATION_WAIT_MINUTES * 60 * 1000);
+    const remainingMs = activationTime.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(remainingMs / (60 * 1000)));
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +53,7 @@ const Login = () => {
     }
 
     setLoading(true);
+    setPendingActivation(false);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -53,7 +67,7 @@ const Login = () => {
         // Check if user is a motoboy (has profile) and NOT a restaurant
         const { data: profile } = await supabase
           .from("profiles")
-          .select("id, user_type")
+          .select("id, user_type, created_at, is_blocked, blocked_reason")
           .eq("id", data.user.id)
           .maybeSingle();
 
@@ -85,6 +99,28 @@ const Login = () => {
           return;
         }
 
+        // Check if account is blocked
+        if (profile.is_blocked) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Conta bloqueada",
+            description: profile.blocked_reason || "Sua conta foi bloqueada. Entre em contato com o suporte.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Check if account is still in activation period (15 minutes)
+        const remaining = calculateRemainingTime(profile.created_at);
+        if (remaining > 0) {
+          await supabase.auth.signOut();
+          setRemainingMinutes(remaining);
+          setPendingActivation(true);
+          setLoading(false);
+          return;
+        }
+
         toast({
           title: "Login realizado!",
           description: "Bem-vindo de volta!",
@@ -104,6 +140,68 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  // Update remaining time every minute
+  useEffect(() => {
+    if (!pendingActivation) return;
+
+    const interval = setInterval(() => {
+      setRemainingMinutes((prev) => {
+        const newValue = prev - 1;
+        if (newValue <= 0) {
+          setPendingActivation(false);
+          toast({
+            title: "Cadastro aprovado!",
+            description: "Sua conta foi ativada. Você já pode fazer login.",
+          });
+          return 0;
+        }
+        return newValue;
+      });
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [pendingActivation, toast]);
+
+  if (pendingActivation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-4 text-center">
+            <div className="mx-auto">
+              <img src={logo} alt="MotoExtra" className="h-32 w-auto" />
+            </div>
+            <div className="mx-auto w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center">
+              <Clock className="w-10 h-10 text-amber-600" />
+            </div>
+            <CardTitle className="text-2xl">Cadastro em Análise</CardTitle>
+            <CardDescription className="text-base">
+              Seu cadastro está sendo analisado pela nossa equipe. 
+              Isso leva aproximadamente <strong>{remainingMinutes} minuto{remainingMinutes !== 1 ? 's' : ''}</strong>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Aguarde a ativação da sua conta</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Você receberá uma notificação assim que seu cadastro for aprovado.
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setPendingActivation(false)}
+            >
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
