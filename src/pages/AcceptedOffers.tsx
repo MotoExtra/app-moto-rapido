@@ -339,6 +339,10 @@ const AcceptedOffers = () => {
     setCancellingId(offerToCancel.id);
 
     try {
+      // Store offer info before deletion for notification
+      const cancelledOffer = offerToCancel.offer;
+      const restaurantUserId = cancelledOffer.created_by;
+
       // Delete the accepted_offer record
       const { error: deleteError } = await supabase
         .from("accepted_offers")
@@ -351,7 +355,7 @@ const AcceptedOffers = () => {
       const { error: updateError } = await supabase
         .from("offers")
         .update({ is_accepted: false, accepted_by: null })
-        .eq("id", offerToCancel.offer.id);
+        .eq("id", cancelledOffer.id);
 
       if (updateError) throw updateError;
 
@@ -362,6 +366,21 @@ const AcceptedOffers = () => {
         title: "Extra cancelado",
         description: "O extra foi cancelado e está disponível novamente.",
       });
+
+      // Notify the restaurant owner about the cancellation (don't wait for it)
+      if (restaurantUserId) {
+        supabase.functions.invoke("notify-offer-cancelled", {
+          body: {
+            offer_id: cancelledOffer.id,
+            motoboy_name: motoboyName,
+            restaurant_user_id: restaurantUserId,
+          },
+        }).then((result) => {
+          console.log("Cancellation notification sent:", result);
+        }).catch((err) => {
+          console.error("Error sending cancellation notification:", err);
+        });
+      }
     } catch (error) {
       console.error("Erro ao cancelar extra:", error);
       toast({
