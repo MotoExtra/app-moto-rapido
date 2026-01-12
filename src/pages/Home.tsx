@@ -68,6 +68,7 @@ const Home = () => {
   const [cityOfferCounts, setCityOfferCounts] = useState<Map<string, number>>(new Map());
   const [isAdmin, setIsAdmin] = useState(false);
   const [myExtrasCount, setMyExtrasCount] = useState(0);
+  const [activeAcceptedCount, setActiveAcceptedCount] = useState(0);
 
   // Handle location permission request
   const handleRequestLocation = () => {
@@ -248,6 +249,24 @@ const Home = () => {
 
       if (error) throw error;
 
+      // Fetch active accepted offers for current user to filter out conflicting offers
+      const { data: acceptedData } = await supabase
+        .from("accepted_offers")
+        .select(`
+          id,
+          offer_id,
+          offers!inner (
+            offer_date,
+            time_start,
+            time_end
+          )
+        `)
+        .eq("user_id", user?.id)
+        .in("status", ["pending", "arrived", "in_progress"]);
+
+      // Track active accepted offers count for banner
+      setActiveAcceptedCount(acceptedData?.length || 0);
+
       if (data && data.length > 0) {
         // Filter out expired offers (past start time - extras disappear when start time passes)
         const now = new Date();
@@ -263,6 +282,24 @@ const Home = () => {
 
         // Excluir extras criados pelo próprio usuário (motoboy não vê seus próprios extras)
         validOffers = validOffers.filter(offer => offer.created_by !== user?.id);
+
+        // Filter out offers that conflict with accepted offers (same date and overlapping time)
+        if (acceptedData && acceptedData.length > 0) {
+          validOffers = validOffers.filter(offer => {
+            return !acceptedData.some((accepted: any) => {
+              const acceptedOffer = accepted.offers;
+              if (!acceptedOffer) return false;
+
+              // Only check same day
+              if (acceptedOffer.offer_date !== offer.offer_date) return false;
+
+              // Check if time ranges overlap
+              // Overlap occurs if: newStart < existingEnd AND newEnd > existingStart
+              return offer.time_start < acceptedOffer.time_end && 
+                     offer.time_end > acceptedOffer.time_start;
+            });
+          });
+        }
 
         // Count offers per city (before filtering by preferences)
         const cityCounts = new Map<string, number>();
@@ -891,6 +928,36 @@ const Home = () => {
 
       {/* Offers List */}
       <div className="p-4 space-y-4 pb-20">
+      {/* Banner: Extras ocultos devido a conflitos */}
+        {activeAcceptedCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 mb-4"
+          >
+            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                Você tem {activeAcceptedCount} extra{activeAcceptedCount > 1 ? 's' : ''} aceito{activeAcceptedCount > 1 ? 's' : ''}
+              </p>
+              <p className="text-xs text-amber-600/80 dark:text-amber-400/70">
+                Extras com horário conflitante estão ocultos
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
+              onClick={() => navigate("/extras-aceitos")}
+            >
+              Ver
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </motion.div>
+        )}
+
         {offers.length === 0 ? (
           <Card className="border-dashed border-2 bg-muted/20">
             <CardContent className="pt-8 pb-8 text-center">
