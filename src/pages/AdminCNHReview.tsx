@@ -93,7 +93,25 @@ const AdminCNHReview = () => {
     filterMotoboys();
   }, [motoboys, searchTerm, statusFilter]);
 
-  const isImageFile = (value: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(value.split("?")[0]);
+  const getExt = (value: string) => value.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+  const isImageExt = (ext: string) => ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
+  const mimeFromExt = (ext: string) => {
+    switch (ext) {
+      case "pdf":
+        return "application/pdf";
+      case "jpg":
+      case "jpeg":
+        return "image/jpeg";
+      case "png":
+        return "image/png";
+      case "webp":
+        return "image/webp";
+      case "gif":
+        return "image/gif";
+      default:
+        return "";
+    }
+  };
 
   const getCnhStoragePath = (cnhValue: string) => {
     const raw = cnhValue.trim();
@@ -145,17 +163,16 @@ const AdminCNHReview = () => {
       } else if (data?.signedUrl) {
         setCnhSignedUrl(data.signedUrl);
 
-        // Alguns navegadores não renderizam PDF direto do link assinado; baixar e usar blob URL melhora a visualização.
-        const ext = storagePath.split("?")[0].split(".").pop()?.toLowerCase();
-        if (ext === "pdf") {
-          const { data: blob, error: downloadError } = await supabase.storage
-            .from("cnh-documents")
-            .download(storagePath);
+        // Pré-visualização mais confiável: baixar o arquivo e usar blob URL.
+        const ext = getExt(storagePath);
+        const { data: blob, error: downloadError } = await supabase.storage
+          .from("cnh-documents")
+          .download(storagePath);
 
-          if (!downloadError && blob) {
-            const normalized = blob.type ? blob : new Blob([blob], { type: "application/pdf" });
-            setCnhObjectUrl(URL.createObjectURL(normalized));
-          }
+        if (!downloadError && blob) {
+          const forcedType = blob.type || mimeFromExt(ext) || "application/octet-stream";
+          const normalized = blob.type ? blob : new Blob([blob], { type: forcedType });
+          setCnhObjectUrl(URL.createObjectURL(normalized));
         }
       }
 
@@ -345,6 +362,10 @@ const AdminCNHReview = () => {
     approved: motoboys.filter(m => m.cnh_status === "approved" && !m.is_blocked).length,
     blocked: motoboys.filter(m => m.is_blocked).length
   };
+
+  const selectedCnhStoragePath = selectedMotoboy?.cnh ? getCnhStoragePath(selectedMotoboy.cnh) : null;
+  const selectedCnhExt = selectedCnhStoragePath ? getExt(selectedCnhStoragePath) : "";
+  const cnhPreviewSrc = cnhObjectUrl ?? cnhSignedUrl;
 
   if (loading) {
     return (
@@ -603,7 +624,7 @@ const AdminCNHReview = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-xs text-muted-foreground truncate">
-                        {getCnhStoragePath(selectedMotoboy.cnh) ?? "documento"}
+                        {selectedCnhStoragePath ?? "documento"}
                       </div>
                       <Button asChild variant="outline" size="sm">
                         <a href={cnhSignedUrl} target="_blank" rel="noopener noreferrer">
@@ -614,7 +635,7 @@ const AdminCNHReview = () => {
                     </div>
 
                     <div className="border rounded-lg overflow-hidden bg-muted">
-                      {isImageFile(cnhSignedUrl) ? (
+                      {isImageExt(selectedCnhExt) ? (
                         cnhPreviewError ? (
                           <div className="p-6 text-center">
                             <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
@@ -622,7 +643,7 @@ const AdminCNHReview = () => {
                           </div>
                         ) : (
                           <img
-                            src={cnhSignedUrl}
+                            src={cnhPreviewSrc ?? cnhSignedUrl}
                             alt="Documento CNH do motoboy"
                             className="w-full max-h-[60vh] object-contain"
                             loading="lazy"
@@ -635,7 +656,7 @@ const AdminCNHReview = () => {
                         )
                       ) : (
                         <iframe
-                          src={cnhObjectUrl ?? cnhSignedUrl}
+                          src={cnhPreviewSrc ?? cnhSignedUrl}
                           title="Documento CNH do motoboy"
                           className="w-full h-[60vh] bg-muted"
                         />

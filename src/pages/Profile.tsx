@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Camera, Package, Clock, Save, Loader2, MapPin, Star } from "lucide-react";
+import { ArrowLeft, Camera, Package, Clock, Save, Loader2, MapPin, Star, Upload, FileCheck, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ES_CITIES } from "@/lib/cities";
@@ -20,7 +20,9 @@ interface ProfileData {
   city: string;
   experience_years: number;
   has_thermal_bag: boolean;
+  /** Path do documento (ex: userId/cnh.pdf). Não é o número da CNH. */
   cnh: string;
+  cnh_status: string;
   vehicle_plate: string;
   avatar_url: string;
 }
@@ -29,11 +31,14 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cnhInputRef = useRef<HTMLInputElement>(null);
   
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cnhFile, setCnhFile] = useState<File | null>(null);
+  const [uploadingCnh, setUploadingCnh] = useState(false);
   const [cityPreferences, setCityPreferences] = useState<string[]>([]);
   const [savingCities, setSavingCities] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
@@ -43,6 +48,7 @@ const Profile = () => {
     experience_years: 0,
     has_thermal_bag: false,
     cnh: "",
+    cnh_status: "pending",
     vehicle_plate: "",
     avatar_url: "",
   });
@@ -91,6 +97,7 @@ const Profile = () => {
           experience_years: data.experience_years || 0,
           has_thermal_bag: data.has_thermal_bag || false,
           cnh: data.cnh || "",
+          cnh_status: (data as any).cnh_status || "pending",
           vehicle_plate: data.vehicle_plate || "",
           avatar_url: data.avatar_url || "",
         });
@@ -245,6 +252,78 @@ const Profile = () => {
     }
   };
 
+
+  const handleCnhClick = () => {
+    cnhInputRef.current?.click();
+  };
+
+  const handleCnhChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Formato inválido",
+        description: "Envie um arquivo PDF ou imagem (JPG, PNG, WEBP).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O arquivo deve ter no máximo 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCnhFile(file);
+  };
+
+  const handleUploadCnh = async () => {
+    if (!user || !cnhFile) return;
+
+    setUploadingCnh(true);
+    try {
+      const ext = cnhFile.name.split(".").pop()?.toLowerCase() || "pdf";
+      const fileName = `${user.id}/cnh.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("cnh-documents")
+        .upload(fileName, cnhFile, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ cnh: fileName, cnh_status: "pending" } as any)
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile((prev) => ({ ...prev, cnh: fileName, cnh_status: "pending" }));
+      setCnhFile(null);
+      if (cnhInputRef.current) cnhInputRef.current.value = "";
+
+      toast({
+        title: "Documento enviado!",
+        description: "Sua CNH foi enviada para análise.",
+      });
+    } catch (error) {
+      console.error("Erro ao enviar CNH:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar o documento agora.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingCnh(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
 
@@ -269,7 +348,6 @@ const Profile = () => {
           city: profile.city.trim(),
           experience_years: profile.experience_years,
           has_thermal_bag: profile.has_thermal_bag,
-          cnh: profile.cnh.trim(),
           vehicle_plate: profile.vehicle_plate.trim().toUpperCase(),
         })
         .eq("id", user.id);
@@ -407,13 +485,107 @@ const Profile = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="cnh">CNH</Label>
-              <Input
-                id="cnh"
-                value={profile.cnh}
-                onChange={(e) => setProfile({ ...profile, cnh: e.target.value })}
-                placeholder="Número da CNH"
-              />
+              <Label className="flex items-center justify-between">
+                Documento da CNH
+                <span className="text-xs text-muted-foreground">
+                  Status: {profile.cnh_status === "approved" ? "Aprovado" : profile.cnh_status === "rejected" ? "Rejeitado" : "Pendente"}
+                </span>
+              </Label>
+
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">
+                      {profile.cnh && profile.cnh.includes("/") ? "Documento enviado" : "Nenhum documento enviado"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {profile.cnh && profile.cnh.includes("/")
+                        ? profile.cnh
+                        : "Envie PDF ou imagem (JPG/PNG/WEBP) até 10MB."}
+                    </p>
+                  </div>
+
+                  {profile.cnh && profile.cnh.includes("/") && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        if (!user) return;
+                        const cnhPath = profile.cnh.trim();
+                        if (!cnhPath.includes("/") || !cnhPath.includes(".")) return;
+                        const { data, error } = await supabase.storage
+                          .from("cnh-documents")
+                          .createSignedUrl(cnhPath, 60 * 10);
+                        if (!error && data?.signedUrl) {
+                          window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                        }
+                      }}
+                    >
+                      Ver
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    ref={cnhInputRef}
+                    type="file"
+                    accept=".pdf,image/jpeg,image/png,image/webp"
+                    onChange={handleCnhChange}
+                    className="hidden"
+                  />
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCnhClick}
+                    disabled={uploadingCnh}
+                  >
+                    {cnhFile ? (
+                      <>
+                        <FileCheck className="w-4 h-4 mr-2" />
+                        Arquivo selecionado
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Selecionar arquivo
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={handleUploadCnh}
+                    disabled={!cnhFile || uploadingCnh}
+                  >
+                    {uploadingCnh ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-4 h-4 mr-2" />
+                        Enviar para análise
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {cnhFile && (
+                  <p className="text-xs text-muted-foreground">
+                    {cnhFile.name} • {(cnhFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                )}
+
+                {profile.cnh_status === "rejected" && (
+                  <p className="text-xs text-destructive">
+                    Sua CNH foi rejeitada. Envie novamente um documento legível.
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
