@@ -302,8 +302,39 @@ const AcceptedOffers = () => {
     });
   }, [completedOffers, tick, userId]);
 
+  // Calculate minutes until offer start
+  const getMinutesUntilStart = (offer: AcceptedOffer['offer']): number => {
+    const now = new Date();
+    const offerDate = offer.offer_date ? new Date(offer.offer_date + 'T00:00:00') : new Date();
+    const [startHours, startMinutes] = offer.time_start.split(':').map(Number);
+    
+    const offerStartTime = new Date(offerDate);
+    offerStartTime.setHours(startHours, startMinutes, 0, 0);
+    
+    return (offerStartTime.getTime() - now.getTime()) / (1000 * 60);
+  };
+
+  // Check if cancellation is allowed (more than 180 minutes before start)
+  const isCancellationAllowed = (offer: AcceptedOffer['offer']): boolean => {
+    return getMinutesUntilStart(offer) >= 180;
+  };
+
   const handleConfirmCancel = async () => {
     if (!offerToCancel) return;
+
+    // Check if cancellation is allowed (180 minutes before start)
+    const minutesUntilStart = getMinutesUntilStart(offerToCancel.offer);
+    if (minutesUntilStart < 180) {
+      const hoursRemaining = Math.floor(minutesUntilStart / 60);
+      const minsRemaining = Math.floor(minutesUntilStart % 60);
+      toast({
+        title: "Cancelamento bloqueado",
+        description: `Não é possível cancelar com menos de 3 horas de antecedência. Faltam ${hoursRemaining}h${minsRemaining}min para o início.`,
+        variant: "destructive",
+      });
+      setOfferToCancel(null);
+      return;
+    }
     
     setCancellingId(offerToCancel.id);
 
@@ -769,25 +800,43 @@ const AcceptedOffers = () => {
                                   Avaliado
                                 </Badge>
                               )}
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="flex-1"
-                                onClick={() => setOfferToCancel(acceptedOffer)}
-                                disabled={cancellingId === acceptedOffer.id}
-                              >
-                                {cancellingId === acceptedOffer.id ? (
-                                  <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Cancelando...
-                                  </>
-                                ) : (
-                                  <>
-                                    <X className="w-4 h-4 mr-2" />
-                                    Cancelar
-                                  </>
-                                )}
-                              </Button>
+                              {(() => {
+                                const canCancel = isCancellationAllowed(acceptedOffer.offer);
+                                const minutesLeft = getMinutesUntilStart(acceptedOffer.offer);
+                                const hoursLeft = Math.floor(minutesLeft / 60);
+                                const minsLeft = Math.floor(minutesLeft % 60);
+                                
+                                return (
+                                  <div className="flex-1 relative group">
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      className="w-full"
+                                      onClick={() => setOfferToCancel(acceptedOffer)}
+                                      disabled={cancellingId === acceptedOffer.id || !canCancel}
+                                    >
+                                      {cancellingId === acceptedOffer.id ? (
+                                        <>
+                                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                          Cancelando...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <X className="w-4 h-4 mr-2" />
+                                          Cancelar
+                                        </>
+                                      )}
+                                    </Button>
+                                    {!canCancel && (
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-popover border rounded-lg shadow-lg text-xs text-muted-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                        Cancelamento bloqueado (faltam {hoursLeft}h{minsLeft}min)
+                                        <br />
+                                        <span className="text-[10px]">Permitido até 3h antes do início</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
                         );
