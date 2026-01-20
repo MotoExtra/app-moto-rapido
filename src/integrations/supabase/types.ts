@@ -49,6 +49,84 @@ export type Database = {
           },
         ]
       }
+      achievements: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          sort_order: number
+          unlock_criteria: Json
+          xp_reward: number
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          description: string
+          icon: string
+          id?: string
+          name: string
+          sort_order?: number
+          unlock_criteria: Json
+          xp_reward?: number
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          unlock_criteria?: Json
+          xp_reward?: number
+        }
+        Relationships: []
+      }
+      challenges: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          target_value: number
+          title: string
+          type: string
+          valid_from: string
+          valid_until: string
+          xp_reward: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          target_value: number
+          title: string
+          type: string
+          valid_from: string
+          valid_until: string
+          xp_reward: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          target_value?: number
+          title?: string
+          type?: string
+          valid_from?: string
+          valid_until?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string
@@ -226,6 +304,90 @@ export type Database = {
         }
         Relationships: []
       }
+      motoboy_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          seen: boolean
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          seen?: boolean
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          seen?: boolean
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motoboy_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "motoboy_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      motoboy_challenges: {
+        Row: {
+          challenge_id: string
+          completed: boolean
+          completed_at: string | null
+          id: string
+          joined_at: string
+          progress: number
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          joined_at?: string
+          progress?: number
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          joined_at?: string
+          progress?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motoboy_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "motoboy_challenges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       motoboy_city_preferences: {
         Row: {
           city: string
@@ -319,6 +481,59 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      motoboy_stats: {
+        Row: {
+          best_streak: number
+          completed_extras: number
+          created_at: string
+          current_level: number
+          current_streak: number
+          extras_without_cancel: number
+          last_work_date: string | null
+          total_cancellations: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+          weekly_xp: number
+        }
+        Insert: {
+          best_streak?: number
+          completed_extras?: number
+          created_at?: string
+          current_level?: number
+          current_streak?: number
+          extras_without_cancel?: number
+          last_work_date?: string | null
+          total_cancellations?: number
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+          weekly_xp?: number
+        }
+        Update: {
+          best_streak?: number
+          completed_extras?: number
+          created_at?: string
+          current_level?: number
+          current_streak?: number
+          extras_without_cancel?: number
+          last_work_date?: string | null
+          total_cancellations?: number
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+          weekly_xp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motoboy_stats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -508,6 +723,33 @@ export type Database = {
           id?: string
           p256dh?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      ranking_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          period_type: string
+          rank_position: number
+          reward_description: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          period_type: string
+          rank_position: number
+          reward_description: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          period_type?: string
+          rank_position?: number
+          reward_description?: string
         }
         Relationships: []
       }
@@ -758,10 +1000,53 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_motoboy_xp: {
+        Args: {
+          p_update_streak?: boolean
+          p_user_id: string
+          p_xp_amount: number
+        }
+        Returns: {
+          best_streak: number
+          completed_extras: number
+          created_at: string
+          current_level: number
+          current_streak: number
+          extras_without_cancel: number
+          last_work_date: string | null
+          total_cancellations: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+          weekly_xp: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "motoboy_stats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      calculate_level: { Args: { xp: number }; Returns: number }
       cleanup_expired_offers: { Args: never; Returns: number }
       find_or_create_external_restaurant: {
         Args: { p_address?: string; p_city: string; p_name: string }
         Returns: string
+      }
+      get_weekly_ranking: {
+        Args: { p_limit?: number }
+        Returns: {
+          avatar_url: string
+          completed_extras: number
+          current_level: number
+          current_streak: number
+          name: string
+          rank_position: number
+          score: number
+          total_xp: number
+          user_id: string
+          weekly_xp: number
+        }[]
       }
       grant_admin_role: { Args: { target_user_id: string }; Returns: undefined }
       has_role: {
@@ -770,6 +1055,75 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      record_cancellation: {
+        Args: { p_user_id: string }
+        Returns: {
+          best_streak: number
+          completed_extras: number
+          created_at: string
+          current_level: number
+          current_streak: number
+          extras_without_cancel: number
+          last_work_date: string | null
+          total_cancellations: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+          weekly_xp: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "motoboy_stats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_completed_extra: {
+        Args: { p_user_id: string }
+        Returns: {
+          best_streak: number
+          completed_extras: number
+          created_at: string
+          current_level: number
+          current_streak: number
+          extras_without_cancel: number
+          last_work_date: string | null
+          total_cancellations: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+          weekly_xp: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "motoboy_stats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_rating_xp: {
+        Args: { p_rating: number; p_user_id: string }
+        Returns: {
+          best_streak: number
+          completed_extras: number
+          created_at: string
+          current_level: number
+          current_streak: number
+          extras_without_cancel: number
+          last_work_date: string | null
+          total_cancellations: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+          weekly_xp: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "motoboy_stats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       unaccent: { Args: { "": string }; Returns: string }
     }
