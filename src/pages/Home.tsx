@@ -21,6 +21,7 @@ import { formatPayment } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
 import { useGamification } from "@/hooks/useGamification";
 import { LevelBadge } from "@/components/gamification/LevelBadge";
+import { LevelUpModal } from "@/components/gamification/LevelUpModal";
 interface Offer {
   id: string;
   restaurant_name: string;
@@ -72,7 +73,7 @@ const Home = () => {
   const [activeAcceptedCount, setActiveAcceptedCount] = useState(0);
 
   // Gamification data
-  const { stats: gamificationStats } = useGamification(user?.id);
+  const { stats: gamificationStats, levelUpInfo, dismissLevelUp } = useGamification(user?.id);
 
   // Handle location permission request
   const handleRequestLocation = () => {
@@ -1225,6 +1226,13 @@ const Home = () => {
           </button>
         </div>
       </nav>
+
+      {/* Level Up Modal */}
+      <LevelUpModal 
+        open={levelUpInfo.show} 
+        onClose={dismissLevelUp} 
+        newLevel={levelUpInfo.newLevel} 
+      />
     </div>
   );
 };

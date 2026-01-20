@@ -38,6 +38,8 @@ export interface UnlockedAchievement {
 
 export function useGamification(userId?: string) {
   const [stats, setStats] = useState<MotoboyStats | null>(null);
+  const [previousLevel, setPreviousLevel] = useState<number | null>(null);
+  const [levelUpInfo, setLevelUpInfo] = useState<{ show: boolean; newLevel: number }>({ show: false, newLevel: 1 });
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [unlockedAchievements, setUnlockedAchievements] = useState<UnlockedAchievement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -115,7 +117,14 @@ export function useGamification(userId?: string) {
         },
         (payload) => {
           if (payload.new) {
-            setStats(payload.new as MotoboyStats);
+            const newStats = payload.new as MotoboyStats;
+            
+            // Check for level up
+            if (stats && newStats.current_level > stats.current_level) {
+              setLevelUpInfo({ show: true, newLevel: newStats.current_level });
+            }
+            
+            setStats(newStats);
           }
         }
       )
@@ -172,11 +181,17 @@ export function useGamification(userId?: string) {
     if (data) setStats(data);
   };
 
+  const dismissLevelUp = () => {
+    setLevelUpInfo({ show: false, newLevel: levelUpInfo.newLevel });
+  };
+
   return {
     stats,
     achievements,
     unlockedAchievements,
     isLoading,
     refetch,
+    levelUpInfo,
+    dismissLevelUp,
   };
 }
