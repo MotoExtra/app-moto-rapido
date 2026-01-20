@@ -25,6 +25,7 @@ import OfferExtra from "./pages/OfferExtra";
 import EditExtra from "./pages/EditExtra";
 import MyExtras from "./pages/MyExtras";
 import SnackExchange from "./pages/SnackExchange";
+import Gamification from "./pages/Gamification";
 
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCNHReview from "./pages/AdminCNHReview";
@@ -77,6 +78,7 @@ const App = () => {
               <Route path="/editar-extra/:id" element={<ProtectedRoute allowedUserType="motoboy"><EditExtra /></ProtectedRoute>} />
               <Route path="/meus-extras" element={<ProtectedRoute allowedUserType="motoboy"><MyExtras /></ProtectedRoute>} />
               <Route path="/troca-lanche" element={<ProtectedRoute allowedUserType="motoboy"><SnackExchange /></ProtectedRoute>} />
+              <Route path="/gamification" element={<ProtectedRoute allowedUserType="motoboy"><Gamification /></ProtectedRoute>} />
               
               {/* Rotas protegidas de restaurante */}
               <Route path="/restaurante/home" element={<ProtectedRoute allowedUserType="restaurant"><RestaurantHome /></ProtectedRoute>} />

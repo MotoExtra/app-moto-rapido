@@ -19,7 +19,8 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { formatPayment } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
-
+import { useGamification } from "@/hooks/useGamification";
+import { GamificationHeader } from "@/components/gamification/GamificationHeader";
 interface Offer {
   id: string;
   restaurant_name: string;
@@ -69,6 +70,9 @@ const Home = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [myExtrasCount, setMyExtrasCount] = useState(0);
   const [activeAcceptedCount, setActiveAcceptedCount] = useState(0);
+
+  // Gamification data
+  const { stats: gamificationStats } = useGamification(user?.id);
 
   // Handle location permission request
   const handleRequestLocation = () => {
