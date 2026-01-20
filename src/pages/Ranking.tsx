@@ -2,81 +2,15 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, Star, Package, Clock, ChevronLeft, Gift } from "lucide-react";
-
-// Mock data - depois vem do backend
-const mockRanking = [
-  {
-    id: 1,
-    position: 1,
-    name: "Carlos Silva",
-    score: 485,
-    deliveries: 142,
-    rating: 4.9,
-    prize: "R$ 500 + Voucher Combustível"
-  },
-  {
-    id: 2,
-    position: 2,
-    name: "Ana Santos",
-    score: 467,
-    deliveries: 138,
-    rating: 4.8,
-    prize: "R$ 300 + Kit Equipamentos"
-  },
-  {
-    id: 3,
-    position: 3,
-    name: "João Oliveira",
-    score: 445,
-    deliveries: 129,
-    rating: 4.7,
-    prize: "R$ 200 + Bag Térmica Premium"
-  },
-  {
-    id: 4,
-    position: 4,
-    name: "Maria Costa",
-    score: 423,
-    deliveries: 118,
-    rating: 4.6,
-  },
-  {
-    id: 5,
-    position: 5,
-    name: "Pedro Alves",
-    score: 412,
-    deliveries: 115,
-    rating: 4.6,
-  },
-  {
-    id: 6,
-    position: 6,
-    name: "Juliana Lima",
-    score: 398,
-    deliveries: 109,
-    rating: 4.5,
-  },
-  {
-    id: 7,
-    position: 7,
-    name: "Ricardo Souza",
-    score: 387,
-    deliveries: 105,
-    rating: 4.5,
-  },
-  {
-    id: 8,
-    position: 8,
-    name: "Fernanda Rocha",
-    score: 375,
-    deliveries: 101,
-    rating: 4.4,
-  },
-];
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Trophy, Medal, Award, Star, Package, Clock, ChevronLeft, Gift, Zap } from "lucide-react";
+import { useRanking } from "@/hooks/useRanking";
+import { LevelBadge } from "@/components/gamification/LevelBadge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Ranking = () => {
   const navigate = useNavigate();
+  const { ranking, rewards, isLoading, currentUserPosition } = useRanking();
 
   const getPodiumIcon = (position: number) => {
     switch (position) {
@@ -104,8 +38,34 @@ const Ranking = () => {
     }
   };
 
-  const topThree = mockRanking.slice(0, 3);
-  const others = mockRanking.slice(3);
+  const getRewardForPosition = (position: number) => {
+    return rewards.find(r => r.rank_position === position)?.reward_description;
+  };
+
+  const topThree = ranking.slice(0, 3);
+  const others = ranking.slice(3);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-10 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-b shadow-sm">
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/home")}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <Skeleton className="h-8 w-32" />
+            </div>
+          </div>
+        </header>
+        <div className="p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -125,107 +85,143 @@ const Ranking = () => {
               <p className="text-sm text-muted-foreground">Melhores da semana</p>
             </div>
           </div>
+          
+          {currentUserPosition && (
+            <div className="bg-primary/10 rounded-lg p-3 border border-primary/20">
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-primary fill-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  Sua posição: <span className="text-primary font-bold">#{currentUserPosition}</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Top 3 Podium */}
+      {/* Content */}
       <div className="p-4 space-y-4">
-        <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Gift className="w-5 h-5 text-primary" />
-            <h2 className="font-bold text-foreground">Top 3 - Ganhe Prêmios!</h2>
-          </div>
-          
-          <div className="space-y-3">
-            {topThree.map((motoboy) => (
-              <Card key={motoboy.id} className={`overflow-hidden border-2 ${getPodiumBg(motoboy.position)}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0">
-                      {getPodiumIcon(motoboy.position)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-lg text-foreground truncate">
-                          {motoboy.name}
-                        </h3>
-                        <Badge variant="secondary" className="shrink-0">
-                          #{motoboy.position}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-primary text-primary" />
-                          <span className="font-bold text-primary">{motoboy.score}</span>
+        {ranking.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-semibold text-foreground mb-2">Nenhum ranking ainda</h3>
+              <p className="text-sm text-muted-foreground">
+                Complete extras para aparecer no ranking!
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Top 3 Podium */}
+            {topThree.length > 0 && (
+              <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Gift className="w-5 h-5 text-primary" />
+                  <h2 className="font-bold text-foreground">Top 3 - Ganhe Prêmios!</h2>
+                </div>
+                
+                <div className="space-y-3">
+                  {topThree.map((motoboy) => (
+                    <Card key={motoboy.user_id} className={`overflow-hidden border-2 ${getPodiumBg(motoboy.rank_position)}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex-shrink-0">
+                            {getPodiumIcon(motoboy.rank_position)}
+                          </div>
+                          
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={motoboy.avatar_url || undefined} />
+                            <AvatarFallback>{motoboy.name?.charAt(0) || "?"}</AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-bold text-lg text-foreground truncate">
+                                {motoboy.name}
+                              </h3>
+                              <Badge variant="secondary" className="shrink-0">
+                                #{motoboy.rank_position}
+                              </Badge>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
+                              <div className="flex items-center gap-1">
+                                <Zap className="w-4 h-4 fill-primary text-primary" />
+                                <span className="font-bold text-primary">{Math.round(motoboy.score)}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Package className="w-4 h-4" />
+                                <span>{motoboy.completed_extras} extras</span>
+                              </div>
+                              <LevelBadge level={motoboy.current_level} size="sm" />
+                            </div>
+                            
+                            {getRewardForPosition(motoboy.rank_position) && (
+                              <div className="bg-background/50 backdrop-blur-sm rounded-lg p-2 border">
+                                <div className="flex items-center gap-2">
+                                  <Gift className="w-4 h-4 text-primary shrink-0" />
+                                  <span className="text-xs font-medium text-foreground">
+                                    {getRewardForPosition(motoboy.rank_position)}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Package className="w-4 h-4" />
-                          <span>{motoboy.deliveries} entregas</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                          <span>{motoboy.rating}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-background/50 backdrop-blur-sm rounded-lg p-2 border">
-                        <div className="flex items-center gap-2">
-                          <Gift className="w-4 h-4 text-primary shrink-0" />
-                          <span className="text-xs font-medium text-foreground">
-                            {motoboy.prize}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {/* Other Positions */}
-        <div>
-          <h2 className="font-bold text-foreground mb-3 px-1">Demais Posições</h2>
-          <div className="space-y-2">
-            {others.map((motoboy) => (
-              <Card key={motoboy.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <span className="font-bold text-muted-foreground">
-                        #{motoboy.position}
-                      </span>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate mb-1">
-                        {motoboy.name}
-                      </h3>
-                      
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-primary text-primary" />
-                          <span className="font-medium">{motoboy.score}</span>
+            {/* Other Positions */}
+            {others.length > 0 && (
+              <div>
+                <h2 className="font-bold text-foreground mb-3 px-1">Demais Posições</h2>
+                <div className="space-y-2">
+                  {others.map((motoboy) => (
+                    <Card key={motoboy.user_id} className="overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                            <span className="font-bold text-muted-foreground">
+                              #{motoboy.rank_position}
+                            </span>
+                          </div>
+                          
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage src={motoboy.avatar_url || undefined} />
+                            <AvatarFallback>{motoboy.name?.charAt(0) || "?"}</AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-foreground truncate mb-1">
+                              {motoboy.name}
+                            </h3>
+                            
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Zap className="w-3 h-3 fill-primary text-primary" />
+                                <span className="font-medium">{Math.round(motoboy.score)}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Package className="w-3 h-3" />
+                                <span>{motoboy.completed_extras}</span>
+                              </div>
+                              <LevelBadge level={motoboy.current_level} size="sm" />
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Package className="w-3 h-3" />
-                          <span>{motoboy.deliveries}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                          <span>{motoboy.rating}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Bottom Navigation */}
@@ -248,7 +244,7 @@ const Ranking = () => {
             <span className="text-xs">Meus Turnos</span>
           </Button>
           <Button variant="default" className="flex-col h-auto py-2">
-            <Star className="w-5 h-5 mb-1 fill-current" />
+            <Trophy className="w-5 h-5 mb-1 fill-current" />
             <span className="text-xs">Ranking</span>
           </Button>
         </div>
