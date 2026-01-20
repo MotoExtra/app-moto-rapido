@@ -20,7 +20,7 @@ import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { formatPayment } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
 import { useGamification } from "@/hooks/useGamification";
-import { GamificationHeader } from "@/components/gamification/GamificationHeader";
+import { LevelBadge } from "@/components/gamification/LevelBadge";
 interface Offer {
   id: string;
   restaurant_name: string;
@@ -593,11 +593,24 @@ const Home = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              
+              {/* Level Badge */}
+              <motion.div
+                className="flex items-center"
+                whileHover={{ scale: 1.05 }}
+                onClick={() => navigate("/gamification")}
+                title={`Nível ${gamificationStats?.current_level || 1}`}
+              >
+                <LevelBadge 
+                  level={gamificationStats?.current_level || 1} 
+                  size="sm" 
+                />
+              </motion.div>
+
               {/* Score Card */}
               <motion.div 
-                className="flex items-center gap-1.5 bg-gradient-to-r from-primary/15 to-primary/5 px-3 py-1.5 rounded-full border border-primary/20"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-primary/15 to-primary/5 px-3 py-1.5 rounded-full border border-primary/20 cursor-pointer"
                 whileHover={{ scale: 1.03 }}
+                onClick={() => navigate("/gamification")}
                 title="Sua pontuação"
               >
                 <motion.div
@@ -606,7 +619,7 @@ const Home = () => {
                 >
                   <Star className="w-4 h-4 fill-primary text-primary" />
                 </motion.div>
-                <span className="text-sm font-bold text-primary">100</span>
+                <span className="text-sm font-bold text-primary">{gamificationStats?.total_xp || 0}</span>
               </motion.div>
               
               {/* Avatar that opens menu */}
