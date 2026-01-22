@@ -22,6 +22,11 @@ export function LevelUpModal({ open, onClose, newLevel }: LevelUpModalProps) {
       // Play level up sound
       playLevelUp();
       
+      // Trigger haptic vibration pattern (celebratory burst)
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100, 50, 200]); // ta-ta-TAA pattern
+      }
+      
       // Trigger confetti
       const duration = 2000;
       const end = Date.now() + duration;
