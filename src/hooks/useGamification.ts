@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 
 export interface MotoboyStats {
   user_id: string;
@@ -44,6 +45,7 @@ export function useGamification(userId?: string) {
   const [unlockedAchievements, setUnlockedAchievements] = useState<UnlockedAchievement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { playAchievement } = useNotificationSound();
 
   useEffect(() => {
     if (!userId) {
@@ -151,6 +153,9 @@ export function useGamification(userId?: string) {
                     achievement: data
                   };
                   setUnlockedAchievements(prev => [...prev, newUnlocked]);
+                  
+                  // Play achievement sound
+                  playAchievement();
                   
                   // Show toast for new achievement
                   toast({
