@@ -635,26 +635,13 @@ const AdminCNHReview = () => {
                     </div>
 
                     <div className="border rounded-lg overflow-hidden bg-muted">
-                      {!cnhObjectUrl ? (
-                        <div className="p-6 text-center">
-                          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground mb-3">
-                            Não foi possível pré-visualizar o documento aqui.
-                          </p>
-                          <Button asChild variant="default" size="sm">
-                            <a href={cnhSignedUrl} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Abrir documento em nova aba
-                            </a>
-                          </Button>
-                        </div>
-                      ) : isImageExt(selectedCnhExt) ? (
+                      {isImageExt(selectedCnhExt) ? (
                         cnhPreviewError ? (
                           <div className="p-6 text-center">
                             <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                             <p className="text-sm text-muted-foreground">{cnhPreviewError}</p>
                           </div>
-                        ) : (
+                        ) : cnhObjectUrl ? (
                           <img
                             src={cnhObjectUrl}
                             alt="Documento CNH do motoboy"
@@ -666,13 +653,46 @@ const AdminCNHReview = () => {
                               )
                             }
                           />
+                        ) : (
+                          <div className="p-6 text-center">
+                            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground mb-3">
+                              Carregando imagem...
+                            </p>
+                          </div>
                         )
+                      ) : selectedCnhExt === "pdf" ? (
+                        <object
+                          data={cnhObjectUrl || cnhSignedUrl || ""}
+                          type="application/pdf"
+                          className="w-full h-[60vh]"
+                        >
+                          <div className="p-6 text-center">
+                            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground mb-3">
+                              Seu navegador não suporta visualização de PDF embutido.
+                            </p>
+                            <Button asChild variant="default" size="sm">
+                              <a href={cnhSignedUrl} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Abrir PDF em nova aba
+                              </a>
+                            </Button>
+                          </div>
+                        </object>
                       ) : (
-                        <iframe
-                          src={cnhObjectUrl}
-                          title="Documento CNH do motoboy"
-                          className="w-full h-[60vh] bg-muted"
-                        />
+                        <div className="p-6 text-center">
+                          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Formato de arquivo não suportado para visualização.
+                          </p>
+                          <Button asChild variant="default" size="sm">
+                            <a href={cnhSignedUrl} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Baixar documento
+                            </a>
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
