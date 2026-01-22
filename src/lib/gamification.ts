@@ -1,10 +1,10 @@
 // Gamification constants and utilities
 
 export const LEVELS = [
-  { level: 1, name: "Novato", minXp: 0, icon: "User" },
+  { level: 1, name: "Novato", minXp: 0, icon: "Zap" },
   { level: 2, name: "Entregador", minXp: 200, icon: "Bike" },
-  { level: 3, name: "Profissional", minXp: 600, icon: "Star" },
-  { level: 4, name: "Veterano", minXp: 1200, icon: "Award" },
+  { level: 3, name: "Profissional", minXp: 600, icon: "Flame" },
+  { level: 4, name: "Veterano", minXp: 1200, icon: "Rocket" },
   { level: 5, name: "Lenda", minXp: 2000, icon: "Crown" },
 ] as const;
 
