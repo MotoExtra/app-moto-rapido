@@ -22,6 +22,7 @@ import type { User } from "@supabase/supabase-js";
 import { useGamification } from "@/hooks/useGamification";
 import { LevelBadge } from "@/components/gamification/LevelBadge";
 import { LevelUpModal } from "@/components/gamification/LevelUpModal";
+import { MotoboyAssistant } from "@/components/MotoboyAssistant";
 interface Offer {
   id: string;
   restaurant_name: string;
@@ -1233,6 +1234,9 @@ const Home = () => {
         onClose={dismissLevelUp} 
         newLevel={levelUpInfo.newLevel} 
       />
+
+      {/* Motoboy Assistant Chatbot */}
+      <MotoboyAssistant />
     </div>
   );
 };

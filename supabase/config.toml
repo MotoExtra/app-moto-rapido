@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.check-pending-ratings]
 verify_jwt = false
+
+[functions.motoboy-assistant]
+verify_jwt = false
