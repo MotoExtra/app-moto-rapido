@@ -314,27 +314,22 @@ const AcceptedOffers = () => {
     return (offerStartTime.getTime() - now.getTime()) / (1000 * 60);
   };
 
-  // Check if cancellation is allowed (more than 180 minutes before start)
-  const isCancellationAllowed = (offer: AcceptedOffer['offer']): boolean => {
-    return getMinutesUntilStart(offer) >= 180;
+  // Get penalty info based on time until start (for display purposes)
+  const getPenaltyInfo = (minutesUntilStart: number): { xp: number; label: string; severity: 'critical' | 'medium' | 'low' } => {
+    if (minutesUntilStart < 180) {
+      return { xp: 100, label: 'Menos de 3h', severity: 'critical' };
+    } else if (minutesUntilStart < 360) {
+      return { xp: 50, label: '3-6h', severity: 'medium' };
+    } else {
+      return { xp: 25, label: 'Mais de 6h', severity: 'low' };
+    }
   };
 
   const handleConfirmCancel = async () => {
-    if (!offerToCancel) return;
+    if (!offerToCancel || !userId) return;
 
-    // Check if cancellation is allowed (180 minutes before start)
-    const minutesUntilStart = getMinutesUntilStart(offerToCancel.offer);
-    if (minutesUntilStart < 180) {
-      const hoursRemaining = Math.floor(minutesUntilStart / 60);
-      const minsRemaining = Math.floor(minutesUntilStart % 60);
-      toast({
-        title: "Cancelamento bloqueado",
-        description: `Não é possível cancelar com menos de 3 horas de antecedência. Faltam ${hoursRemaining}h${minsRemaining}min para o início.`,
-        variant: "destructive",
-      });
-      setOfferToCancel(null);
-      return;
-    }
+    const minutesUntilStart = Math.floor(getMinutesUntilStart(offerToCancel.offer));
+    const penaltyInfo = getPenaltyInfo(minutesUntilStart);
     
     setCancellingId(offerToCancel.id);
 
@@ -342,6 +337,21 @@ const AcceptedOffers = () => {
       // Store offer info before deletion for notification
       const cancelledOffer = offerToCancel.offer;
       const restaurantUserId = cancelledOffer.created_by;
+
+      // Apply progressive cancellation penalty
+      const { data: penaltyResult, error: penaltyError } = await supabase.rpc(
+        "record_cancellation_progressive" as any,
+        {
+          p_user_id: userId,
+          p_offer_id: cancelledOffer.id,
+          p_minutes_until_start: minutesUntilStart,
+        }
+      );
+
+      if (penaltyError) {
+        console.error("Erro ao aplicar penalidade:", penaltyError);
+        // Continue with cancellation even if penalty fails
+      }
 
       // Delete the accepted_offer record
       const { error: deleteError } = await supabase
@@ -362,9 +372,20 @@ const AcceptedOffers = () => {
       // Remove from local state
       setAcceptedOffers((current) => current.filter((o) => o.id !== offerToCancel.id));
 
+      // Show toast with penalty info
+      const resultData = penaltyResult as any;
+      const penaltyXp = resultData?.[0]?.penalty_xp || penaltyInfo.xp;
+      const penaltyReason = resultData?.[0]?.penalty_reason || `Cancelamento com ${penaltyInfo.label} de antecedência`;
+      
+      // Haptic feedback for negative action
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
+      
       toast({
         title: "Extra cancelado",
-        description: "O extra foi cancelado e está disponível novamente.",
+        description: `${penaltyReason}. Você perdeu -${penaltyXp} XP.`,
+        variant: "destructive",
       });
 
       // Notify the restaurant owner about the cancellation (don't wait for it)
@@ -455,14 +476,15 @@ const AcceptedOffers = () => {
         )
       );
       
-      // Apply arrival delay penalty if applicable
+      // Apply arrival delay penalty if applicable (using v2 that logs to penalty_history)
       let penaltyMessage = "";
       if (userId && acceptedOffer.offer.offer_date && acceptedOffer.offer.time_start) {
         try {
           const { data: penaltyData, error: penaltyError } = await supabase.rpc(
-            "apply_arrival_delay_penalty",
+            "apply_arrival_delay_penalty_v2" as any,
             {
               p_user_id: userId,
+              p_offer_id: acceptedOffer.offer.id,
               p_offer_date: acceptedOffer.offer.offer_date,
               p_time_start: acceptedOffer.offer.time_start,
             }
@@ -470,10 +492,18 @@ const AcceptedOffers = () => {
           
           if (penaltyError) {
             console.error("Erro ao calcular penalidade:", penaltyError);
-          } else if (penaltyData && penaltyData.length > 0 && penaltyData[0].applied) {
-            const penalty = penaltyData[0];
-            penaltyMessage = `\n⚠️ Atraso de ${penalty.delay_minutes} min: -${penalty.penalty_xp} XP`;
-            console.log("Penalidade aplicada:", penalty);
+          } else {
+            const resultData = penaltyData as any;
+            if (resultData && resultData.length > 0 && resultData[0].applied) {
+              const penalty = resultData[0];
+              penaltyMessage = `\n⚠️ ${penalty.penalty_reason}: -${penalty.penalty_xp} XP`;
+              console.log("Penalidade aplicada:", penalty);
+              
+              // Haptic feedback for penalty
+              if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+              }
+            }
           }
         } catch (penaltyErr) {
           console.error("Erro ao aplicar penalidade:", penaltyErr);
@@ -530,16 +560,54 @@ const AcceptedOffers = () => {
 
   return (
     <>
-      {/* Cancel Confirmation Dialog */}
+      {/* Cancel Confirmation Dialog with Penalty Warning */}
       <AlertDialog open={!!offerToCancel} onOpenChange={(open) => !open && setOfferToCancel(null)}>
         <AlertDialogContent className="z-[1000]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar Extra</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja cancelar o extra em{" "}
-              <span className="font-semibold">{offerToCancel?.offer.restaurant_name}</span>?
-              <br /><br />
-              Esta ação fará o extra voltar a ficar disponível para outros motoboys.
+            <AlertDialogTitle className="flex items-center gap-2">
+              <X className="w-5 h-5 text-destructive" />
+              Cancelar Extra
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Tem certeza que deseja cancelar o extra em{" "}
+                  <span className="font-semibold">{offerToCancel?.offer.restaurant_name}</span>?
+                </p>
+                
+                {offerToCancel && (() => {
+                  const minutesUntilStart = Math.floor(getMinutesUntilStart(offerToCancel.offer));
+                  const penaltyInfo = getPenaltyInfo(minutesUntilStart);
+                  const hoursUntilStart = Math.floor(minutesUntilStart / 60);
+                  const minsUntilStart = Math.floor(minutesUntilStart % 60);
+                  
+                  return (
+                    <div className={`p-3 rounded-lg border ${
+                      penaltyInfo.severity === 'critical' 
+                        ? 'bg-destructive/10 border-destructive/30' 
+                        : penaltyInfo.severity === 'medium'
+                        ? 'bg-orange-500/10 border-orange-500/30'
+                        : 'bg-yellow-500/10 border-yellow-500/30'
+                    }`}>
+                      <p className="font-semibold text-foreground mb-1">
+                        ⚠️ Penalidade: -{penaltyInfo.xp} XP
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Faltam {hoursUntilStart}h{minsUntilStart > 0 ? ` ${minsUntilStart}min` : ''} para o início.
+                        {penaltyInfo.severity === 'critical' && (
+                          <span className="block mt-1 text-destructive font-medium">
+                            Cancelamentos de última hora impactam muito os restaurantes!
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  );
+                })()}
+                
+                <p className="text-sm">
+                  Esta ação fará o extra voltar a ficar disponível para outros motoboys.
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -848,10 +916,8 @@ const AcceptedOffers = () => {
                                 </Badge>
                               )}
                               {(() => {
-                                const canCancel = isCancellationAllowed(acceptedOffer.offer);
                                 const minutesLeft = getMinutesUntilStart(acceptedOffer.offer);
-                                const hoursLeft = Math.floor(minutesLeft / 60);
-                                const minsLeft = Math.floor(minutesLeft % 60);
+                                const penaltyInfo = getPenaltyInfo(minutesLeft);
                                 
                                 return (
                                   <div className="flex-1 relative group">
@@ -860,7 +926,7 @@ const AcceptedOffers = () => {
                                       size="sm"
                                       className="w-full"
                                       onClick={() => setOfferToCancel(acceptedOffer)}
-                                      disabled={cancellingId === acceptedOffer.id || !canCancel}
+                                      disabled={cancellingId === acceptedOffer.id}
                                     >
                                       {cancellingId === acceptedOffer.id ? (
                                         <>
@@ -870,17 +936,10 @@ const AcceptedOffers = () => {
                                       ) : (
                                         <>
                                           <X className="w-4 h-4 mr-2" />
-                                          Cancelar
+                                          Cancelar (-{penaltyInfo.xp} XP)
                                         </>
                                       )}
                                     </Button>
-                                    {!canCancel && (
-                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-popover border rounded-lg shadow-lg text-xs text-muted-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                        Cancelamento bloqueado (faltam {hoursLeft}h{minsLeft}min)
-                                        <br />
-                                        <span className="text-[10px]">Permitido até 3h antes do início</span>
-                                      </div>
-                                    )}
                                   </div>
                                 );
                               })()}

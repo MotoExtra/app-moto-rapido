@@ -642,6 +642,47 @@ export type Database = {
           },
         ]
       }
+      penalty_history: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          id: string
+          offer_id: string | null
+          penalty_type: string
+          reason: string
+          user_id: string
+          xp_amount: number
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          offer_id?: string | null
+          penalty_type: string
+          reason: string
+          user_id: string
+          xp_amount: number
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          offer_id?: string | null
+          penalty_type?: string
+          reason?: string
+          user_id?: string
+          xp_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "penalty_history_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1035,6 +1076,20 @@ export type Database = {
           penalty_xp: number
         }[]
       }
+      apply_arrival_delay_penalty_v2: {
+        Args: {
+          p_offer_date: string
+          p_offer_id: string
+          p_time_start: string
+          p_user_id: string
+        }
+        Returns: {
+          applied: boolean
+          delay_minutes: number
+          penalty_reason: string
+          penalty_xp: number
+        }[]
+      }
       calculate_level: { Args: { xp: number }; Returns: number }
       cleanup_expired_offers: { Args: never; Returns: number }
       find_or_create_external_restaurant: {
@@ -1086,6 +1141,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_cancellation_progressive: {
+        Args: {
+          p_minutes_until_start: number
+          p_offer_id: string
+          p_user_id: string
+        }
+        Returns: {
+          new_total_xp: number
+          penalty_reason: string
+          penalty_xp: number
+        }[]
       }
       record_completed_extra: {
         Args: { p_user_id: string }
