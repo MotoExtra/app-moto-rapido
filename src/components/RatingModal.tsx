@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import RatingTagSelector from "./RatingTagSelector";
 
 interface RatingModalProps {
   open: boolean;
@@ -35,6 +36,7 @@ const RatingModal = ({
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -50,16 +52,31 @@ const RatingModal = ({
     setSubmitting(true);
 
     try {
-      const { error } = await supabase.from("ratings").insert({
-        offer_id: offerId,
-        restaurant_id: restaurantId,
-        motoboy_id: motoboyId,
-        rating,
-        comment: comment.trim() || null,
-        rating_type: "restaurant_to_motoboy",
-      });
+      // Insert rating
+      const { data: ratingData, error: ratingError } = await supabase
+        .from("ratings")
+        .insert({
+          offer_id: offerId,
+          restaurant_id: restaurantId,
+          motoboy_id: motoboyId,
+          rating,
+          comment: comment.trim() || null,
+          rating_type: "restaurant_to_motoboy",
+        })
+        .select("id")
+        .single();
 
-      if (error) throw error;
+      if (ratingError) throw ratingError;
+
+      // Insert tag selections
+      if (selectedTags.length > 0 && ratingData) {
+        const tagSelections = selectedTags.map((tagId) => ({
+          rating_id: ratingData.id,
+          tag_id: tagId,
+        }));
+
+        await supabase.from("rating_tag_selections" as any).insert(tagSelections as any);
+      }
 
       toast({
         title: "Avaliação enviada",
@@ -70,6 +87,7 @@ const RatingModal = ({
       onOpenChange(false);
       setRating(0);
       setComment("");
+      setSelectedTags([]);
     } catch (error) {
       console.error("Erro ao enviar avaliação:", error);
       toast({
@@ -129,6 +147,18 @@ const RatingModal = ({
             </p>
           </div>
 
+          {/* Tags */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Selecione tags (opcional)
+            </label>
+            <RatingTagSelector
+              applicableTo="motoboy"
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
+            />
+          </div>
+
           {/* Comment */}
           <div className="space-y-2">
             <label className="text-sm font-medium">
@@ -138,7 +168,7 @@ const RatingModal = ({
               placeholder="Deixe um comentário sobre o serviço..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              rows={3}
+              rows={2}
               maxLength={500}
             />
           </div>

@@ -13,6 +13,7 @@ import { Star, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import RatingTagSelector from "./RatingTagSelector";
 
 interface RateRestaurantModalProps {
   open: boolean;
@@ -37,6 +38,7 @@ const RateRestaurantModal = ({
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -52,16 +54,31 @@ const RateRestaurantModal = ({
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("ratings").insert({
-        offer_id: offerId,
-        restaurant_id: restaurantId,
-        motoboy_id: motoboyId,
-        rating,
-        comment: comment.trim() || null,
-        rating_type: "motoboy_to_restaurant",
-      });
+      // Insert rating
+      const { data: ratingData, error: ratingError } = await supabase
+        .from("ratings")
+        .insert({
+          offer_id: offerId,
+          restaurant_id: restaurantId,
+          motoboy_id: motoboyId,
+          rating,
+          comment: comment.trim() || null,
+          rating_type: "motoboy_to_restaurant",
+        })
+        .select("id")
+        .single();
 
-      if (error) throw error;
+      if (ratingError) throw ratingError;
+
+      // Insert tag selections
+      if (selectedTags.length > 0 && ratingData) {
+        const tagSelections = selectedTags.map((tagId) => ({
+          rating_id: ratingData.id,
+          tag_id: tagId,
+        }));
+
+        await supabase.from("rating_tag_selections" as any).insert(tagSelections as any);
+      }
 
       toast({
         title: "Avaliação enviada!",
@@ -72,6 +89,7 @@ const RateRestaurantModal = ({
       onOpenChange(false);
       setRating(0);
       setComment("");
+      setSelectedTags([]);
     } catch (error) {
       console.error("Erro ao enviar avaliação:", error);
       toast({
@@ -160,9 +178,23 @@ const RateRestaurantModal = ({
             </AnimatePresence>
           </div>
 
+          {/* Tags */}
+          <motion.div 
+            className="mt-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <RatingTagSelector
+              applicableTo="restaurant"
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
+            />
+          </motion.div>
+
           {/* Comment Section */}
           <motion.div 
-            className="mt-6"
+            className="mt-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -171,7 +203,7 @@ const RateRestaurantModal = ({
               placeholder="Deixe um comentário sobre sua experiência (opcional)"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="min-h-[100px] resize-none transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+              className="min-h-[80px] resize-none transition-all duration-200 focus:ring-2 focus:ring-primary/20"
               maxLength={500}
             />
             <p className="text-xs text-muted-foreground mt-2 text-right">
