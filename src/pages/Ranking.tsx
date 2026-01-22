@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trophy, Package, Clock } from "lucide-react";
@@ -8,9 +10,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RankingHeader } from "@/components/ranking/RankingHeader";
 import { PodiumDisplay } from "@/components/ranking/PodiumDisplay";
 import { RankingCard } from "@/components/ranking/RankingCard";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 
 const Ranking = () => {
   const navigate = useNavigate();
+  const { playLevelUp } = useNotificationSound();
+  const hasTriggeredCelebration = useRef(false);
   const { ranking, rewards, isLoading, currentUserPosition } = useRanking();
 
   const getRewardForPosition = (position: number) => {
@@ -27,6 +32,70 @@ const Ranking = () => {
     return userEntry?.user_id;
   };
   const currentUserId = getCurrentUserId();
+
+  // Celebrate Top 3 entry
+  useEffect(() => {
+    if (
+      !isLoading &&
+      currentUserPosition &&
+      currentUserPosition <= 3 &&
+      !hasTriggeredCelebration.current
+    ) {
+      const storageKey = `top3_celebrated_${currentUserId}`;
+      const alreadyCelebrated = localStorage.getItem(storageKey);
+
+      if (!alreadyCelebrated) {
+        hasTriggeredCelebration.current = true;
+
+        // Play celebration sound
+        playLevelUp();
+
+        // Trigger haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate([100, 50, 100, 50, 200, 100, 300]);
+        }
+
+        // Fire confetti celebration
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+
+        const fireConfetti = () => {
+          const timeLeft = animationEnd - Date.now();
+          if (timeLeft <= 0) return;
+
+          confetti({
+            particleCount: 3,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0, y: 0.7 },
+            colors: ["#f97316", "#fbbf24", "#fcd34d", "#ffffff"],
+          });
+          confetti({
+            particleCount: 3,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1, y: 0.7 },
+            colors: ["#f97316", "#fbbf24", "#fcd34d", "#ffffff"],
+          });
+
+          requestAnimationFrame(fireConfetti);
+        };
+
+        // Burst at start
+        confetti({
+          particleCount: 100,
+          spread: 100,
+          origin: { y: 0.6 },
+          colors: ["#f97316", "#fbbf24", "#fcd34d", "#ffffff", "#ea580c"],
+        });
+
+        fireConfetti();
+
+        // Mark as celebrated
+        localStorage.setItem(storageKey, "true");
+      }
+    }
+  }, [isLoading, currentUserPosition, currentUserId, playLevelUp]);
 
   if (isLoading) {
     return (
