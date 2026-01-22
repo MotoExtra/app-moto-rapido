@@ -62,10 +62,20 @@ export const RestaurantHeader = ({
       active: true,
     },
     {
+      icon: RefreshCw,
+      label: "Extras Recorrentes",
+      onClick: () => navigate("/restaurante/recorrencias"),
+    },
+    {
       icon: Navigation,
       label: "Motoboy ao Vivo",
       onClick: () => navigate("/restaurante/motoboy-ao-vivo"),
       badge: hasActiveMotoboys,
+    },
+    {
+      icon: BarChart3,
+      label: "Insights",
+      onClick: () => navigate("/restaurante/insights"),
     },
     {
       icon: Settings,
