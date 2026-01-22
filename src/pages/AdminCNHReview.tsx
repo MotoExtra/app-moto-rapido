@@ -44,7 +44,8 @@ import {
   MapPin,
   Calendar,
   ExternalLink,
-  Unlock
+  Unlock,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -635,13 +636,13 @@ const AdminCNHReview = () => {
                     </div>
 
                     <div className="border rounded-lg overflow-hidden bg-muted">
-                      {isImageExt(selectedCnhExt) ? (
+                      {isImageExt(selectedCnhExt) && cnhObjectUrl ? (
                         cnhPreviewError ? (
                           <div className="p-6 text-center">
                             <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                             <p className="text-sm text-muted-foreground">{cnhPreviewError}</p>
                           </div>
-                        ) : cnhObjectUrl ? (
+                        ) : (
                           <img
                             src={cnhObjectUrl}
                             alt="Documento CNH do motoboy"
@@ -649,48 +650,36 @@ const AdminCNHReview = () => {
                             loading="lazy"
                             onError={() =>
                               setCnhPreviewError(
-                                "Não foi possível pré-visualizar aqui. Use o botão 'Abrir' para ver em nova aba."
+                                "Não foi possível pré-visualizar aqui. Use o botão 'Baixar' para ver o documento."
                               )
                             }
                           />
-                        ) : (
-                          <div className="p-6 text-center">
-                            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                            <p className="text-sm text-muted-foreground mb-3">
-                              Carregando imagem...
-                            </p>
-                          </div>
                         )
-                      ) : selectedCnhExt === "pdf" ? (
-                        <object
-                          data={cnhObjectUrl || cnhSignedUrl || ""}
-                          type="application/pdf"
-                          className="w-full h-[60vh]"
-                        >
-                          <div className="p-6 text-center">
-                            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                            <p className="text-sm text-muted-foreground mb-3">
-                              Seu navegador não suporta visualização de PDF embutido.
-                            </p>
-                            <Button asChild variant="default" size="sm">
-                              <a href={cnhSignedUrl} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="h-4 w-4 mr-2" />
-                                Abrir PDF em nova aba
-                              </a>
-                            </Button>
-                          </div>
-                        </object>
                       ) : (
-                        <div className="p-6 text-center">
-                          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground mb-3">
-                            Formato de arquivo não suportado para visualização.
+                        <div className="p-8 text-center">
+                          <FileText className="h-16 w-16 mx-auto text-primary mb-4" />
+                          <p className="text-lg font-medium mb-2">
+                            {selectedCnhExt === "pdf" ? "Documento PDF" : "Documento CNH"}
                           </p>
-                          <Button asChild variant="default" size="sm">
-                            <a href={cnhSignedUrl} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Baixar documento
-                            </a>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {selectedCnhStoragePath?.split("/").pop() || "documento"}
+                          </p>
+                          <Button 
+                            onClick={() => {
+                              if (cnhObjectUrl) {
+                                const link = document.createElement('a');
+                                link.href = cnhObjectUrl;
+                                link.download = selectedCnhStoragePath?.split("/").pop() || "cnh-documento";
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              }
+                            }}
+                            disabled={!cnhObjectUrl}
+                            className="gap-2"
+                          >
+                            <Download className="h-4 w-4" />
+                            {cnhObjectUrl ? "Baixar Documento" : "Carregando..."}
                           </Button>
                         </div>
                       )}
