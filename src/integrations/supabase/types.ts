@@ -1027,6 +1027,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_arrival_delay_penalty: {
+        Args: { p_offer_date: string; p_time_start: string; p_user_id: string }
+        Returns: {
+          applied: boolean
+          delay_minutes: number
+          penalty_xp: number
+        }[]
+      }
       calculate_level: { Args: { xp: number }; Returns: number }
       cleanup_expired_offers: { Args: never; Returns: number }
       find_or_create_external_restaurant: {

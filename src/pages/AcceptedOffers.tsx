@@ -455,6 +455,31 @@ const AcceptedOffers = () => {
         )
       );
       
+      // Apply arrival delay penalty if applicable
+      let penaltyMessage = "";
+      if (userId && acceptedOffer.offer.offer_date && acceptedOffer.offer.time_start) {
+        try {
+          const { data: penaltyData, error: penaltyError } = await supabase.rpc(
+            "apply_arrival_delay_penalty",
+            {
+              p_user_id: userId,
+              p_offer_date: acceptedOffer.offer.offer_date,
+              p_time_start: acceptedOffer.offer.time_start,
+            }
+          );
+          
+          if (penaltyError) {
+            console.error("Erro ao calcular penalidade:", penaltyError);
+          } else if (penaltyData && penaltyData.length > 0 && penaltyData[0].applied) {
+            const penalty = penaltyData[0];
+            penaltyMessage = `\n⚠️ Atraso de ${penalty.delay_minutes} min: -${penalty.penalty_xp} XP`;
+            console.log("Penalidade aplicada:", penalty);
+          }
+        } catch (penaltyErr) {
+          console.error("Erro ao aplicar penalidade:", penaltyErr);
+        }
+      }
+      
       // Notify restaurant about motoboy arrival
       if (acceptedOffer.offer.created_by) {
         try {
@@ -477,8 +502,11 @@ const AcceptedOffers = () => {
       }
       
       toast({
-        title: "Check-in realizado!",
-        description: "Sua chegada foi confirmada com sucesso.",
+        title: penaltyMessage ? "Check-in realizado com atraso" : "Check-in realizado!",
+        description: penaltyMessage 
+          ? `Sua chegada foi confirmada.${penaltyMessage}` 
+          : "Sua chegada foi confirmada com sucesso.",
+        variant: penaltyMessage ? "destructive" : "default",
       });
     } catch (error) {
       console.error("Erro ao confirmar chegada:", error);
