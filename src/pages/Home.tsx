@@ -978,7 +978,7 @@ const Home = () => {
       </div>
 
       {/* Offers List */}
-      <div className="p-4 space-y-4 pb-20">
+      <div className="p-4 space-y-4 pb-28">
         {/* Peak Hour Banner */}
         <PeakHourBanner city={cityPreferences.length > 0 ? cityPreferences[0] : null} />
         
