@@ -26,7 +26,7 @@ export function GamificationHeader({
         "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-3 border border-primary/20 cursor-pointer hover:border-primary/40 transition-colors",
         className
       )}
-      onClick={() => navigate("/gamification")}
+      onClick={() => navigate("/meu-progresso")}
     >
       <div className="flex items-center gap-3">
         {/* Level Badge */}
