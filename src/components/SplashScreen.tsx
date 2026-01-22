@@ -81,7 +81,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
                 ]
               }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="w-32 h-32 rounded-3xl bg-white/95 backdrop-blur-sm flex items-center justify-center p-4 shadow-2xl"
+              className="w-48 h-48 rounded-3xl bg-white/95 backdrop-blur-sm flex items-center justify-center p-4 shadow-2xl"
             >
               <img 
                 src={logo} 
