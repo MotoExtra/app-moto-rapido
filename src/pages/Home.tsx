@@ -576,7 +576,22 @@ const Home = () => {
   const firstName = profileData?.name?.split(" ")[0] || "Motoboy";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Decorative Background Blobs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        {/* Top-right blob */}
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-gradient-to-br from-primary/10 via-amber-400/8 to-transparent rounded-full blur-3xl" />
+        {/* Bottom-left blob */}
+        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-gradient-to-tr from-amber-500/8 via-primary/5 to-transparent rounded-full blur-3xl" />
+        {/* Center-right subtle accent */}
+        <div className="absolute top-1/2 -right-20 w-72 h-72 bg-gradient-to-l from-primary/5 to-transparent rounded-full blur-2xl" />
+        {/* Geometric pattern overlay */}
+        <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+          backgroundSize: '32px 32px'
+        }} />
+      </div>
+
       {/* Header with Glassmorphism */}
       <motion.header 
         initial={{ y: -20, opacity: 0 }}
