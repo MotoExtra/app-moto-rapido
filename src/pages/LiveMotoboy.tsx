@@ -414,12 +414,19 @@ const LiveMotoboy = () => {
           </div>
           
           {/* Route History Toggle */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1.5">
             <Route className={`w-4 h-4 ${showRouteHistory ? 'text-blue-500' : 'text-muted-foreground'}`} />
+            <label 
+              htmlFor="show-route" 
+              className="text-xs font-medium text-muted-foreground cursor-pointer select-none"
+            >
+              {showRouteHistory ? 'Trajeto visível' : 'Ver trajeto'}
+            </label>
             <Switch
               id="show-route"
               checked={showRouteHistory}
               onCheckedChange={setShowRouteHistory}
+              className="scale-90"
             />
           </div>
         </div>
