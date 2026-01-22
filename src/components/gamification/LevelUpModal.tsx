@@ -46,9 +46,17 @@ export function LevelUpModal({ open, onClose, newLevel }: LevelUpModalProps) {
     }
   }, [open]);
 
+  const levelMessages: Record<number, string> = {
+    1: "Você está começando sua jornada!",
+    2: "Você já domina as ruas!",
+    3: "Você é um profissional de verdade!",
+    4: "Sua experiência é impressionante!",
+    5: "Você se tornou uma LENDA!",
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-md text-center">
+      <DialogContent className="sm:max-w-md text-center overflow-hidden">
         <AnimatePresence>
           {open && (
             <motion.div
@@ -58,33 +66,55 @@ export function LevelUpModal({ open, onClose, newLevel }: LevelUpModalProps) {
               className="py-6"
             >
               <motion.div
-                initial={{ y: -20 }}
-                animate={{ y: 0 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className="text-6xl mb-4"
+                initial={{ y: -30, scale: 0 }}
+                animate={{ y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                className="text-7xl mb-4"
               >
-                🎉
+                {newLevel === 5 ? "👑" : newLevel === 4 ? "🚀" : newLevel === 3 ? "🔥" : newLevel === 2 ? "🏍️" : "⚡"}
               </motion.div>
 
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                Subiu de Nível!
-              </h2>
+              <motion.h2 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-orange-400 mb-2"
+              >
+                LEVEL UP!
+              </motion.h2>
 
-              <p className="text-muted-foreground mb-6">
-                Parabéns! Você alcançou o nível {newLevel}
-              </p>
+              <motion.p 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-muted-foreground mb-6"
+              >
+                {levelMessages[newLevel] || "Você evoluiu!"}
+              </motion.p>
 
-              <div className="flex justify-center mb-6">
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.4 }}
+                className="flex justify-center mb-6"
+              >
                 <LevelBadge level={newLevel} size="lg" showName />
-              </div>
+              </motion.div>
 
-              <p className="text-sm text-muted-foreground mb-4">
-                Continue completando extras para evoluir ainda mais!
-              </p>
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="space-y-4"
+              >
+                <p className="text-sm text-muted-foreground">
+                  Continue acelerando para alcançar novos patamares! 🏁
+                </p>
 
-              <Button onClick={onClose} className="w-full">
-                Continuar
-              </Button>
+                <Button onClick={onClose} className="w-full font-bold" size="lg">
+                  Bora! 🔥
+                </Button>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

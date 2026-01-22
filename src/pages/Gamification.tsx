@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, Zap, Package, TrendingUp, Trophy, Clock, Star } from "lucide-react";
+import { ChevronLeft, Zap, Package, TrendingUp, Trophy, Clock, Flame, Rocket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGamification } from "@/hooks/useGamification";
 import { LevelBadge } from "@/components/gamification/LevelBadge";
@@ -67,47 +68,60 @@ const Gamification = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-b shadow-sm">
+      {/* Header with gradient */}
+      <header className="sticky top-0 z-10 bg-gradient-to-br from-primary/20 via-orange-500/10 to-background border-b shadow-sm">
         <div className="p-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate("/home")}>
               <ChevronLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Gamificação</h1>
-              <p className="text-sm text-muted-foreground">Seu progresso e conquistas</p>
+              <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
+                <Rocket className="w-6 h-6 text-primary" />
+                Gamificação
+              </h1>
+              <p className="text-sm text-muted-foreground">Acelere sua evolução!</p>
             </div>
           </div>
         </div>
       </header>
 
       <div className="p-4 space-y-4">
-        {/* Stats Overview */}
-        <Card className="overflow-hidden border-primary/20">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4 mb-6">
-              <LevelBadge level={stats?.current_level || 1} size="lg" />
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-foreground">{levelInfo.name}</h2>
-                <p className="text-sm text-muted-foreground">Nível {stats?.current_level || 1}</p>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1 text-primary">
-                  <Zap className="w-5 h-5 fill-primary" />
-                  <span className="text-2xl font-bold">{stats?.total_xp || 0}</span>
+        {/* Stats Overview - Hero Card */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-card via-card to-primary/5">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-6">
+                <LevelBadge level={stats?.current_level || 1} size="lg" />
+                <div className="flex-1">
+                  <h2 className="text-xl font-black text-foreground">{levelInfo.name}</h2>
+                  <p className="text-sm text-muted-foreground">Nível {stats?.current_level || 1}</p>
                 </div>
-                <p className="text-xs text-muted-foreground">XP Total</p>
+                <motion.div 
+                  className="text-right"
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <div className="flex items-center gap-1 text-primary">
+                    <Zap className="w-6 h-6 fill-primary" />
+                    <span className="text-3xl font-black">{stats?.total_xp || 0}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground font-medium">XP Total</p>
+                </motion.div>
               </div>
-            </div>
 
-            <XPProgressBar
-              totalXp={stats?.total_xp || 0}
-              currentLevel={stats?.current_level || 1}
-              size="lg"
-            />
-          </CardContent>
-        </Card>
+              <XPProgressBar
+                totalXp={stats?.total_xp || 0}
+                currentLevel={stats?.current_level || 1}
+                size="lg"
+              />
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3">
@@ -199,7 +213,7 @@ const Gamification = () => {
             <span className="text-xs">Meus Turnos</span>
           </Button>
           <Button variant="default" className="flex-col h-auto py-2">
-            <Star className="w-5 h-5 mb-1 fill-current" />
+            <Flame className="w-5 h-5 mb-1 fill-current" />
             <span className="text-xs">Gamificação</span>
           </Button>
         </div>
