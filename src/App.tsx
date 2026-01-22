@@ -31,7 +31,7 @@ const Gamification = lazy(() => import("./pages/Gamification"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminCNHReview = lazy(() => import("./pages/AdminCNHReview"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const LogoPreview = lazy(() => import("./pages/LogoPreview"));
+
 
 const queryClient = new QueryClient();
 
@@ -102,7 +102,7 @@ const App = () => {
                 
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/cnh" element={<AdminCNHReview />} />
-                <Route path="/logo-preview" element={<LogoPreview />} />
+                
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
