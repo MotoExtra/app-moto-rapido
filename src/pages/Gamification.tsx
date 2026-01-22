@@ -78,9 +78,9 @@ const Gamification = () => {
             <div>
               <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
                 <Rocket className="w-6 h-6 text-primary" />
-                Gamificação
+                Meu Progresso
               </h1>
-              <p className="text-sm text-muted-foreground">Acelere sua evolução!</p>
+              <p className="text-sm text-muted-foreground">Acompanhe sua evolução!</p>
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@ const Gamification = () => {
           </Button>
           <Button variant="default" className="flex-col h-auto py-2">
             <Flame className="w-5 h-5 mb-1 fill-current" />
-            <span className="text-xs">Gamificação</span>
+            <span className="text-xs">Progresso</span>
           </Button>
         </div>
       </nav>

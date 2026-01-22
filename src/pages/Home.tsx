@@ -599,7 +599,7 @@ const Home = () => {
               <motion.div
                 className="flex items-center"
                 whileHover={{ scale: 1.05 }}
-                onClick={() => navigate("/gamification")}
+                onClick={() => navigate("/meu-progresso")}
                 title={`Nível ${gamificationStats?.current_level || 1}`}
               >
                 <LevelBadge 
@@ -612,7 +612,7 @@ const Home = () => {
               <motion.div 
                 className="flex items-center gap-1.5 bg-gradient-to-r from-primary/15 to-primary/5 px-3 py-1.5 rounded-full border border-primary/20 cursor-pointer"
                 whileHover={{ scale: 1.03 }}
-                onClick={() => navigate("/gamification")}
+                onClick={() => navigate("/meu-progresso")}
                 title="Sua pontuação"
               >
                 <motion.div
