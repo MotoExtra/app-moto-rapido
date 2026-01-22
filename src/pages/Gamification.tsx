@@ -11,6 +11,7 @@ import { LevelBadge } from "@/components/gamification/LevelBadge";
 import { XPProgressBar } from "@/components/gamification/XPProgressBar";
 import { StreakIndicator } from "@/components/gamification/StreakIndicator";
 import { AchievementCard } from "@/components/gamification/AchievementCard";
+import { PenaltyHistory } from "@/components/gamification/PenaltyHistory";
 import { getLevelInfo } from "@/lib/gamification";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -150,6 +151,11 @@ const Gamification = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Penalty History */}
+        {userId && (
+          <PenaltyHistory userId={userId} limit={20} />
+        )}
 
         {/* Achievements */}
         <Card>
