@@ -104,7 +104,7 @@ const Gamification = () => {
         </div>
       </header>
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 pb-28">
         {/* Stats Overview - Hero Card */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
