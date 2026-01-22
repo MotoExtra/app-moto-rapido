@@ -72,8 +72,8 @@ export function AchievementCard({
       </div>
 
       {!isUnlocked && (
-        <div className="absolute inset-0 rounded-xl bg-background/50 flex items-center justify-center">
-          <LucideIcons.Lock className="w-6 h-6 text-muted-foreground" />
+        <div className="absolute top-3 right-3">
+          <LucideIcons.Lock className="w-4 h-4 text-muted-foreground" />
         </div>
       )}
     </motion.div>
