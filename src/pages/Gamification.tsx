@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, Zap, Package, TrendingUp, Trophy, Clock, Flame, Rocket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGamification } from "@/hooks/useGamification";
@@ -13,6 +13,7 @@ import { StreakIndicator } from "@/components/gamification/StreakIndicator";
 import { AchievementCard } from "@/components/gamification/AchievementCard";
 import { PenaltyHistory } from "@/components/gamification/PenaltyHistory";
 import { getLevelInfo } from "@/lib/gamification";
+import { calculateAchievementProgress } from "@/lib/achievementProgress";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Gamification = () => {
@@ -32,7 +33,7 @@ const Gamification = () => {
     checkAuth();
   }, [navigate]);
 
-  const { stats, achievements, unlockedAchievements, isLoading } = useGamification(userId || undefined);
+  const { stats, ratingStats, achievements, unlockedAchievements, isLoading } = useGamification(userId || undefined);
 
   const unlockedIds = new Set(unlockedAchievements.map(ua => ua.achievement_id));
 
@@ -42,6 +43,22 @@ const Gamification = () => {
 
   const unlockedCount = unlockedAchievements.length;
   const totalCount = achievements.length;
+
+  // Pre-calculate progress for all achievements
+  const achievementProgressMap = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof calculateAchievementProgress>>();
+    achievements.forEach(achievement => {
+      if (!unlockedIds.has(achievement.id)) {
+        const progress = calculateAchievementProgress(
+          achievement.unlock_criteria,
+          stats,
+          ratingStats
+        );
+        map.set(achievement.id, progress);
+      }
+    });
+    return map;
+  }, [achievements, stats, ratingStats, unlockedIds]);
 
   if (isLoading) {
     return (
@@ -180,19 +197,23 @@ const Gamification = () => {
               </TabsList>
 
               <div className="space-y-3">
-                {filteredAchievements.map((achievement) => (
-                  <AchievementCard
-                    key={achievement.id}
-                    code={achievement.code}
-                    name={achievement.name}
-                    description={achievement.description}
-                    icon={achievement.icon}
-                    category={achievement.category}
-                    xpReward={achievement.xp_reward}
-                    isUnlocked={unlockedIds.has(achievement.id)}
-                    unlockedAt={unlockedAchievements.find(ua => ua.achievement_id === achievement.id)?.unlocked_at}
-                  />
-                ))}
+                {filteredAchievements.map((achievement) => {
+                  const isUnlocked = unlockedIds.has(achievement.id);
+                  return (
+                    <AchievementCard
+                      key={achievement.id}
+                      code={achievement.code}
+                      name={achievement.name}
+                      description={achievement.description}
+                      icon={achievement.icon}
+                      category={achievement.category}
+                      xpReward={achievement.xp_reward}
+                      isUnlocked={isUnlocked}
+                      unlockedAt={unlockedAchievements.find(ua => ua.achievement_id === achievement.id)?.unlocked_at}
+                      progress={isUnlocked ? null : achievementProgressMap.get(achievement.id)}
+                    />
+                  );
+                })}
               </div>
             </Tabs>
           </CardContent>
