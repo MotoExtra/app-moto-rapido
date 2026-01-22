@@ -662,7 +662,7 @@ const AcceptedOffers = () => {
       </header>
 
       {/* Ofertas Aceitas */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 pb-28">
         {acceptedOffers.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-center">

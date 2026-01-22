@@ -120,7 +120,7 @@ const Ranking = () => {
       <RankingHeader currentUserPosition={currentUserPosition} />
 
       {/* Content */}
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 pb-28">
         {ranking.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
