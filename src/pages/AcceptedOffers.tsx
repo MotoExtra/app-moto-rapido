@@ -388,6 +388,20 @@ const AcceptedOffers = () => {
         variant: "destructive",
       });
 
+      // Send push notification to motoboy about penalty
+      supabase.functions.invoke("notify-penalty", {
+        body: {
+          user_id: userId,
+          penalty_type: "cancellation",
+          xp_amount: penaltyXp,
+          reason: penaltyReason,
+        },
+      }).then((result) => {
+        console.log("Penalty notification sent:", result);
+      }).catch((err) => {
+        console.error("Error sending penalty notification:", err);
+      });
+
       // Notify the restaurant owner about the cancellation (don't wait for it)
       if (restaurantUserId) {
         supabase.functions.invoke("notify-offer-cancelled", {
@@ -498,6 +512,20 @@ const AcceptedOffers = () => {
               const penalty = resultData[0];
               penaltyMessage = `\n⚠️ ${penalty.penalty_reason}: -${penalty.penalty_xp} XP`;
               console.log("Penalidade aplicada:", penalty);
+              
+              // Send push notification to motoboy about delay penalty
+              supabase.functions.invoke("notify-penalty", {
+                body: {
+                  user_id: userId,
+                  penalty_type: "delay",
+                  xp_amount: penalty.penalty_xp,
+                  reason: penalty.penalty_reason,
+                },
+              }).then((result) => {
+                console.log("Delay penalty notification sent:", result);
+              }).catch((err) => {
+                console.error("Error sending delay penalty notification:", err);
+              });
               
               // Haptic feedback for penalty
               if (navigator.vibrate) {
