@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface RankingEntry {
@@ -26,6 +26,8 @@ export function useRanking(limit: number = 50) {
   const [rewards, setRewards] = useState<RankingReward[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserPosition, setCurrentUserPosition] = useState<number | null>(null);
+  const previousPositionRef = useRef<number | null>(null);
+  const hasCheckedRef = useRef(false);
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -42,7 +44,40 @@ export function useRanking(limit: number = 50) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user && rankingData) {
           const userEntry = rankingData.find((r: RankingEntry) => r.user_id === user.id);
-          setCurrentUserPosition(userEntry ? userEntry.rank_position : null);
+          const newPosition = userEntry ? userEntry.rank_position : null;
+          setCurrentUserPosition(newPosition);
+
+          // Check for position improvement and notify
+          if (newPosition && !hasCheckedRef.current) {
+            hasCheckedRef.current = true;
+            
+            // Get stored previous position from localStorage
+            const storageKey = `ranking_position_${user.id}`;
+            const storedPosition = localStorage.getItem(storageKey);
+            const oldPosition = storedPosition ? parseInt(storedPosition, 10) : null;
+            
+            // Update stored position
+            localStorage.setItem(storageKey, String(newPosition));
+            
+            // If position improved, trigger notification
+            if (oldPosition && newPosition < oldPosition) {
+              console.log(`Ranking improved: ${oldPosition} -> ${newPosition}`);
+              
+              try {
+                await supabase.functions.invoke("notify-ranking-change", {
+                  body: {
+                    user_id: user.id,
+                    old_position: oldPosition,
+                    new_position: newPosition,
+                  },
+                });
+              } catch (notifyError) {
+                console.error("Error sending ranking change notification:", notifyError);
+              }
+            }
+            
+            previousPositionRef.current = newPosition;
+          }
         }
 
         // Fetch rewards

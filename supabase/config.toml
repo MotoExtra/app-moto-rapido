@@ -20,3 +20,12 @@ verify_jwt = false
 
 [functions.motoboy-assistant]
 verify_jwt = false
+
+[functions.notify-ranking-change]
+verify_jwt = false
+
+[functions.notify-account-activated]
+verify_jwt = false
+
+[functions.notify-offer-cancelled]
+verify_jwt = false
