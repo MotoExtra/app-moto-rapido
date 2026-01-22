@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.notify-offer-cancelled]
 verify_jwt = false
+
+[functions.generate-logo]
+verify_jwt = false
