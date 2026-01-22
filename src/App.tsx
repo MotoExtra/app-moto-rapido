@@ -30,6 +30,8 @@ const SnackExchange = lazy(() => import("./pages/SnackExchange"));
 const Gamification = lazy(() => import("./pages/Gamification"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminCNHReview = lazy(() => import("./pages/AdminCNHReview"));
+const RestaurantInsights = lazy(() => import("./pages/RestaurantInsights"));
+const RecurringOffers = lazy(() => import("./pages/RecurringOffers"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 
@@ -99,6 +101,8 @@ const App = () => {
                 <Route path="/restaurante/criar-extra" element={<ProtectedRoute allowedUserType="restaurant"><CreateOffer /></ProtectedRoute>} />
                 <Route path="/restaurante/editar-extra/:id" element={<ProtectedRoute allowedUserType="restaurant"><EditRestaurantOffer /></ProtectedRoute>} />
                 <Route path="/restaurante/motoboy-ao-vivo" element={<ProtectedRoute allowedUserType="restaurant"><LiveMotoboy /></ProtectedRoute>} />
+                <Route path="/restaurante/insights" element={<ProtectedRoute allowedUserType="restaurant"><RestaurantInsights /></ProtectedRoute>} />
+                <Route path="/restaurante/recorrencias" element={<ProtectedRoute allowedUserType="restaurant"><RecurringOffers /></ProtectedRoute>} />
                 
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/cnh" element={<AdminCNHReview />} />

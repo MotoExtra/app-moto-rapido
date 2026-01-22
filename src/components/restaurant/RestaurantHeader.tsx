@@ -18,6 +18,8 @@ import {
   Package,
   ChevronRight,
   HelpCircle,
+  BarChart3,
+  RefreshCw,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 

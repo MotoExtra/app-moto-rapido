@@ -20,6 +20,10 @@ export type Database = {
           created_at: string
           id: string
           offer_id: string
+          payment_amount: string | null
+          payment_confirmed: boolean | null
+          payment_confirmed_at: string | null
+          payment_method: string | null
           status: string | null
           user_id: string
         }
@@ -28,6 +32,10 @@ export type Database = {
           created_at?: string
           id?: string
           offer_id: string
+          payment_amount?: string | null
+          payment_confirmed?: boolean | null
+          payment_confirmed_at?: string | null
+          payment_method?: string | null
           status?: string | null
           user_id: string
         }
@@ -36,6 +44,10 @@ export type Database = {
           created_at?: string
           id?: string
           offer_id?: string
+          payment_amount?: string | null
+          payment_confirmed?: boolean | null
+          payment_confirmed_at?: string | null
+          payment_method?: string | null
           status?: string | null
           user_id?: string
         }
@@ -642,6 +654,39 @@ export type Database = {
           },
         ]
       }
+      peak_hours: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          multiplier: number | null
+          start_time: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          multiplier?: number | null
+          start_time: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          multiplier?: number | null
+          start_time?: string
+        }
+        Relationships: []
+      }
       penalty_history: {
         Row: {
           created_at: string | null
@@ -818,6 +863,75 @@ export type Database = {
         }
         Relationships: []
       }
+      rating_tag_selections: {
+        Row: {
+          created_at: string | null
+          id: string
+          rating_id: string | null
+          tag_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          rating_id?: string | null
+          tag_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          rating_id?: string | null
+          tag_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_tag_selections_rating_id_fkey"
+            columns: ["rating_id"]
+            isOneToOne: false
+            referencedRelation: "ratings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_tag_selections_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "rating_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rating_tags: {
+        Row: {
+          applicable_to: string
+          category: string
+          created_at: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          applicable_to: string
+          category: string
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          applicable_to?: string
+          category?: string
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       ratings: {
         Row: {
           comment: string | null
@@ -868,10 +982,95 @@ export type Database = {
             foreignKeyName: "ratings_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
+            referencedRelation: "restaurant_insights"
+            referencedColumns: ["restaurant_id"]
+          },
+          {
+            foreignKeyName: "ratings_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
+      }
+      recurring_offers: {
+        Row: {
+          address: string
+          can_become_permanent: boolean | null
+          city: string | null
+          created_at: string | null
+          days_of_week: number[]
+          delivery_quantity: string | null
+          delivery_range: string
+          description: string
+          id: string
+          includes_meal: boolean | null
+          is_active: boolean | null
+          last_generated_date: string | null
+          lat: number | null
+          lng: number | null
+          needs_bag: boolean | null
+          observations: string | null
+          payment: string | null
+          phone: string | null
+          radius: number | null
+          restaurant_id: string
+          time_end: string
+          time_start: string
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          can_become_permanent?: boolean | null
+          city?: string | null
+          created_at?: string | null
+          days_of_week: number[]
+          delivery_quantity?: string | null
+          delivery_range: string
+          description: string
+          id?: string
+          includes_meal?: boolean | null
+          is_active?: boolean | null
+          last_generated_date?: string | null
+          lat?: number | null
+          lng?: number | null
+          needs_bag?: boolean | null
+          observations?: string | null
+          payment?: string | null
+          phone?: string | null
+          radius?: number | null
+          restaurant_id: string
+          time_end: string
+          time_start: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          can_become_permanent?: boolean | null
+          city?: string | null
+          created_at?: string | null
+          days_of_week?: number[]
+          delivery_quantity?: string | null
+          delivery_range?: string
+          description?: string
+          id?: string
+          includes_meal?: boolean | null
+          is_active?: boolean | null
+          last_generated_date?: string | null
+          lat?: number | null
+          lng?: number | null
+          needs_bag?: boolean | null
+          observations?: string | null
+          payment?: string | null
+          phone?: string | null
+          radius?: number | null
+          restaurant_id?: string
+          time_end?: string
+          time_start?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       restaurants: {
         Row: {
@@ -1038,7 +1237,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      restaurant_insights: {
+        Row: {
+          acceptance_rate: number | null
+          avg_acceptance_time_minutes: number | null
+          avg_rating_received: number | null
+          extras_this_month: number | null
+          extras_this_week: number | null
+          extras_today: number | null
+          restaurant_id: string | null
+          total_accepted: number | null
+          total_extras_created: number | null
+          total_ratings_received: number | null
+          unique_motoboys: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_motoboy_xp: {
@@ -1092,10 +1306,15 @@ export type Database = {
       }
       calculate_level: { Args: { xp: number }; Returns: number }
       cleanup_expired_offers: { Args: never; Returns: number }
+      complete_extra_with_peak_bonus: {
+        Args: { p_city?: string; p_offer_id: string; p_user_id: string }
+        Returns: Json
+      }
       find_or_create_external_restaurant: {
         Args: { p_address?: string; p_city: string; p_name: string }
         Returns: string
       }
+      generate_recurring_offers: { Args: never; Returns: number }
       get_weekly_ranking: {
         Args: { p_limit?: number }
         Returns: {
@@ -1118,6 +1337,13 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      is_peak_hour: {
+        Args: { p_city?: string }
+        Returns: {
+          is_peak: boolean
+          multiplier: number
+        }[]
       }
       record_cancellation: {
         Args: { p_user_id: string }
@@ -1200,6 +1426,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      refresh_restaurant_insights: { Args: never; Returns: undefined }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
