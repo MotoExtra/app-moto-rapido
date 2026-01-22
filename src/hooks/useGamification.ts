@@ -157,6 +157,11 @@ export function useGamification(userId?: string) {
                   // Play achievement sound
                   playAchievement();
                   
+                  // Trigger haptic vibration
+                  if (navigator.vibrate) {
+                    navigator.vibrate([50, 30, 100]); // quick celebratory pulse
+                  }
+                  
                   // Show toast for new achievement
                   toast({
                     title: "🏆 Conquista Desbloqueada!",
