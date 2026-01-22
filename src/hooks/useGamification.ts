@@ -16,6 +16,13 @@ export interface MotoboyStats {
   extras_without_cancel: number;
 }
 
+export interface RatingStats {
+  rating_5_count: number;
+  avg_rating: number;
+  total_ratings: number;
+  streak_good_rating: number;
+}
+
 export interface Achievement {
   id: string;
   code: string;
@@ -39,6 +46,7 @@ export interface UnlockedAchievement {
 
 export function useGamification(userId?: string) {
   const [stats, setStats] = useState<MotoboyStats | null>(null);
+  const [ratingStats, setRatingStats] = useState<RatingStats | null>(null);
   const [previousLevel, setPreviousLevel] = useState<number | null>(null);
   const [levelUpInfo, setLevelUpInfo] = useState<{ show: boolean; newLevel: number }>({ show: false, newLevel: 1 });
   const [achievements, setAchievements] = useState<Achievement[]>([]);
@@ -96,6 +104,44 @@ export function useGamification(userId?: string) {
 
         if (unlockedError) throw unlockedError;
         setUnlockedAchievements(unlockedData || []);
+
+        // Fetch rating stats for achievement progress
+        const { data: ratingsData } = await supabase
+          .from("ratings")
+          .select("rating")
+          .eq("motoboy_id", userId)
+          .eq("rating_type", "restaurant_to_motoboy");
+
+        if (ratingsData && ratingsData.length > 0) {
+          const ratings = ratingsData.map(r => r.rating);
+          const rating5Count = ratings.filter(r => r === 5).length;
+          const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+          const totalRatings = ratings.length;
+          
+          // Calculate streak of good ratings (4 or 5 stars)
+          let streakGoodRating = 0;
+          for (let i = ratings.length - 1; i >= 0; i--) {
+            if (ratings[i] >= 4) {
+              streakGoodRating++;
+            } else {
+              break;
+            }
+          }
+
+          setRatingStats({
+            rating_5_count: rating5Count,
+            avg_rating: avgRating,
+            total_ratings: totalRatings,
+            streak_good_rating: streakGoodRating
+          });
+        } else {
+          setRatingStats({
+            rating_5_count: 0,
+            avg_rating: 0,
+            total_ratings: 0,
+            streak_good_rating: 0
+          });
+        }
 
       } catch (error) {
         console.error("Error fetching gamification data:", error);
@@ -197,6 +243,7 @@ export function useGamification(userId?: string) {
 
   return {
     stats,
+    ratingStats,
     achievements,
     unlockedAchievements,
     isLoading,
