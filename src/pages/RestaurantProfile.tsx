@@ -5,11 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Store, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Store, Save, LogOut } from "lucide-react";
 import { ES_CITIES } from "@/lib/cities";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPhone, formatCNPJ } from "@/lib/masks";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Restaurant {
   id: string;
@@ -111,6 +122,15 @@ const RestaurantProfile = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Até logo!",
+      description: "Você saiu da sua conta.",
+    });
+    navigate("/login/restaurante");
   };
 
   if (loading || !formData) {
@@ -257,6 +277,34 @@ const RestaurantProfile = () => {
             </form>
           </CardContent>
         </Card>
+
+        {/* Logout Button with Confirmation */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              size="lg"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair da conta
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar saída</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente para acessar o painel.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogout} className="bg-destructive hover:bg-destructive/90">
+                Sair
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

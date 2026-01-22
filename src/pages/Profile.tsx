@@ -7,12 +7,23 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Camera, Package, Clock, Save, Loader2, MapPin, Star, Upload, FileCheck, AlertCircle } from "lucide-react";
+import { ArrowLeft, Camera, Package, Clock, Save, Loader2, MapPin, Star, Upload, FileCheck, AlertCircle, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ES_CITIES } from "@/lib/cities";
 import { formatPhone } from "@/lib/masks";
 import type { User } from "@supabase/supabase-js";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ProfileData {
   name: string;
@@ -379,6 +390,15 @@ const Profile = () => {
       .slice(0, 2);
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Até logo!",
+      description: "Você saiu da sua conta.",
+    });
+    navigate("/login/motoboy");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -709,6 +729,34 @@ const Profile = () => {
             </>
           )}
         </Button>
+
+        {/* Logout Button with Confirmation */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              size="lg"
+            >
+              <LogOut className="w-5 h-5 mr-2" />
+              Sair da conta
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar saída</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente para acessar o app.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogout} className="bg-destructive hover:bg-destructive/90">
+                Sair
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
 
       </div>
