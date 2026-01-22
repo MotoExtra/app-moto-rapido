@@ -23,6 +23,9 @@ import { useGamification } from "@/hooks/useGamification";
 import { LevelBadge } from "@/components/gamification/LevelBadge";
 import { LevelUpModal } from "@/components/gamification/LevelUpModal";
 import { MotoboyAssistant } from "@/components/MotoboyAssistant";
+import { HomeStatsCard } from "@/components/home/HomeStatsCard";
+import { EmptyFeedState } from "@/components/home/EmptyFeedState";
+import { OfferSkeleton } from "@/components/home/OfferSkeleton";
 interface Offer {
   id: string;
   restaurant_name: string;
@@ -72,6 +75,7 @@ const Home = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [myExtrasCount, setMyExtrasCount] = useState(0);
   const [activeAcceptedCount, setActiveAcceptedCount] = useState(0);
+  const [isLoadingOffers, setIsLoadingOffers] = useState(true);
 
   // Gamification data
   const { stats: gamificationStats, levelUpInfo, dismissLevelUp } = useGamification(user?.id);
@@ -246,6 +250,7 @@ const Home = () => {
   }, [user, cityPreferences]);
 
   const fetchOffers = async () => {
+    setIsLoadingOffers(true);
     try {
       const { data, error } = await supabase
         .from("offers")
@@ -362,6 +367,8 @@ const Home = () => {
         description: "Não foi possível carregar as ofertas.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoadingOffers(false);
     }
   };
 
@@ -796,17 +803,26 @@ const Home = () => {
         </div>
       </div>
 
+      {/* Stats Card */}
+      <HomeStatsCard userId={user?.id} />
+
       {/* Offer Extra Button */}
-      <div className="px-4 pt-4">
-        <Button
-          onClick={() => navigate("/ofertar-extra")}
-          className="w-full h-14 rounded-2xl bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent text-accent-foreground shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/30 transition-all flex items-center justify-center gap-3"
+      <div className="px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
         >
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-            <Plus className="w-5 h-5" />
-          </div>
-          <span className="text-lg font-semibold">Ofertar Extra para Motoboys</span>
-        </Button>
+          <Button
+            onClick={() => navigate("/ofertar-extra")}
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-amber-500 hover:from-primary/90 hover:to-amber-500/90 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center justify-center gap-3"
+          >
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+              <Plus className="w-5 h-5" />
+            </div>
+            <span className="text-lg font-semibold">Ofertar Extra para Motoboys</span>
+          </Button>
+        </motion.div>
       </div>
 
 
@@ -977,14 +993,10 @@ const Home = () => {
           </motion.div>
         )}
 
-        {offers.length === 0 ? (
-          <Card className="border-dashed border-2 bg-muted/20">
-            <CardContent className="pt-8 pb-8 text-center">
-              <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p className="text-muted-foreground font-medium">Nenhum extra disponível no momento.</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">Novos extras aparecerão aqui</p>
-            </CardContent>
-          </Card>
+        {isLoadingOffers ? (
+          <OfferSkeleton />
+        ) : offers.length === 0 ? (
+          <EmptyFeedState />
         ) : (
           offers.map((offer) => {
             const timeInfo = getTimeUntilStart(offer.time_start, offer.offer_date);
