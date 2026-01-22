@@ -26,6 +26,7 @@ import { MotoboyAssistant } from "@/components/MotoboyAssistant";
 import { HomeStatsCard } from "@/components/home/HomeStatsCard";
 import { EmptyFeedState } from "@/components/home/EmptyFeedState";
 import { OfferSkeleton } from "@/components/home/OfferSkeleton";
+import PeakHourBanner from "@/components/home/PeakHourBanner";
 interface Offer {
   id: string;
   restaurant_name: string;
@@ -978,7 +979,10 @@ const Home = () => {
 
       {/* Offers List */}
       <div className="p-4 space-y-4 pb-20">
-      {/* Banner: Extras ocultos devido a conflitos */}
+        {/* Peak Hour Banner */}
+        <PeakHourBanner city={cityPreferences.length > 0 ? cityPreferences[0] : null} />
+        
+        {/* Banner: Extras ocultos devido a conflitos */}
         {activeAcceptedCount > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
