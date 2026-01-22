@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,13 +36,14 @@ import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { ChatModal } from "@/components/ChatModal";
 import { useUnreadCounts } from "@/hooks/useChatMessages";
 import { AcceptedOfferDetailsModal } from "@/components/AcceptedOfferDetailsModal";
-import { RestaurantStats } from "@/components/restaurant/RestaurantStats";
+import { RestaurantHeader } from "@/components/restaurant/RestaurantHeader";
+import { RestaurantHeroStats } from "@/components/restaurant/RestaurantHeroStats";
+import { RestaurantEmptyState } from "@/components/restaurant/RestaurantEmptyState";
 import { OfferCardAvailable } from "@/components/restaurant/OfferCardAvailable";
 import { OfferCardInProgress } from "@/components/restaurant/OfferCardInProgress";
 import { OfferCardHistory } from "@/components/restaurant/OfferCardHistory";
 import { ArchivedOfferCard } from "@/components/restaurant/ArchivedOfferCard";
 import { ExpiredOfferCard } from "@/components/restaurant/ExpiredOfferCard";
-import { EmptyState } from "@/components/restaurant/EmptyState";
 import { isRatingPromptTime, hasShownRatingPrompt, markRatingPromptShown, sendRatingPushNotification, hasSentRatingPushNotification } from "@/lib/ratingPrompt";
 
 interface Restaurant {
@@ -558,7 +560,15 @@ const RestaurantHome = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-4">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <Loader2 className="w-10 h-10 text-primary" />
+          </motion.div>
+          <p className="text-sm text-muted-foreground">Carregando dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -606,47 +616,31 @@ const RestaurantHome = () => {
       </AlertDialog>
 
       <div className="min-h-screen bg-background pb-24">
+        {/* Decorative Background */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-3xl" />
+          <div className="absolute bottom-1/3 left-0 w-80 h-80 bg-gradient-to-tr from-primary/3 to-transparent rounded-full blur-3xl" />
+          <div 
+            className="absolute inset-0 opacity-[0.015]"
+            style={{
+              backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+              backgroundSize: '24px 24px',
+            }}
+          />
+        </div>
+
         {/* Header */}
-        <header className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-4 pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <img src={logo} alt="MotoExtra" className="h-10" />
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-primary-foreground hover:bg-primary-foreground/10"
-                onClick={() => navigate("/restaurante/perfil")}
-              >
-                <Settings className="w-5 h-5" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-primary-foreground hover:bg-primary-foreground/10"
-                onClick={handleLogout}
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-              <Store className="w-7 h-7" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">{restaurant?.fantasy_name}</h1>
-              <p className="text-sm text-primary-foreground/80 flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                {restaurant?.city}
-              </p>
-            </div>
-          </div>
-        </header>
+        <RestaurantHeader
+          restaurantName={restaurant?.fantasy_name || ""}
+          city={restaurant?.city || ""}
+          logoUrl={restaurant?.logo_url || null}
+          onLogout={handleLogout}
+          hasActiveMotoboys={inProgressOffers.some(o => o.motoboy_status === 'in_progress')}
+        />
 
         {/* Stats Dashboard */}
-        <div className="px-4 -mt-4">
-          <RestaurantStats
+        <div className="relative z-10 px-4 -mt-4">
+          <RestaurantHeroStats
             availableCount={availableOffers.length}
             inProgressCount={inProgressOffers.length}
             historyCount={historyOffers.length + expiredOffers.length + archivedOffers.length}
@@ -657,17 +651,22 @@ const RestaurantHome = () => {
         </div>
 
         {/* Content with Tabs */}
-        <div className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="relative z-10 p-4 space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-center justify-between"
+          >
             <h2 className="text-lg font-semibold">Meus Extras</h2>
-            <Button onClick={() => navigate("/restaurante/criar-extra")} size="sm">
+            <Button onClick={() => navigate("/restaurante/criar-extra")} size="sm" className="shadow-lg shadow-primary/20">
               <Plus className="w-4 h-4 mr-2" />
               Criar Extra
             </Button>
-          </div>
+          </motion.div>
 
           {offers.length === 0 && archivedOffers.length === 0 ? (
-            <EmptyState type="all" />
+            <RestaurantEmptyState type="all" />
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-4">
@@ -724,50 +723,84 @@ const RestaurantHome = () => {
 
               <TabsContent value="available" className="space-y-3 mt-0">
                 {availableOffers.length === 0 ? (
-                  <EmptyState type="available" />
+                  <RestaurantEmptyState type="available" />
                 ) : (
-                  availableOffers.map((offer) => (
-                    <OfferCardAvailable 
-                      key={offer.id} 
-                      offer={offer} 
-                      onDelete={() => setOfferToDelete(offer)} 
-                    />
-                  ))
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="space-y-3"
+                  >
+                    {availableOffers.map((offer, index) => (
+                      <motion.div
+                        key={offer.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <OfferCardAvailable 
+                          offer={offer} 
+                          onDelete={() => setOfferToDelete(offer)} 
+                        />
+                      </motion.div>
+                    ))}
+                  </motion.div>
                 )}
               </TabsContent>
 
               <TabsContent value="in_progress" className="space-y-3 mt-0">
                 {inProgressOffers.length === 0 ? (
-                  <EmptyState type="in_progress" />
+                  <RestaurantEmptyState type="in_progress" />
                 ) : (
-                  inProgressOffers.map((offer) => (
-                    <OfferCardInProgress
-                      key={offer.id}
-                      offer={offer}
-                      unreadCount={unreadCounts[offer.id] || 0}
-                      onDetailsClick={() => setDetailsModalOffer(offer)}
-                      onChatClick={() => setChatOffer(offer)}
-                      onLiveClick={() => navigate("/restaurante/motoboy-ao-vivo")}
-                    />
-                  ))
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="space-y-3"
+                  >
+                    {inProgressOffers.map((offer, index) => (
+                      <motion.div
+                        key={offer.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <OfferCardInProgress
+                          offer={offer}
+                          unreadCount={unreadCounts[offer.id] || 0}
+                          onDetailsClick={() => setDetailsModalOffer(offer)}
+                          onChatClick={() => setChatOffer(offer)}
+                          onLiveClick={() => navigate("/restaurante/motoboy-ao-vivo")}
+                        />
+                      </motion.div>
+                    ))}
+                  </motion.div>
                 )}
               </TabsContent>
 
               <TabsContent value="history" className="space-y-3 mt-0">
                 {historyOffers.length === 0 && expiredOffers.length === 0 && archivedOffers.length === 0 ? (
-                  <EmptyState type="history" />
+                  <RestaurantEmptyState type="history" />
                 ) : (
-                  <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="space-y-3"
+                  >
                     {/* Recent history offers (can still rate) */}
-                    {historyOffers.map((offer) => (
-                      <OfferCardHistory
+                    {historyOffers.map((offer, index) => (
+                      <motion.div
                         key={offer.id}
-                        offer={offer}
-                        onRateClick={() => {
-                          setSelectedOffer(offer);
-                          setRatingModalOpen(true);
-                        }}
-                      />
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <OfferCardHistory
+                          offer={offer}
+                          onRateClick={() => {
+                            setSelectedOffer(offer);
+                            setRatingModalOpen(true);
+                          }}
+                        />
+                      </motion.div>
                     ))}
                     
                     {/* Expired offers (not accepted) separator */}
@@ -780,12 +813,18 @@ const RestaurantHome = () => {
                     )}
                     
                     {/* Expired offers (not accepted) */}
-                    {expiredOffers.map((offer) => (
-                      <ExpiredOfferCard
+                    {expiredOffers.map((offer, index) => (
+                      <motion.div
                         key={offer.id}
-                        offer={offer}
-                        onDelete={() => setOfferToDelete(offer)}
-                      />
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: (historyOffers.length + index) * 0.05 }}
+                      >
+                        <ExpiredOfferCard
+                          offer={offer}
+                          onDelete={() => setOfferToDelete(offer)}
+                        />
+                      </motion.div>
                     ))}
                     
                     {/* Archived offers separator */}
@@ -798,43 +837,61 @@ const RestaurantHome = () => {
                     )}
                     
                     {/* Archived offers */}
-                    {archivedOffers.map((offer) => (
-                      <ArchivedOfferCard
+                    {archivedOffers.map((offer, index) => (
+                      <motion.div
                         key={offer.id}
-                        offer={offer}
-                      />
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: (historyOffers.length + expiredOffers.length + index) * 0.05 }}
+                      >
+                        <ArchivedOfferCard offer={offer} />
+                      </motion.div>
                     ))}
-                  </>
+                  </motion.div>
                 )}
               </TabsContent>
             </Tabs>
           )}
         </div>
 
-        {/* Bottom Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-background/95 backdrop-blur-lg border-t shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-          <div className="flex items-center justify-around px-4 py-3 max-w-md mx-auto">
-            <button className="relative flex flex-col items-center gap-1 px-4 py-1 group">
+        {/* Bottom Navigation - Glassmorphism */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-xl border-t border-border/50" />
+          <div className="relative flex items-center justify-around px-4 py-3 max-w-md mx-auto">
+            <motion.button 
+              whileTap={{ scale: 0.95 }}
+              className="relative flex flex-col items-center gap-1 px-4 py-1 group"
+            >
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-full" />
               <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
                 <Package className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="text-xs font-semibold text-primary">Extras</span>
-            </button>
+            </motion.button>
             
-            <button 
+            <motion.button 
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/restaurante/motoboy-ao-vivo")}
               className="relative flex flex-col items-center gap-1 px-4 py-1 group"
             >
               {/* Badge for active motoboys */}
               {inProgressOffers.some(o => o.motoboy_status === 'in_progress') && (
-                <div className="absolute -top-1 right-0 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-[10px] font-bold text-white animate-pulse shadow-lg shadow-red-500/50">
-                  {inProgressOffers.filter(o => o.motoboy_status === 'in_progress').length}
-                </div>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 right-0 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg shadow-red-500/50"
+                >
+                  <motion.span
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    {inProgressOffers.filter(o => o.motoboy_status === 'in_progress').length}
+                  </motion.span>
+                </motion.div>
               )}
               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
                 inProgressOffers.some(o => o.motoboy_status === 'in_progress')
-                  ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/30 animate-pulse'
+                  ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/30'
                   : 'bg-muted/50 group-hover:bg-muted'
               }`}>
                 <Navigation className={`w-5 h-5 ${
@@ -848,9 +905,10 @@ const RestaurantHome = () => {
                   ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
                   : 'text-muted-foreground group-hover:text-foreground'
               }`}>Ao Vivo</span>
-            </button>
+            </motion.button>
             
-            <button 
+            <motion.button 
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/restaurante/perfil")}
               className="relative flex flex-col items-center gap-1 px-4 py-1 group"
             >
@@ -858,7 +916,7 @@ const RestaurantHome = () => {
                 <Store className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
               </div>
               <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Perfil</span>
-            </button>
+            </motion.button>
           </div>
         </nav>
 
