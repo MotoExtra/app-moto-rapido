@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LevelBadge } from "./LevelBadge";
 import { getLevelInfo } from "@/lib/gamification";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 import confetti from "canvas-confetti";
 
 interface LevelUpModalProps {
@@ -14,9 +15,13 @@ interface LevelUpModalProps {
 
 export function LevelUpModal({ open, onClose, newLevel }: LevelUpModalProps) {
   const levelInfo = getLevelInfo(newLevel);
+  const { playLevelUp } = useNotificationSound();
 
   useEffect(() => {
     if (open) {
+      // Play level up sound
+      playLevelUp();
+      
       // Trigger confetti
       const duration = 2000;
       const end = Date.now() + duration;
@@ -44,7 +49,7 @@ export function LevelUpModal({ open, onClose, newLevel }: LevelUpModalProps) {
 
       frame();
     }
-  }, [open]);
+  }, [open, playLevelUp]);
 
   const levelMessages: Record<number, string> = {
     1: "Você está começando sua jornada!",

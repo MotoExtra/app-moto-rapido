@@ -40,6 +40,24 @@ const NOTIFICATION_SOUNDS = {
     { frequency: 1318.51, duration: 200 }, // E6
     { frequency: 1567.98, duration: 400 }, // G6 longo
   ],
+  // Som épico de level up - fanfarra triunfante
+  levelUp: [
+    { frequency: 523.25, duration: 120 },  // C5
+    { frequency: 659.25, duration: 120 },  // E5
+    { frequency: 783.99, duration: 120 },  // G5
+    { frequency: 1046.5, duration: 200 },  // C6
+    { frequency: 0, duration: 80 },        // pausa
+    { frequency: 1046.5, duration: 100 },  // C6
+    { frequency: 1174.66, duration: 100 }, // D6
+    { frequency: 1318.51, duration: 400 }, // E6 (nota final longa)
+  ],
+  // Som de conquista desbloqueada - brilho mágico
+  achievement: [
+    { frequency: 880, duration: 80 },      // A5
+    { frequency: 1108.73, duration: 80 },  // C#6
+    { frequency: 1318.51, duration: 100 }, // E6
+    { frequency: 1760, duration: 250 },    // A6 (brilho final)
+  ],
 };
 
 type SoundType = keyof typeof NOTIFICATION_SOUNDS;
@@ -105,6 +123,8 @@ export const useNotificationSound = () => {
   const playError = useCallback(() => playSound("error"), [playSound]);
   const playMotoboyArrived = useCallback(() => playSound("motoboyArrived"), [playSound]);
   const playNewMessage = useCallback(() => playSound("newMessage"), [playSound]);
+  const playLevelUp = useCallback(() => playSound("levelUp"), [playSound]);
+  const playAchievement = useCallback(() => playSound("achievement"), [playSound]);
 
   return {
     playSound,
@@ -114,5 +134,7 @@ export const useNotificationSound = () => {
     playError,
     playMotoboyArrived,
     playNewMessage,
+    playLevelUp,
+    playAchievement,
   };
 };
