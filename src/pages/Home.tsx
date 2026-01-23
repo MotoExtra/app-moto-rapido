@@ -276,8 +276,23 @@ const Home = () => {
         .eq("user_id", user?.id)
         .in("status", ["pending", "arrived", "in_progress"]);
 
+      // Filter to only count truly active offers (not expired based on date/time)
+      const now = new Date();
+      const activeAccepted = (acceptedData || []).filter(ao => {
+        const offer = ao.offers as any;
+        if (!offer) return false;
+        
+        const offerDate = offer.offer_date ? parseISO(offer.offer_date) : new Date();
+        const [endHours, endMinutes] = offer.time_end.split(':').map(Number);
+        const offerEndTime = new Date(offerDate);
+        offerEndTime.setHours(endHours, endMinutes, 0, 0);
+        
+        // Only count if end time hasn't passed yet
+        return offerEndTime > now;
+      });
+
       // Track active accepted offers count for banner
-      setActiveAcceptedCount(acceptedData?.length || 0);
+      setActiveAcceptedCount(activeAccepted.length);
 
       if (data && data.length > 0) {
         // Filter out expired offers (past start time - extras disappear when start time passes)
