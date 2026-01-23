@@ -296,7 +296,7 @@ const AcceptedOffers = () => {
 
   // Auto-trigger rating modal 3 minutes after offer end time
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || ratingModalOpen) return; // Don't re-trigger if modal is already open
 
     const offerToRate = completedOffers.find(ao => {
       const isMotoboyOffer = ao.offer.offer_type === 'motoboy';
@@ -321,7 +321,7 @@ const AcceptedOffers = () => {
       setRatingModalOpen(true);
       markRatingPromptShown(offerToRate.offer.id, 'motoboy');
     }
-  }, [completedOffers, tick, userId]);
+  }, [completedOffers, userId, ratingModalOpen]);
 
   // Send push notification for rating 3 minutes after offer end time
   useEffect(() => {
