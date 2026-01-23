@@ -845,7 +845,7 @@ const AcceptedOffers = () => {
                               size="lg"
                               className={`w-full h-14 text-lg font-bold transition-all duration-300 ${
                                 arrivalStatus.isEnabled
-                                  ? 'bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30 animate-pulse'
+                                  ? 'bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30 animate-shake-urgent'
                                   : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
                               }`}
                               disabled={!arrivalStatus.isEnabled || arrivingId === acceptedOffer.id}
@@ -859,7 +859,7 @@ const AcceptedOffers = () => {
                               ) : arrivalStatus.isEnabled ? (
                                 <>
                                   <MapPinCheck className="w-6 h-6 mr-2" />
-                                  CHEGUEI
+                                  🔔 CHEGUEI
                                 </>
                               ) : (
                                 <>

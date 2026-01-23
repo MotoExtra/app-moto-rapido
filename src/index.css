@@ -128,4 +128,21 @@ All colors MUST be HSL.
       background-position: 200% 0;
     }
   }
+
+  /* Shake animation for CHEGUEI button when enabled */
+  .animate-shake-urgent {
+    animation: shake-urgent 0.8s ease-in-out infinite;
+  }
+  
+  @keyframes shake-urgent {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      transform: translateX(-4px);
+    }
+    20%, 40%, 60%, 80% {
+      transform: translateX(4px);
+    }
+  }
 }
