@@ -207,22 +207,30 @@ const RateExternalRestaurantModal = ({
           <Button
             onClick={handleSubmit}
             disabled={rating === 0 || isSubmitting}
-            className="gap-2 transition-all duration-200"
+            className="gap-2 transition-all duration-200 min-w-[140px]"
           >
             {isSubmitting ? (
-              <>
+              <motion.div 
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
                 <motion.div
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                  transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                  className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full"
                 />
-                Enviando...
-              </>
+                <span>Enviando...</span>
+              </motion.div>
             ) : (
-              <>
+              <motion.div 
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
                 <Send className="w-4 h-4" />
-                Enviar Avaliação
-              </>
+                <span>Enviar Avaliação</span>
+              </motion.div>
             )}
           </Button>
         </DialogFooter>
