@@ -19,7 +19,7 @@ import {
   Award
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface XPHistoryRecord {
@@ -37,6 +37,8 @@ interface XPHistoryRecord {
     delay_minutes?: number;
     minutes_until_start?: number;
     hours_until_start?: number;
+    milestone_days?: number;
+    current_streak?: number;
   };
   created_at: string;
 }
@@ -49,6 +51,7 @@ interface XPHistoryTimelineProps {
 const getEventIcon = (eventType: string, xpAmount: number) => {
   switch (eventType) {
     case "completion":
+    case "peak_completion":
       return <Package className="w-4 h-4" />;
     case "rating_5":
     case "rating_4":
@@ -60,6 +63,7 @@ const getEventIcon = (eventType: string, xpAmount: number) => {
     case "delay":
       return <Clock className="w-4 h-4" />;
     case "streak":
+    case "streak_bonus":
       return <Flame className="w-4 h-4 fill-current" />;
     case "achievement":
       return <Award className="w-4 h-4" />;

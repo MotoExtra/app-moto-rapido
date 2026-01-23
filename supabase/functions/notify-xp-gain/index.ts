@@ -7,11 +7,12 @@ const corsHeaders = {
 
 interface XPGainPayload {
   user_id: string;
-  event_type: "rating_5" | "rating_4" | "peak_completion" | "completion" | "streak" | "achievement";
+  event_type: "rating_5" | "rating_4" | "peak_completion" | "completion" | "streak" | "streak_bonus" | "achievement";
   xp_amount: number;
   restaurant_name?: string;
   multiplier?: number;
   streak_days?: number;
+  milestone_days?: number;
   achievement_name?: string;
 }
 
@@ -27,7 +28,7 @@ Deno.serve(async (req) => {
     );
 
     const payload: XPGainPayload = await req.json();
-    const { user_id, event_type, xp_amount, restaurant_name, multiplier, streak_days, achievement_name } = payload;
+    const { user_id, event_type, xp_amount, restaurant_name, multiplier, streak_days, milestone_days, achievement_name } = payload;
 
     console.log("Enviando notificação de ganho de XP:", payload);
 
@@ -89,6 +90,18 @@ Deno.serve(async (req) => {
       case "streak":
         title = "🔥 Bônus de Sequência!";
         body = `Você ganhou +${xp_amount} XP! ${streak_days} dias consecutivos trabalhando!`;
+        break;
+      
+      case "streak_bonus":
+        const milestoneEmojis: Record<number, string> = {
+          3: "🌟",
+          7: "⭐",
+          14: "🏅",
+          30: "🏆"
+        };
+        const emoji = milestoneEmojis[milestone_days || 0] || "🔥";
+        title = `${emoji} ${milestone_days} Dias de Streak!`;
+        body = `Parabéns! Você ganhou +${xp_amount} XP por trabalhar ${milestone_days} dias consecutivos!`;
         break;
       
       case "achievement":

@@ -1365,6 +1365,14 @@ export type Database = {
       }
       auto_complete_expired_extras: { Args: never; Returns: number }
       calculate_level: { Args: { xp: number }; Returns: number }
+      check_and_award_streak_bonus: {
+        Args: { p_new_streak: number; p_user_id: string }
+        Returns: {
+          bonus_awarded: boolean
+          bonus_xp: number
+          milestone_days: number
+        }[]
+      }
       cleanup_expired_offers: { Args: never; Returns: number }
       complete_extra_with_peak_bonus: {
         Args: { p_city?: string; p_offer_id: string; p_user_id: string }
