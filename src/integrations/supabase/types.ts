@@ -1235,6 +1235,47 @@ export type Database = {
         }
         Relationships: []
       }
+      xp_history: {
+        Row: {
+          created_at: string | null
+          description: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          offer_id: string | null
+          user_id: string
+          xp_amount: number
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          offer_id?: string | null
+          user_id: string
+          xp_amount: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          offer_id?: string | null
+          user_id?: string
+          xp_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xp_history_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       restaurant_insights: {
