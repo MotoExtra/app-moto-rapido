@@ -12,6 +12,7 @@ import { XPProgressBar } from "@/components/gamification/XPProgressBar";
 import { StreakIndicator } from "@/components/gamification/StreakIndicator";
 import { AchievementCard } from "@/components/gamification/AchievementCard";
 import { XPHistoryTimeline } from "@/components/gamification/XPHistoryTimeline";
+import { StreakMilestonesCard } from "@/components/gamification/StreakMilestonesCard";
 import { XPEvolutionChart } from "@/components/gamification/XPEvolutionChart";
 import { getLevelInfo } from "@/lib/gamification";
 import { calculateAchievementProgress } from "@/lib/achievementProgress";
@@ -142,14 +143,11 @@ const Gamification = () => {
           </Card>
         </motion.div>
 
+        {/* Streak Milestones Card */}
+        <StreakMilestonesCard currentStreak={stats?.current_streak || 0} />
+
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <StreakIndicator streak={stats?.current_streak || 0} size="lg" showLabel={false} />
-              <p className="text-xs text-muted-foreground mt-1">Streak</p>
-            </CardContent>
-          </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-1 text-foreground">
@@ -166,6 +164,15 @@ const Gamification = () => {
                 <span className="text-xl font-bold">{stats?.best_streak || 0}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">Melhor Streak</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center gap-1 text-foreground">
+                <Trophy className="w-5 h-5 text-amber-500" />
+                <span className="text-xl font-bold">{unlockedCount}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Conquistas</p>
             </CardContent>
           </Card>
         </div>
