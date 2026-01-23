@@ -162,12 +162,20 @@ const AcceptedOffers = () => {
       const isLocationOk = distance <= 1; // Within 1km
       const isTimeOk = isWithinTimeWindow(offer_date, time_start, 30);
 
-      // If conditions are met, vibrate and mark as vibrated
+      // If conditions are met, vibrate, show toast, and mark as notified
       if (isLocationOk && isTimeOk) {
         // Vibrate pattern: 3 short bursts to get attention
         if (navigator.vibrate) {
           navigator.vibrate([200, 100, 200, 100, 200]);
         }
+        
+        // Show toast reminder
+        toast({
+          title: "🔔 Você está próximo!",
+          description: `Chegou em ${ao.offer.restaurant_name}? Aperte o botão CHEGUEI para confirmar sua chegada.`,
+          duration: 8000,
+        });
+        
         setVibratedOffers((prev) => new Set(prev).add(ao.offer.id));
       }
     });
