@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.notify-offer-cancelled]
 verify_jwt = false
+
+[functions.notify-penalty]
+verify_jwt = false
+
+[functions.notify-xp-gain]
+verify_jwt = false
