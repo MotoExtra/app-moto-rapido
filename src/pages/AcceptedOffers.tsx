@@ -939,52 +939,9 @@ const AcceptedOffers = () => {
                               </div>
                             )}
                             
-                            {/* Other action buttons */}
+                            {/* Other action buttons - Rating buttons removed from active section */}
+                            {/* Motoboys can only rate after the extra is completed (in completed section) */}
                             <div className="flex gap-2">
-                              {/* Show rating button for restaurant offers */}
-                              {acceptedOffer.offer.offer_type !== 'motoboy' && !acceptedOffer.has_rating && acceptedOffer.offer.created_by && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex-1"
-                                  onClick={() => {
-                                    setSelectedOffer(acceptedOffer);
-                                    setRatingModalOpen(true);
-                                  }}
-                                >
-                                  <Star className="w-4 h-4 mr-2" />
-                                  Avaliar Restaurante
-                                </Button>
-                              )}
-                              {/* Show rating button for motoboy offers with external restaurant */}
-                              {acceptedOffer.offer.offer_type === 'motoboy' && !acceptedOffer.has_external_rating && acceptedOffer.offer.external_restaurant_id && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex-1"
-                                  onClick={() => {
-                                    setSelectedOffer(acceptedOffer);
-                                    setRatingModalOpen(true);
-                                  }}
-                                >
-                                  <Star className="w-4 h-4 mr-2" />
-                                  Avaliar Estabelecimento
-                                </Button>
-                              )}
-                              {/* Show "Avaliado" badge for restaurant offers */}
-                              {acceptedOffer.offer.offer_type !== 'motoboy' && acceptedOffer.has_rating && (
-                                <Badge variant="secondary" className="gap-1 flex-1 justify-center py-2">
-                                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                  Avaliado
-                                </Badge>
-                              )}
-                              {/* Show "Avaliado" badge for motoboy offers */}
-                              {acceptedOffer.offer.offer_type === 'motoboy' && acceptedOffer.has_external_rating && (
-                                <Badge variant="secondary" className="gap-1 flex-1 justify-center py-2">
-                                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                  Avaliado
-                                </Badge>
-                              )}
                               {(() => {
                                 const minutesLeft = getMinutesUntilStart(acceptedOffer.offer);
                                 const penaltyInfo = getPenaltyInfo(minutesLeft);
