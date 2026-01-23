@@ -94,7 +94,7 @@ const LiveMotoboy = () => {
         // Get offers created by this restaurant that are in_progress
         const { data: offersData, error: offersError } = await supabase
           .from('offers')
-          .select('id, description, address, lat, lng, time_start, time_end, accepted_by')
+          .select('id, description, address, lat, lng, time_start, time_end, offer_date, accepted_by')
           .eq('created_by', user.id)
           .eq('is_accepted', true);
 
@@ -152,8 +152,25 @@ const LiveMotoboy = () => {
           historyByOffer.set(h.offer_id, current);
         });
 
+        // Filter only extras that are still within valid time period
+        const now = new Date();
+        const validAccepted = acceptedData.filter(accepted => {
+          const offer = offersData.find(o => o.id === accepted.offer_id);
+          if (!offer) return false;
+          
+          // Build end datetime for the offer
+          const offerDate = new Date(offer.offer_date || new Date().toISOString().split('T')[0]);
+          const [endHours, endMinutes] = (offer.time_end || '23:59').split(':').map(Number);
+          const offerEndTime = new Date(offerDate);
+          offerEndTime.setHours(endHours, endMinutes, 0, 0);
+          
+          // Only include if end time hasn't passed yet (with 30min grace period)
+          const gracePeriod = 30 * 60 * 1000; // 30 minutes
+          return offerEndTime.getTime() + gracePeriod > now.getTime();
+        });
+
         // Build active motoboys list
-        const motoboys: ActiveMotoboy[] = acceptedData.map(accepted => {
+        const motoboys: ActiveMotoboy[] = validAccepted.map(accepted => {
           const offer = offersData.find(o => o.id === accepted.offer_id)!;
           const profile = profilesMap.get(accepted.user_id);
           const location = locationsMap.get(accepted.offer_id);
