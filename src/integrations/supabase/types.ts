@@ -100,6 +100,24 @@ export type Database = {
         }
         Relationships: []
       }
+      activation_notifications_sent: {
+        Row: {
+          id: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
           created_at: string

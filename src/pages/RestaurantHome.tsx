@@ -768,7 +768,6 @@ const RestaurantHome = () => {
                           unreadCount={unreadCounts[offer.id] || 0}
                           onDetailsClick={() => setDetailsModalOffer(offer)}
                           onChatClick={() => setChatOffer(offer)}
-                          onLiveClick={() => navigate("/restaurante/motoboy-ao-vivo")}
                         />
                       </motion.div>
                     ))}

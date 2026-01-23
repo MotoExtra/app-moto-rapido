@@ -9,7 +9,6 @@ import {
   Star,
   MessageCircle,
   Phone,
-  Navigation,
   ChevronRight,
   CheckCircle2
 } from "lucide-react";
@@ -37,7 +36,6 @@ interface OfferCardInProgressProps {
   unreadCount: number;
   onDetailsClick: () => void;
   onChatClick: () => void;
-  onLiveClick: () => void;
 }
 
 const formatTime = (time: string) => time.slice(0, 5);
@@ -46,8 +44,7 @@ export const OfferCardInProgress = ({
   offer, 
   unreadCount, 
   onDetailsClick,
-  onChatClick,
-  onLiveClick
+  onChatClick
 }: OfferCardInProgressProps) => {
   const [showRatingsModal, setShowRatingsModal] = useState(false);
   const hasArrived = offer.motoboy_status === "in_progress";

@@ -49,12 +49,11 @@ const handler = async (req: Request): Promise<Response> => {
     let notificationsSent = 0;
 
     for (const motoboy of pendingMotoboys || []) {
-      // Check if we already sent an activation notification
+      // Check if we already sent an activation notification (using dedicated table)
       const { data: alreadySent } = await supabase
-        .from("rating_notifications_sent")
+        .from("activation_notifications_sent")
         .select("id")
         .eq("user_id", motoboy.id)
-        .eq("user_type", "activation")
         .maybeSingle();
 
       if (alreadySent) {
@@ -70,10 +69,8 @@ const handler = async (req: Request): Promise<Response> => {
       if (!subscriptions || subscriptions.length === 0) {
         console.log(`Nenhuma subscription para ${motoboy.id}, pulando...`);
         // Still record that we "processed" this user
-        await supabase.from("rating_notifications_sent").insert({
-          offer_id: motoboy.id, // Using user_id as offer_id for this purpose
+        await supabase.from("activation_notifications_sent").insert({
           user_id: motoboy.id,
-          user_type: "activation",
         });
         continue;
       }
@@ -113,11 +110,9 @@ const handler = async (req: Request): Promise<Response> => {
           .in("id", failedSubscriptions);
       }
 
-      // Record that notification was sent (or attempted)
-      await supabase.from("rating_notifications_sent").insert({
-        offer_id: motoboy.id,
+      // Record that notification was sent (or attempted) using dedicated table
+      await supabase.from("activation_notifications_sent").insert({
         user_id: motoboy.id,
-        user_type: "activation",
       });
 
       if (anySent) {
