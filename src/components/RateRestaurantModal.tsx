@@ -80,16 +80,22 @@ const RateRestaurantModal = ({
         await supabase.from("rating_tag_selections" as any).insert(tagSelections as any);
       }
 
-      toast({
-        title: "Avaliação enviada!",
-        description: "Obrigado por avaliar este restaurante.",
-      });
-
-      onRatingComplete();
-      onOpenChange(false);
+      // Reset local state first
       setRating(0);
       setComment("");
       setSelectedTags([]);
+      
+      // Close modal before triggering parent state changes
+      onOpenChange(false);
+      
+      // Delay parent callback to allow modal animation to complete
+      setTimeout(() => {
+        toast({
+          title: "Avaliação enviada!",
+          description: "Obrigado por avaliar este restaurante.",
+        });
+        onRatingComplete();
+      }, 150);
     } catch (error) {
       console.error("Erro ao enviar avaliação:", error);
       toast({
@@ -111,7 +117,7 @@ const RateRestaurantModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md z-[1000] overflow-hidden">
+      <DialogContent className="sm:max-w-md overflow-hidden">
         <DialogHeader className="text-center pb-2">
           <DialogTitle className="text-xl font-bold text-center">
             Avaliar Restaurante
