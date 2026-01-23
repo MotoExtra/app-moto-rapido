@@ -139,6 +139,40 @@ const AcceptedOffers = () => {
     accuracy: geolocation.accuracy,
   });
 
+  // Track which offers have already triggered proximity vibration
+  const [vibratedOffers, setVibratedOffers] = useState<Set<string>>(new Set());
+
+  // Vibrate phone when motoboy enters proximity zone for CHEGUEI button
+  useEffect(() => {
+    if (!geolocation.latitude || !geolocation.longitude) return;
+
+    activeOffers.forEach((ao) => {
+      // Skip if already in_progress or already vibrated for this offer
+      if (ao.status === 'in_progress' || vibratedOffers.has(ao.offer.id)) return;
+
+      const { lat, lng, offer_date, time_start } = ao.offer;
+      if (!lat || !lng) return;
+
+      const distance = calculateDistance(
+        geolocation.latitude!,
+        geolocation.longitude!,
+        lat,
+        lng
+      );
+      const isLocationOk = distance <= 1; // Within 1km
+      const isTimeOk = isWithinTimeWindow(offer_date, time_start, 30);
+
+      // If conditions are met, vibrate and mark as vibrated
+      if (isLocationOk && isTimeOk) {
+        // Vibrate pattern: 3 short bursts to get attention
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200, 100, 200]);
+        }
+        setVibratedOffers((prev) => new Set(prev).add(ao.offer.id));
+      }
+    });
+  }, [geolocation.latitude, geolocation.longitude, activeOffers, vibratedOffers]);
+
   useEffect(() => {
     const fetchAcceptedOffers = async () => {
       try {
