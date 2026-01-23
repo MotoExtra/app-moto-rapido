@@ -68,15 +68,7 @@ const RatingModal = ({
 
       if (ratingError) throw ratingError;
 
-      // Award XP to motoboy based on rating
-      const { error: xpError } = await supabase.rpc("record_rating_xp", {
-        p_user_id: motoboyId,
-        p_rating: rating,
-      });
-      
-      if (xpError) {
-        console.error("Erro ao registrar XP da avaliação:", xpError);
-      }
+      // XP is now automatically awarded via database trigger (auto_award_rating_xp)
 
       // Insert tag selections
       if (selectedTags.length > 0 && ratingData) {
