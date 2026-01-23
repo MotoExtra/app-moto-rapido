@@ -1304,6 +1304,7 @@ export type Database = {
           penalty_xp: number
         }[]
       }
+      auto_complete_expired_extras: { Args: never; Returns: number }
       calculate_level: { Args: { xp: number }; Returns: number }
       cleanup_expired_offers: { Args: never; Returns: number }
       complete_extra_with_peak_bonus: {
