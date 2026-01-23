@@ -12,6 +12,7 @@ import { XPProgressBar } from "@/components/gamification/XPProgressBar";
 import { StreakIndicator } from "@/components/gamification/StreakIndicator";
 import { AchievementCard } from "@/components/gamification/AchievementCard";
 import { XPHistoryTimeline } from "@/components/gamification/XPHistoryTimeline";
+import { XPEvolutionChart } from "@/components/gamification/XPEvolutionChart";
 import { getLevelInfo } from "@/lib/gamification";
 import { calculateAchievementProgress } from "@/lib/achievementProgress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -168,6 +169,11 @@ const Gamification = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* XP Evolution Chart */}
+        {userId && (
+          <XPEvolutionChart userId={userId} />
+        )}
 
         {/* XP History Timeline */}
         {userId && (
