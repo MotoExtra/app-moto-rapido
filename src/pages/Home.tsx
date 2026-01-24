@@ -27,6 +27,7 @@ import { HomeStatsCard } from "@/components/home/HomeStatsCard";
 import { EmptyFeedState } from "@/components/home/EmptyFeedState";
 import { OfferSkeleton } from "@/components/home/OfferSkeleton";
 import PeakHourBanner from "@/components/home/PeakHourBanner";
+import { GpsStatusIndicator } from "@/components/home/GpsStatusIndicator";
 interface Offer {
   id: string;
   restaurant_name: string;
@@ -799,40 +800,13 @@ const Home = () => {
       </motion.header>
 
 
-      {/* Location Status Indicator - Elegant with Glow */}
-      <div className="px-4 pt-4">
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-          geolocation.error 
-            ? 'bg-destructive/10 text-destructive border border-destructive/20' 
-            : geolocation.loading
-              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
-              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.5)]'
-        }`}>
-          <div className={`w-2 h-2 rounded-full ${
-            geolocation.error 
-              ? 'bg-destructive' 
-              : geolocation.loading
-                ? 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.8)]'
-                : 'bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.9)]'
-          }`} />
-          <Navigation className="w-3.5 h-3.5" />
-          <span>
-            {geolocation.error 
-              ? 'GPS inativo' 
-              : geolocation.loading 
-                ? 'Localizando...' 
-                : `GPS ativo • ${Math.round(geolocation.accuracy || 0)}m`}
-          </span>
-          {geolocation.error && (
-            <button 
-              onClick={handleRequestLocation}
-              className="ml-1 underline hover:no-underline"
-            >
-              Ativar
-            </button>
-          )}
-        </div>
-      </div>
+      {/* GPS Status Indicator - Modern Design */}
+      <GpsStatusIndicator
+        error={geolocation.error}
+        loading={geolocation.loading}
+        accuracy={geolocation.accuracy}
+        onActivate={handleRequestLocation}
+      />
 
       {/* Stats Card */}
       <HomeStatsCard userId={user?.id} />
