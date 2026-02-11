@@ -635,7 +635,7 @@ const RestaurantHome = () => {
           city={restaurant?.city || ""}
           logoUrl={restaurant?.logo_url || null}
           onLogout={handleLogout}
-          hasActiveMotoboys={inProgressOffers.some(o => o.motoboy_status === 'in_progress')}
+          hasActiveMotoboys={inProgressOffers.some(o => o.motoboy_status === 'in_progress' || o.motoboy_status === 'completed')}
         />
 
         {/* Stats Dashboard */}
@@ -874,7 +874,7 @@ const RestaurantHome = () => {
               className="relative flex flex-col items-center gap-1 px-4 py-1 group"
             >
               {/* Badge for active motoboys */}
-              {inProgressOffers.some(o => o.motoboy_status === 'in_progress') && (
+              {inProgressOffers.some(o => o.motoboy_status === 'in_progress' || o.motoboy_status === 'completed') && (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -884,23 +884,23 @@ const RestaurantHome = () => {
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ duration: 1, repeat: Infinity }}
                   >
-                    {inProgressOffers.filter(o => o.motoboy_status === 'in_progress').length}
+                    {inProgressOffers.filter(o => o.motoboy_status === 'in_progress' || o.motoboy_status === 'completed').length}
                   </motion.span>
                 </motion.div>
               )}
               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
-                inProgressOffers.some(o => o.motoboy_status === 'in_progress')
+                inProgressOffers.some(o => o.motoboy_status === 'in_progress' || o.motoboy_status === 'completed')
                   ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/30'
                   : 'bg-muted/50 group-hover:bg-muted'
               }`}>
                 <Navigation className={`w-5 h-5 ${
-                  inProgressOffers.some(o => o.motoboy_status === 'in_progress')
+                  inProgressOffers.some(o => o.motoboy_status === 'in_progress' || o.motoboy_status === 'completed')
                     ? 'text-white'
                     : 'text-muted-foreground group-hover:text-foreground'
                 } transition-colors`} />
               </div>
               <span className={`text-xs font-medium transition-colors ${
-                inProgressOffers.some(o => o.motoboy_status === 'in_progress')
+                inProgressOffers.some(o => o.motoboy_status === 'in_progress' || o.motoboy_status === 'completed')
                   ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
                   : 'text-muted-foreground group-hover:text-foreground'
               }`}>Ao Vivo</span>

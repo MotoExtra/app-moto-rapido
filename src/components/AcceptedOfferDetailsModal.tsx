@@ -90,7 +90,7 @@ export function AcceptedOfferDetailsModal({
   onLiveTrackClick,
 }: AcceptedOfferDetailsModalProps) {
   const [showRatingsModal, setShowRatingsModal] = useState(false);
-  const isArrived = offer.motoboy_status === "in_progress";
+  const isArrived = offer.motoboy_status === "in_progress" || offer.motoboy_status === "completed";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
