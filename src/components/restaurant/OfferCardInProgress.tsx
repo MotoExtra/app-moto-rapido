@@ -47,7 +47,7 @@ export const OfferCardInProgress = ({
   onChatClick
 }: OfferCardInProgressProps) => {
   const [showRatingsModal, setShowRatingsModal] = useState(false);
-  const hasArrived = offer.motoboy_status === "in_progress";
+  const hasArrived = offer.motoboy_status === "in_progress" || offer.motoboy_status === "completed";
 
   return (
     <>
