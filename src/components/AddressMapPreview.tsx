@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { MapPin, Loader2, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { geocodeStructured } from "@/lib/geocoding";
 import "leaflet/dist/leaflet.css";
 
 interface AddressMapPreviewProps {
@@ -30,7 +31,7 @@ const AddressMapPreview = ({ rua, numero, bairro, cidade }: AddressMapPreviewPro
 
   const canSearch = rua && numero && bairro && cidade;
 
-  const geocodeAddress = async () => {
+  const handleGeocode = async () => {
     if (!canSearch) return;
 
     setIsLoading(true);
@@ -38,15 +39,10 @@ const AddressMapPreview = ({ rua, numero, bairro, cidade }: AddressMapPreviewPro
     setCoordinates(null);
 
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`
-      );
-      const data = await response.json();
+      const result = await geocodeStructured({ rua, numero, bairro, cidade });
 
-      if (data && data.length > 0) {
-        const newLat = parseFloat(data[0].lat);
-        const newLng = parseFloat(data[0].lon);
-        setCoordinates({ lat: newLat, lng: newLng });
+      if (result) {
+        setCoordinates({ lat: result.lat, lng: result.lng });
       } else {
         setError("Endereço não encontrado no mapa. Verifique os dados.");
       }
@@ -89,7 +85,7 @@ const AddressMapPreview = ({ rua, numero, bairro, cidade }: AddressMapPreviewPro
             type="button"
             size="sm"
             variant={hasSearched && coordinates ? "outline" : "default"}
-            onClick={geocodeAddress}
+            onClick={handleGeocode}
             disabled={isLoading}
             className="shrink-0"
           >
