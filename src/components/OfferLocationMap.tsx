@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Navigation, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { geocodeAddress } from "@/lib/geocoding";
 import "leaflet/dist/leaflet.css";
 
 interface OfferLocationMapProps {
@@ -29,29 +30,22 @@ const OfferLocationMap = ({ address, lat, lng, restaurantName, offerId }: OfferL
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const geocodeAddress = async () => {
+    const doGeocode = async () => {
       if (coordinates || !address) return;
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
-        );
-        const data = await response.json();
+        const result = await geocodeAddress(address);
 
-        if (data && data.length > 0) {
-          const newLat = parseFloat(data[0].lat);
-          const newLng = parseFloat(data[0].lon);
-          
-          setCoordinates({ lat: newLat, lng: newLng });
+        if (result) {
+          setCoordinates({ lat: result.lat, lng: result.lng });
 
-          // Save coordinates to database if offerId is provided
           if (offerId) {
             await supabase
               .from("offers")
-              .update({ lat: newLat, lng: newLng })
+              .update({ lat: result.lat, lng: result.lng })
               .eq("id", offerId);
           }
         } else {
@@ -66,7 +60,7 @@ const OfferLocationMap = ({ address, lat, lng, restaurantName, offerId }: OfferL
     };
 
     if (isExpanded && !coordinates) {
-      geocodeAddress();
+      doGeocode();
     }
   }, [isExpanded, address, coordinates, offerId]);
 
