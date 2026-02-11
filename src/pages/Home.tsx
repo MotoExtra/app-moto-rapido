@@ -171,12 +171,12 @@ const Home = () => {
 
       setMyExtrasCount(extrasCount || 0);
 
-      // Check if user already has an active offer
+      // Check if user already has an active offer (any active status)
       const { data: activeOffers } = await supabase
         .from("accepted_offers")
         .select("id")
         .eq("user_id", user.id)
-        .eq("status", "pending");
+        .in("status", ["pending", "arrived", "in_progress"]);
 
       setHasActiveOffer((activeOffers?.length ?? 0) > 0);
     };
@@ -471,53 +471,43 @@ const Home = () => {
     }
 
     try {
-      // Check for time conflicts with existing accepted offers
-      const { data: existingOffers, error: conflictError } = await supabase
+      // Check if motoboy already has ANY active extra (only one at a time allowed)
+      const { data: activeExtras, error: activeError } = await supabase
         .from("accepted_offers")
-        .select(`
-          id,
-          offer_id,
-          status,
-          offers!inner (
-            offer_date,
-            time_start,
-            time_end
-          )
-        `)
+        .select("id")
         .eq("user_id", user.id)
         .in("status", ["pending", "arrived", "in_progress"]);
 
-      if (conflictError) throw conflictError;
+      if (activeError) throw activeError;
 
-      // Check for time overlap
-      if (existingOffers && existingOffers.length > 0) {
-        const newOfferDate = offer.offer_date;
-        const newStart = offer.time_start;
-        const newEnd = offer.time_end;
-
-        const hasConflict = existingOffers.some((existing: any) => {
-          const existingOffer = existing.offers;
-          if (!existingOffer) return false;
-
-          // Only check same day
-          if (existingOffer.offer_date !== newOfferDate) return false;
-
-          const existingStart = existingOffer.time_start;
-          const existingEnd = existingOffer.time_end;
-
-          // Check if time ranges overlap
-          // Overlap occurs if: newStart < existingEnd AND newEnd > existingStart
-          return newStart < existingEnd && newEnd > existingStart;
+      if (activeExtras && activeExtras.length > 0) {
+        toast({
+          title: "Você já tem um extra ativo",
+          description: "Finalize ou cancele seu extra atual antes de aceitar outro.",
+          variant: "destructive",
         });
+        setHasActiveOffer(true);
+        return;
+      }
 
-        if (hasConflict) {
-          toast({
-            title: "Conflito de horário",
-            description: "Você já tem um extra aceito que coincide com este horário. Finalize ou cancele antes de aceitar outro no mesmo período.",
-            variant: "destructive",
-          });
-          return;
-        }
+      // Also verify the offer is still available (race condition protection)
+      const { data: freshOffer, error: freshError } = await supabase
+        .from("offers")
+        .select("id, is_accepted")
+        .eq("id", offer.id)
+        .eq("is_accepted", false)
+        .maybeSingle();
+
+      if (freshError) throw freshError;
+
+      if (!freshOffer) {
+        toast({
+          title: "Extra indisponível",
+          description: "Este extra já foi aceito por outro motoboy.",
+          variant: "destructive",
+        });
+        setOffers((current) => current.filter((o) => o.id !== offer.id));
+        return;
       }
 
       // Update offer as accepted
