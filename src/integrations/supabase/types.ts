@@ -1495,6 +1495,10 @@ export type Database = {
         }
       }
       refresh_restaurant_insights: { Args: never; Returns: undefined }
+      try_accept_offer: {
+        Args: { p_offer_id: string; p_user_id: string }
+        Returns: string
+      }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
