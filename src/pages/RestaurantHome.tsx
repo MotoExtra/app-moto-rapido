@@ -412,8 +412,9 @@ const RestaurantHome = () => {
           const updatedAcceptedOffer = payload.new as any;
           const oldAcceptedOffer = payload.old as any;
           
-          // Check if status changed to "in_progress" (motoboy arrived)
-          if (updatedAcceptedOffer.status === "in_progress" && oldAcceptedOffer.status !== "in_progress") {
+          // Check if status changed to "in_progress" or "completed" (motoboy arrived or extra completed)
+          const arrivedStatuses = ["in_progress", "completed"];
+          if (arrivedStatuses.includes(updatedAcceptedOffer.status) && !arrivedStatuses.includes(oldAcceptedOffer.status)) {
             // Fetch offer details to check if it belongs to this restaurant
             const { data: offerData } = await supabase
               .from("offers")
@@ -438,7 +439,7 @@ const RestaurantHome = () => {
               setOffers(current =>
                 current.map(o =>
                   o.id === updatedAcceptedOffer.offer_id
-                    ? { ...o, motoboy_status: "in_progress" }
+                    ? { ...o, motoboy_status: updatedAcceptedOffer.status }
                     : o
                 )
               );
