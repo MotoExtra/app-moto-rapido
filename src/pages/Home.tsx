@@ -471,63 +471,35 @@ const Home = () => {
     }
 
     try {
-      // Check if motoboy already has ANY active extra (only one at a time allowed)
-      const { data: activeExtras, error: activeError } = await supabase
-        .from("accepted_offers")
-        .select("id")
-        .eq("user_id", user.id)
-        .in("status", ["pending", "arrived", "in_progress"]);
-
-      if (activeError) throw activeError;
-
-      if (activeExtras && activeExtras.length > 0) {
-        toast({
-          title: "Você já tem um extra ativo",
-          description: "Finalize ou cancele seu extra atual antes de aceitar outro.",
-          variant: "destructive",
+      // Use atomic database function to prevent race conditions
+      const { data: acceptedId, error: acceptError } = await supabase
+        .rpc("try_accept_offer", {
+          p_user_id: user.id,
+          p_offer_id: offer.id,
         });
-        setHasActiveOffer(true);
-        return;
+
+      if (acceptError) {
+        const msg = acceptError.message || "";
+        if (msg.includes("extra ativo")) {
+          toast({
+            title: "Você já tem um extra ativo",
+            description: "Finalize ou cancele seu extra atual antes de aceitar outro.",
+            variant: "destructive",
+          });
+          setHasActiveOffer(true);
+          return;
+        }
+        if (msg.includes("já foi aceito")) {
+          toast({
+            title: "Extra indisponível",
+            description: "Este extra já foi aceito por outro motoboy.",
+            variant: "destructive",
+          });
+          setOffers((current) => current.filter((o) => o.id !== offer.id));
+          return;
+        }
+        throw acceptError;
       }
-
-      // Also verify the offer is still available (race condition protection)
-      const { data: freshOffer, error: freshError } = await supabase
-        .from("offers")
-        .select("id, is_accepted")
-        .eq("id", offer.id)
-        .eq("is_accepted", false)
-        .maybeSingle();
-
-      if (freshError) throw freshError;
-
-      if (!freshOffer) {
-        toast({
-          title: "Extra indisponível",
-          description: "Este extra já foi aceito por outro motoboy.",
-          variant: "destructive",
-        });
-        setOffers((current) => current.filter((o) => o.id !== offer.id));
-        return;
-      }
-
-      // Update offer as accepted
-      const { error: updateError } = await supabase
-        .from("offers")
-        .update({ is_accepted: true, accepted_by: user.id })
-        .eq("id", offer.id);
-
-      if (updateError) throw updateError;
-
-      // Create accepted_offers record
-      const { error: insertError } = await supabase
-        .from("accepted_offers")
-        .insert({
-          user_id: user.id,
-          offer_id: offer.id,
-          status: "pending",
-        });
-
-      if (insertError) throw insertError;
 
       // Remove from local state immediately
       setOffers((current) => current.filter((o) => o.id !== offer.id));
