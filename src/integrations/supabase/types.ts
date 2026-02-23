@@ -584,6 +584,7 @@ export type Database = {
           id: string
           includes_meal: boolean | null
           is_accepted: boolean | null
+          is_urgent: boolean | null
           lat: number | null
           lng: number | null
           needs_bag: boolean | null
@@ -599,6 +600,7 @@ export type Database = {
           time_end: string
           time_start: string
           updated_at: string
+          urgent_reposted_at: string | null
         }
         Insert: {
           accepted_by?: string | null
@@ -615,6 +617,7 @@ export type Database = {
           id?: string
           includes_meal?: boolean | null
           is_accepted?: boolean | null
+          is_urgent?: boolean | null
           lat?: number | null
           lng?: number | null
           needs_bag?: boolean | null
@@ -630,6 +633,7 @@ export type Database = {
           time_end: string
           time_start: string
           updated_at?: string
+          urgent_reposted_at?: string | null
         }
         Update: {
           accepted_by?: string | null
@@ -646,6 +650,7 @@ export type Database = {
           id?: string
           includes_meal?: boolean | null
           is_accepted?: boolean | null
+          is_urgent?: boolean | null
           lat?: number | null
           lng?: number | null
           needs_bag?: boolean | null
@@ -661,6 +666,7 @@ export type Database = {
           time_end?: string
           time_start?: string
           updated_at?: string
+          urgent_reposted_at?: string | null
         }
         Relationships: [
           {
