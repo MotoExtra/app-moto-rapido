@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.notify-xp-gain]
 verify_jwt = false
+
+[functions.notify-urgent-offer]
+verify_jwt = false
