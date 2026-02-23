@@ -1073,9 +1073,15 @@ const Home = () => {
                         {offer.description}
                       </CardDescription>
                       {offer.is_urgent && (
-                        <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs font-medium text-orange-700 dark:text-orange-400">
-                          <Shield className="w-3.5 h-3.5" />
-                          <span>Sem penalidade por atraso para quem aceitar</span>
+                        <div className="mt-2 space-y-1.5">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs font-medium text-orange-700 dark:text-orange-400">
+                            <Shield className="w-3.5 h-3.5" />
+                            <span>Sem penalidade por atraso para quem aceitar</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-xs font-bold text-green-700 dark:text-green-400">
+                            <Star className="w-3.5 h-3.5 fill-green-500 text-green-500" />
+                            <span>2x XP — Ganhe 60 XP ao completar este extra!</span>
+                          </div>
                         </div>
                       )}
                       <div className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-xs font-medium ${
