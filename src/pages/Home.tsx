@@ -111,15 +111,22 @@ const Home = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-      // Re-filter offers to remove any that have started
+      // Re-filter offers to remove any that have started (using Brasília timezone)
       setOffers(current => {
-        const now = new Date();
+        // Get current time in Brasília (UTC-3)
+        const nowUtc = new Date();
+        const brasiliaOffset = -3 * 60; // UTC-3 in minutes
+        const brasiliaTime = new Date(nowUtc.getTime() + (brasiliaOffset + nowUtc.getTimezoneOffset()) * 60000);
+        
         return current.filter(offer => {
-          const offerDate = offer.offer_date ? parseISO(offer.offer_date) : new Date();
+          const dateStr = offer.offer_date || format(new Date(), 'yyyy-MM-dd');
+          const [year, month, day] = dateStr.split('-').map(Number);
           const [startHours, startMinutes] = offer.time_start.split(':').map(Number);
-          const offerStartTime = new Date(offerDate);
-          offerStartTime.setHours(startHours, startMinutes, 0, 0);
-          return offerStartTime > now;
+          
+          // Create offer start time as Brasília local time for comparison
+          const offerStartTime = new Date(year, month - 1, day, startHours, startMinutes, 0, 0);
+          
+          return offerStartTime > brasiliaTime;
         });
       });
     }, 30000); // Check every 30 seconds
