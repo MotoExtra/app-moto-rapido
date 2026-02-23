@@ -404,9 +404,16 @@ const AcceptedOffers = () => {
       if (deleteError) throw deleteError;
 
       // Update the offer to make it available again
+      // Mark as urgent if cancellation is less than 3 hours before start
+      const isUrgentRepost = minutesUntilStart < 180;
       const { error: updateError } = await supabase
         .from("offers")
-        .update({ is_accepted: false, accepted_by: null })
+        .update({ 
+          is_accepted: false, 
+          accepted_by: null,
+          is_urgent: isUrgentRepost,
+          urgent_reposted_at: isUrgentRepost ? new Date().toISOString() : null,
+        })
         .eq("id", cancelledOffer.id);
 
       if (updateError) throw updateError;

@@ -53,6 +53,8 @@ interface Offer {
   created_by?: string;
   restaurant_rating?: number;
   restaurant_review_count?: number;
+  is_urgent?: boolean;
+  urgent_reposted_at?: string | null;
 }
 
 const Home = () => {
@@ -125,6 +127,12 @@ const Home = () => {
           
           // Create offer start time as Brasília local time for comparison
           const offerStartTime = new Date(year, month - 1, day, startHours, startMinutes, 0, 0);
+          
+          // Urgent offers get a 60-minute grace period after start time
+          if (offer.is_urgent) {
+            const graceTime = new Date(offerStartTime.getTime() + 60 * 60 * 1000);
+            return graceTime > brasiliaTime;
+          }
           
           return offerStartTime > brasiliaTime;
         });
@@ -316,12 +324,19 @@ const Home = () => {
 
       if (data && data.length > 0) {
         // Filter out expired offers (past start time - extras disappear when start time passes)
+        // Urgent offers get a 60-minute grace period
         const now = new Date();
         let validOffers = data.filter(offer => {
           const offerDate = offer.offer_date ? parseISO(offer.offer_date) : new Date();
           const [startHours, startMinutes] = offer.time_start.split(':').map(Number);
           const offerStartTime = new Date(offerDate);
           offerStartTime.setHours(startHours, startMinutes, 0, 0);
+          
+          // Urgent offers: allow 60 min after start time
+          if (offer.is_urgent) {
+            const graceTime = new Date(offerStartTime.getTime() + 60 * 60 * 1000);
+            return graceTime > now;
+          }
           
           // Keep only offers whose start time hasn't passed yet
           return offerStartTime > now;
@@ -390,6 +405,13 @@ const Home = () => {
             restaurant_rating: restaurantRating ? Math.round((restaurantRating.total / restaurantRating.count) * 10) / 10 : undefined,
             restaurant_review_count: restaurantRating?.count || 0
           };
+        });
+
+        // Sort: urgent offers first, then by creation date
+        enrichedOffers.sort((a, b) => {
+          if (a.is_urgent && !b.is_urgent) return -1;
+          if (!a.is_urgent && b.is_urgent) return 1;
+          return 0;
         });
 
         setOffers(enrichedOffers);
@@ -998,7 +1020,7 @@ const Home = () => {
                 className={`overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-card via-card to-muted/20 ${isOwnOffer ? 'ring-2 ring-blue-500/30' : ''}`}
               >
                 {/* Top accent bar */}
-                <div className={`h-1.5 ${timeInfo.isUrgent ? 'bg-gradient-to-r from-destructive via-destructive/80 to-destructive' : 'bg-gradient-to-r from-primary via-primary/80 to-green-500'}`} />
+                <div className={`h-1.5 ${offer.is_urgent ? 'bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 animate-pulse' : timeInfo.isUrgent ? 'bg-gradient-to-r from-destructive via-destructive/80 to-destructive' : 'bg-gradient-to-r from-primary via-primary/80 to-green-500'}`} />
                 
                 <CardHeader className="pb-3 pt-4">
                   <div className="flex items-start justify-between gap-2">
@@ -1022,8 +1044,15 @@ const Home = () => {
                             MOTOBOY
                           </Badge>
                         )}
+                        {offer.is_urgent && (
+                          <Badge 
+                            className="bg-gradient-to-r from-orange-600 to-red-500 text-white shadow-sm shadow-orange-600/30 font-semibold animate-pulse"
+                          >
+                            🚨 URGENTE
+                          </Badge>
+                        )}
                         <Badge 
-                          className={`${timeInfo.isUrgent 
+                          className={`${timeInfo.isUrgent || offer.is_urgent
                             ? "bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-sm shadow-destructive/30" 
                             : "bg-gradient-to-r from-green-600 to-green-500 text-white shadow-sm shadow-green-600/30"
                           } font-semibold`}
@@ -1035,13 +1064,22 @@ const Home = () => {
                       <CardDescription className="font-medium text-foreground/70">
                         {offer.description}
                       </CardDescription>
+                      {offer.is_urgent && (
+                        <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs font-medium text-orange-700 dark:text-orange-400">
+                          <Shield className="w-3.5 h-3.5" />
+                          <span>Sem penalidade por atraso para quem aceitar</span>
+                        </div>
+                      )}
                       <div className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-xs font-medium ${
-                        timeInfo.isUrgent 
+                        timeInfo.isUrgent || offer.is_urgent
                           ? "bg-destructive/10 text-destructive" 
                           : "bg-primary/10 text-primary"
                       }`}>
                         <Clock className="w-3.5 h-3.5" />
-                        <span>Começa em {timeInfo.hours}h {timeInfo.minutes}min</span>
+                        <span>{timeInfo.hours > 0 || timeInfo.minutes > 0 
+                          ? `Começa em ${timeInfo.hours}h ${timeInfo.minutes}min`
+                          : 'Já começou — aceite agora!'
+                        }</span>
                       </div>
                     </div>
                   </div>
