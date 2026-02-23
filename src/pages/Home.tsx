@@ -61,7 +61,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSupported, isSubscribed, permission, subscribe } = usePushNotifications();
-  const { playSuccess, playNewOffer, playError } = useNotificationSound();
+  const { playSuccess, playNewOffer, playError, playUrgentAlert } = useNotificationSound();
   const geolocation = useGeolocation();
   const [user, setUser] = useState<User | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -250,8 +250,16 @@ const Home = () => {
         },
         (payload) => {
           console.log('New offer inserted:', payload);
-          // Play sound for new offer
-          playNewOffer();
+          // Play urgent sound for urgent offers, normal sound otherwise
+          if ((payload.new as any)?.is_urgent) {
+            playUrgentAlert();
+            // Haptic feedback for urgent offers
+            if (navigator.vibrate) {
+              navigator.vibrate([100, 50, 100, 50, 200]);
+            }
+          } else {
+            playNewOffer();
+          }
           // Refresh offers list
           fetchOffers();
         }

@@ -40,6 +40,17 @@ const NOTIFICATION_SOUNDS = {
     { frequency: 1318.51, duration: 200 }, // E6
     { frequency: 1567.98, duration: 400 }, // G6 longo
   ],
+  // Som de alerta urgente - sirene rápida e intensa
+  urgentAlert: [
+    { frequency: 1046.5, duration: 120 },  // C6
+    { frequency: 1396.91, duration: 120 }, // F6
+    { frequency: 1046.5, duration: 120 },  // C6
+    { frequency: 1396.91, duration: 120 }, // F6
+    { frequency: 0, duration: 80 },        // pausa
+    { frequency: 1567.98, duration: 150 }, // G6
+    { frequency: 1174.66, duration: 150 }, // D6
+    { frequency: 1567.98, duration: 250 }, // G6 final
+  ],
   // Som épico de level up - fanfarra triunfante
   levelUp: [
     { frequency: 523.25, duration: 120 },  // C5
@@ -125,6 +136,7 @@ export const useNotificationSound = () => {
   const playNewMessage = useCallback(() => playSound("newMessage"), [playSound]);
   const playLevelUp = useCallback(() => playSound("levelUp"), [playSound]);
   const playAchievement = useCallback(() => playSound("achievement"), [playSound]);
+  const playUrgentAlert = useCallback(() => playSound("urgentAlert"), [playSound]);
 
   return {
     playSound,
@@ -136,5 +148,6 @@ export const useNotificationSound = () => {
     playNewMessage,
     playLevelUp,
     playAchievement,
+    playUrgentAlert,
   };
 };
