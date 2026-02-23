@@ -87,6 +87,11 @@ Deno.serve(async (req) => {
         body = `Você ganhou +${xp_amount} XP! ${restaurant_name || "Extra"} finalizado com sucesso.`;
         break;
       
+      case "urgent_completion":
+        title = "🚨 Extra Urgente Completado! 2x XP!";
+        body = `Você ganhou +${xp_amount} XP (${multiplier}x)! Obrigado por cobrir ${restaurant_name || "o extra urgente"}!`;
+        break;
+      
       case "streak":
         title = "🔥 Bônus de Sequência!";
         body = `Você ganhou +${xp_amount} XP! ${streak_days} dias consecutivos trabalhando!`;
