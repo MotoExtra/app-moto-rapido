@@ -54,6 +54,7 @@ interface AcceptedOffer {
     created_by: string | null;
     lat: number | null;
     lng: number | null;
+    city: string | null;
     offer_type?: string | null;
     external_restaurant_id?: string | null;
   };
@@ -238,6 +239,7 @@ const AcceptedOffers = () => {
               created_by,
               lat,
               lng,
+              city,
               offer_type,
               external_restaurant_id
             )
@@ -450,6 +452,24 @@ const AcceptedOffers = () => {
       }).catch((err) => {
         console.error("Error sending penalty notification:", err);
       });
+
+      // If urgent repost, notify all motoboys in the city
+      if (isUrgentRepost && cancelledOffer.city) {
+        supabase.functions.invoke("notify-urgent-offer", {
+          body: {
+            offer_id: cancelledOffer.id,
+            restaurant_name: cancelledOffer.restaurant_name,
+            time_start: cancelledOffer.time_start,
+            time_end: cancelledOffer.time_end,
+            city: cancelledOffer.city,
+            offer_date: cancelledOffer.offer_date,
+          },
+        }).then((result) => {
+          console.log("Urgent offer notification sent:", result);
+        }).catch((err) => {
+          console.error("Error sending urgent offer notification:", err);
+        });
+      }
 
       // Notify the restaurant owner about the cancellation (don't wait for it)
       if (restaurantUserId) {
