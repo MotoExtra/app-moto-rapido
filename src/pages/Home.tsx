@@ -107,10 +107,22 @@ const Home = () => {
   };
 
 
+  // Remove offers from screen when their start time passes
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Atualiza a cada minuto
+      // Re-filter offers to remove any that have started
+      setOffers(current => {
+        const now = new Date();
+        return current.filter(offer => {
+          const offerDate = offer.offer_date ? parseISO(offer.offer_date) : new Date();
+          const [startHours, startMinutes] = offer.time_start.split(':').map(Number);
+          const offerStartTime = new Date(offerDate);
+          offerStartTime.setHours(startHours, startMinutes, 0, 0);
+          return offerStartTime > now;
+        });
+      });
+    }, 30000); // Check every 30 seconds
 
     return () => clearInterval(timer);
   }, []);
