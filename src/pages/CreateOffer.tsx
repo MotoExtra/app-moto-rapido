@@ -335,8 +335,8 @@ const CreateOffer = () => {
                 rua: parsedAddress.rua,
                 numero: parsedAddress.numero,
                 bairro: parsedAddress.bairro,
-                timeStart: lastOffer.time_start,
-                timeEnd: lastOffer.time_end,
+                timeStart: lastOffer.time_start?.slice(0, 5) || "",
+                timeEnd: lastOffer.time_end?.slice(0, 5) || "",
                 deliveryRange: lastOffer.delivery_range,
                 deliveryQuantity: lastOffer.delivery_quantity || "",
                 needsBag: lastOffer.needs_bag || false,
@@ -358,7 +358,7 @@ const CreateOffer = () => {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-foreground">Repetir último extra</p>
                 <p className="text-sm text-muted-foreground truncate">
-                  {lastOffer.time_start} - {lastOffer.time_end} • {lastOffer.delivery_range}
+                  {lastOffer.time_start?.slice(0, 5)} - {lastOffer.time_end?.slice(0, 5)} • {lastOffer.delivery_range}
                 </p>
               </div>
             </CardContent>
