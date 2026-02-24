@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +11,11 @@ import {
   Ban, 
   Clock, 
   Trophy,
-  ChevronDown, 
-  ChevronUp,
   TrendingUp,
   TrendingDown,
   Flame,
-  Award
+  Award,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
@@ -45,9 +44,10 @@ interface XPHistoryRecord {
 
 interface XPHistoryTimelineProps {
   userId: string;
-  limit?: number;
   totalXp?: number;
 }
+
+const PAGE_SIZE = 20;
 
 const getEventIcon = (eventType: string, xpAmount: number) => {
   switch (eventType) {
@@ -91,10 +91,11 @@ const getEventStyles = (xpAmount: number) => {
   }
 };
 
-export function XPHistoryTimeline({ userId, limit = 30, totalXp }: XPHistoryTimelineProps) {
+export function XPHistoryTimeline({ userId, totalXp }: XPHistoryTimelineProps) {
   const [history, setHistory] = useState<XPHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<"all" | "gains" | "losses">("all");
   const [aggregateTotals, setAggregateTotals] = useState<{ gains: number; losses: number } | null>(null);
 
@@ -102,14 +103,13 @@ export function XPHistoryTimeline({ userId, limit = 30, totalXp }: XPHistoryTime
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch recent history and aggregate totals in parallel
         const [historyResult, gainsResult, lossesResult] = await Promise.all([
           supabase
             .from("xp_history")
             .select("*")
             .eq("user_id", userId)
             .order("created_at", { ascending: false })
-            .limit(limit),
+            .limit(PAGE_SIZE),
           supabase
             .from("xp_history")
             .select("xp_amount")
@@ -123,11 +123,13 @@ export function XPHistoryTimeline({ userId, limit = 30, totalXp }: XPHistoryTime
         ]);
 
         if (historyResult.error) throw historyResult.error;
-        setHistory((historyResult.data as XPHistoryRecord[]) || []);
+        const data = (historyResult.data as XPHistoryRecord[]) || [];
+        setHistory(data);
+        setHasMore(data.length === PAGE_SIZE);
 
-        const totalGains = (gainsResult.data || []).reduce((acc, h) => acc + h.xp_amount, 0);
-        const totalLosses = Math.abs((lossesResult.data || []).reduce((acc, h) => acc + h.xp_amount, 0));
-        setAggregateTotals({ gains: totalGains, losses: totalLosses });
+        const tGains = (gainsResult.data || []).reduce((acc, h) => acc + h.xp_amount, 0);
+        const tLosses = Math.abs((lossesResult.data || []).reduce((acc, h) => acc + h.xp_amount, 0));
+        setAggregateTotals({ gains: tGains, losses: tLosses });
       } catch (error) {
         console.error("Erro ao carregar histórico de XP:", error);
       } finally {
@@ -137,7 +139,6 @@ export function XPHistoryTimeline({ userId, limit = 30, totalXp }: XPHistoryTime
 
     fetchData();
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel(`xp-history-${userId}`)
       .on(
@@ -151,10 +152,7 @@ export function XPHistoryTimeline({ userId, limit = 30, totalXp }: XPHistoryTime
         (payload) => {
           if (payload.new) {
             const newRecord = payload.new as XPHistoryRecord;
-            setHistory((prev) =>
-              [newRecord, ...prev].slice(0, limit)
-            );
-            // Update aggregates with new record
+            setHistory((prev) => [newRecord, ...prev]);
             setAggregateTotals((prev) => {
               if (!prev) return prev;
               if (newRecord.xp_amount > 0) {
@@ -171,7 +169,31 @@ export function XPHistoryTimeline({ userId, limit = 30, totalXp }: XPHistoryTime
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, limit]);
+  }, [userId]);
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore || history.length === 0) return;
+    setIsLoadingMore(true);
+    try {
+      const lastItem = history[history.length - 1];
+      const { data, error } = await supabase
+        .from("xp_history")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .lt("created_at", lastItem.created_at)
+        .limit(PAGE_SIZE);
+
+      if (error) throw error;
+      const newRecords = (data as XPHistoryRecord[]) || [];
+      setHistory((prev) => [...prev, ...newRecords]);
+      setHasMore(newRecords.length === PAGE_SIZE);
+    } catch (error) {
+      console.error("Erro ao carregar mais histórico:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [userId, history, isLoadingMore, hasMore]);
 
   const filteredHistory =
     filter === "all"
@@ -203,7 +225,6 @@ export function XPHistoryTimeline({ userId, limit = 30, totalXp }: XPHistoryTime
     );
   }
 
-  // No history - show welcome state
   if (history.length === 0) {
     return (
       <Card className="border-primary/30 bg-primary/5">
@@ -326,91 +347,90 @@ export function XPHistoryTimeline({ userId, limit = 30, totalXp }: XPHistoryTime
 
         {/* Timeline */}
         <div className="relative">
-          {/* Timeline line */}
           <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-border" />
 
           <div className="space-y-3">
             <AnimatePresence>
-              {(isExpanded ? filteredHistory : filteredHistory.slice(0, 5)).map(
-                (record, index) => {
-                  const styles = getEventStyles(record.xp_amount);
-                  const Icon = () => getEventIcon(record.event_type, record.xp_amount);
+              {filteredHistory.map((record, index) => {
+                const styles = getEventStyles(record.xp_amount);
+                const Icon = () => getEventIcon(record.event_type, record.xp_amount);
 
-                  return (
-                    <motion.div
-                      key={record.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="relative pl-10"
+                return (
+                  <motion.div
+                    key={record.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ delay: Math.min(index, 5) * 0.05 }}
+                    className="relative pl-10"
+                  >
+                    <div
+                      className={`absolute left-0 w-10 h-10 rounded-full ${styles.iconBgClass} flex items-center justify-center ${styles.iconColorClass} z-10`}
                     >
-                      {/* Timeline dot */}
-                      <div
-                        className={`absolute left-0 w-10 h-10 rounded-full ${styles.iconBgClass} flex items-center justify-center ${styles.iconColorClass} z-10`}
-                      >
-                        <Icon />
-                      </div>
+                      <Icon />
+                    </div>
 
-                      {/* Content card */}
-                      <div
-                        className={`p-3 rounded-lg border ${styles.cardClass}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {record.description}
+                    <div
+                      className={`p-3 rounded-lg border ${styles.cardClass}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {record.description}
+                          </p>
+                          {record.metadata?.restaurant_name && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {record.metadata.restaurant_name}
                             </p>
-                            {record.metadata?.restaurant_name && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {record.metadata.restaurant_name}
-                              </p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatDistanceToNow(new Date(record.created_at), {
-                                addSuffix: true,
-                                locale: ptBR,
-                              })}
-                            </p>
-                          </div>
-                          <Badge
-                            variant="outline"
-                            className={`font-mono shrink-0 ${styles.badgeClass}`}
-                          >
-                            <Zap className="w-3 h-3 mr-1" />
-                            {record.xp_amount > 0 ? "+" : ""}
-                            {record.xp_amount}
-                          </Badge>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDistanceToNow(new Date(record.created_at), {
+                              addSuffix: true,
+                              locale: ptBR,
+                            })}
+                          </p>
                         </div>
+                        <Badge
+                          variant="outline"
+                          className={`font-mono shrink-0 ${styles.badgeClass}`}
+                        >
+                          <Zap className="w-3 h-3 mr-1" />
+                          {record.xp_amount > 0 ? "+" : ""}
+                          {record.xp_amount}
+                        </Badge>
                       </div>
-                    </motion.div>
-                  );
-                }
-              )}
+                    </div>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
         </div>
 
-        {/* Expand/Collapse Button */}
-        {filteredHistory.length > 5 && (
+        {/* Load More Button */}
+        {hasMore && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={loadMore}
+            disabled={isLoadingMore}
             className="w-full"
           >
-            {isExpanded ? (
+            {isLoadingMore ? (
               <>
-                <ChevronUp className="w-4 h-4 mr-1" />
-                Ver menos
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                Carregando...
               </>
             ) : (
-              <>
-                <ChevronDown className="w-4 h-4 mr-1" />
-                Ver mais ({filteredHistory.length - 5} restantes)
-              </>
+              "Carregar mais antigos"
             )}
           </Button>
+        )}
+
+        {!hasMore && history.length > PAGE_SIZE && (
+          <p className="text-xs text-center text-muted-foreground">
+            Todos os {history.length} eventos carregados
+          </p>
         )}
       </CardContent>
     </Card>
