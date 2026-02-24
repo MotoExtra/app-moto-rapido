@@ -184,7 +184,7 @@ const Gamification = () => {
 
         {/* XP History Timeline */}
         {userId && (
-          <XPHistoryTimeline userId={userId} limit={30} totalXp={stats?.total_xp || 0} />
+          <XPHistoryTimeline userId={userId} totalXp={stats?.total_xp || 0} />
         )}
 
         {/* Achievements */}
