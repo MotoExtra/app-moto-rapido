@@ -279,6 +279,19 @@ const Home = () => {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'accepted_offers',
+        },
+        (payload) => {
+          console.log('Accepted offer updated:', payload);
+          // Re-fetch when any accepted_offer status changes (completed, cancelled, etc.)
+          fetchOffers();
+        }
+      )
       .subscribe();
 
     return () => {
