@@ -75,9 +75,8 @@ export const HomeStatsCard = ({ userId }: HomeStatsCardProps) => {
               </div>
               <div className="w-full">
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <span className="text-sm">{levelInfo.icon}</span>
-                  <span className="text-xs font-medium text-foreground">Nv.{currentLevel}</span>
-                </div>
+                   <span className="text-xs font-bold text-foreground">{levelInfo.name}</span>
+                 </div>
                 <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                   <motion.div 
                     className="h-full rounded-full bg-gradient-to-r from-primary to-amber-500"
