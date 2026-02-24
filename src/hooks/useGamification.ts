@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import confetti from "canvas-confetti";
 
 export interface MotoboyStats {
   user_id: string;
@@ -209,19 +210,40 @@ export function useGamification(userId?: string) {
                   };
                   setUnlockedAchievements(prev => [...prev, newUnlocked]);
                   
-                  // Play achievement sound
-                  playAchievement();
-                  
-                  // Trigger haptic vibration
-                  if (navigator.vibrate) {
-                    navigator.vibrate([50, 30, 100]); // quick celebratory pulse
-                  }
-                  
-                  // Show toast for new achievement
-                  toast({
-                    title: "🏆 Conquista Desbloqueada!",
-                    description: `${data.name} - +${data.xp_reward} XP`,
-                  });
+                   // Play achievement sound
+                   playAchievement();
+                   
+                   // Trigger haptic vibration
+                   if (navigator.vibrate) {
+                     navigator.vibrate([50, 30, 100]);
+                   }
+
+                   // 🎉 Confetti burst
+                   const end = Date.now() + 1500;
+                   const colors = ["#f97316", "#fbbf24", "#fb923c"];
+                   (function frame() {
+                     confetti({
+                       particleCount: 3,
+                       angle: 60,
+                       spread: 55,
+                       origin: { x: 0, y: 0.7 },
+                       colors,
+                     });
+                     confetti({
+                       particleCount: 3,
+                       angle: 120,
+                       spread: 55,
+                       origin: { x: 1, y: 0.7 },
+                       colors,
+                     });
+                     if (Date.now() < end) requestAnimationFrame(frame);
+                   })();
+                   
+                   // Show toast for new achievement
+                   toast({
+                     title: "🏆 Conquista Desbloqueada!",
+                     description: `${data.name} - +${data.xp_reward} XP`,
+                   });
                 }
               });
           }
