@@ -46,6 +46,7 @@ interface XPHistoryRecord {
 interface XPHistoryTimelineProps {
   userId: string;
   limit?: number;
+  totalXp?: number;
 }
 
 const getEventIcon = (eventType: string, xpAmount: number) => {
@@ -90,25 +91,43 @@ const getEventStyles = (xpAmount: number) => {
   }
 };
 
-export function XPHistoryTimeline({ userId, limit = 30 }: XPHistoryTimelineProps) {
+export function XPHistoryTimeline({ userId, limit = 30, totalXp }: XPHistoryTimelineProps) {
   const [history, setHistory] = useState<XPHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [filter, setFilter] = useState<"all" | "gains" | "losses">("all");
+  const [aggregateTotals, setAggregateTotals] = useState<{ gains: number; losses: number } | null>(null);
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("xp_history")
-          .select("*")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(limit);
+        // Fetch recent history and aggregate totals in parallel
+        const [historyResult, gainsResult, lossesResult] = await Promise.all([
+          supabase
+            .from("xp_history")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .limit(limit),
+          supabase
+            .from("xp_history")
+            .select("xp_amount")
+            .eq("user_id", userId)
+            .gt("xp_amount", 0),
+          supabase
+            .from("xp_history")
+            .select("xp_amount")
+            .eq("user_id", userId)
+            .lt("xp_amount", 0),
+        ]);
 
-        if (error) throw error;
-        setHistory((data as XPHistoryRecord[]) || []);
+        if (historyResult.error) throw historyResult.error;
+        setHistory((historyResult.data as XPHistoryRecord[]) || []);
+
+        const totalGains = (gainsResult.data || []).reduce((acc, h) => acc + h.xp_amount, 0);
+        const totalLosses = Math.abs((lossesResult.data || []).reduce((acc, h) => acc + h.xp_amount, 0));
+        setAggregateTotals({ gains: totalGains, losses: totalLosses });
       } catch (error) {
         console.error("Erro ao carregar histórico de XP:", error);
       } finally {
@@ -116,7 +135,7 @@ export function XPHistoryTimeline({ userId, limit = 30 }: XPHistoryTimelineProps
       }
     };
 
-    fetchHistory();
+    fetchData();
 
     // Subscribe to realtime updates
     const channel = supabase
@@ -131,9 +150,19 @@ export function XPHistoryTimeline({ userId, limit = 30 }: XPHistoryTimelineProps
         },
         (payload) => {
           if (payload.new) {
+            const newRecord = payload.new as XPHistoryRecord;
             setHistory((prev) =>
-              [payload.new as XPHistoryRecord, ...prev].slice(0, limit)
+              [newRecord, ...prev].slice(0, limit)
             );
+            // Update aggregates with new record
+            setAggregateTotals((prev) => {
+              if (!prev) return prev;
+              if (newRecord.xp_amount > 0) {
+                return { ...prev, gains: prev.gains + newRecord.xp_amount };
+              } else {
+                return { ...prev, losses: prev.losses + Math.abs(newRecord.xp_amount) };
+              }
+            });
           }
         }
       )
@@ -151,13 +180,9 @@ export function XPHistoryTimeline({ userId, limit = 30 }: XPHistoryTimelineProps
       ? history.filter((h) => h.xp_amount > 0)
       : history.filter((h) => h.xp_amount < 0);
 
-  const totalGains = history
-    .filter((h) => h.xp_amount > 0)
-    .reduce((acc, h) => acc + h.xp_amount, 0);
-  const totalLosses = Math.abs(
-    history.filter((h) => h.xp_amount < 0).reduce((acc, h) => acc + h.xp_amount, 0)
-  );
-  const netBalance = totalGains - totalLosses;
+  const totalGains = aggregateTotals?.gains ?? 0;
+  const totalLosses = aggregateTotals?.losses ?? 0;
+  const netBalance = totalXp ?? (totalGains - totalLosses);
 
   if (isLoading) {
     return (
