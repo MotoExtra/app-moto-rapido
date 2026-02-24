@@ -70,7 +70,7 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
   
   const fixoOptions = ["80", "90", "100", "110", "120"];
   
-  // Sync with external value on mount
+  // Sync with external value changes
   useEffect(() => {
     const parsed = parsePaymentString(value);
     setPaymentData(parsed);
@@ -78,7 +78,7 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
     if (parsed.fixo && !fixoOptions.includes(parsed.fixo)) {
       setShowCustomFixo(true);
     }
-  }, []);
+  }, [value]);
   
   // Update parent when data changes
   const handleFixoChange = (fieldValue: string) => {
