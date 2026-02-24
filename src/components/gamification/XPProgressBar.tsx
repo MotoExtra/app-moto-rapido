@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { getXpProgress, getLevelInfo, getNextLevelInfo } from "@/lib/gamification";
+import { getXpProgress, getLevelInfo, getNextLevelInfo, getLevelForXp } from "@/lib/gamification";
 import { Progress } from "@/components/ui/progress";
 
 interface XPProgressBarProps {
@@ -17,9 +17,13 @@ export function XPProgressBar({
   size = "md",
   className 
 }: XPProgressBarProps) {
-  const progress = getXpProgress(totalXp, currentLevel);
-  const currentLevelInfo = getLevelInfo(currentLevel);
-  const nextLevelInfo = getNextLevelInfo(currentLevel);
+  // Calculate correct level from XP to handle DB desync
+  const correctedLevel = getLevelForXp(totalXp).level;
+  const effectiveLevel = Math.max(currentLevel, correctedLevel);
+  
+  const progress = getXpProgress(totalXp, effectiveLevel);
+  const currentLevelInfo = getLevelInfo(effectiveLevel);
+  const nextLevelInfo = getNextLevelInfo(effectiveLevel);
 
   const heightClasses = {
     sm: "h-1.5",

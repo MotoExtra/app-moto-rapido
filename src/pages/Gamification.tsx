@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { getLevelForXp } from "@/lib/gamification";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -84,7 +85,10 @@ const Gamification = () => {
     );
   }
 
-  const levelInfo = getLevelInfo(stats?.current_level || 1);
+  // Calculate correct level from XP to handle DB desync
+  const correctedLevel = getLevelForXp(stats?.total_xp || 0).level;
+  const effectiveLevel = Math.max(stats?.current_level || 1, correctedLevel);
+  const levelInfo = getLevelInfo(effectiveLevel);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -116,10 +120,10 @@ const Gamification = () => {
           <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-card via-card to-primary/5">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-6">
-                <LevelBadge level={stats?.current_level || 1} size="lg" />
+                <LevelBadge level={effectiveLevel} size="lg" />
                 <div className="flex-1">
                   <h2 className="text-xl font-black text-foreground">{levelInfo.name}</h2>
-                  <p className="text-sm text-muted-foreground">Nível {stats?.current_level || 1}</p>
+                  <p className="text-sm text-muted-foreground">Nível {effectiveLevel}</p>
                 </div>
                 <motion.div 
                   className="text-right"
@@ -136,7 +140,7 @@ const Gamification = () => {
 
               <XPProgressBar
                 totalXp={stats?.total_xp || 0}
-                currentLevel={stats?.current_level || 1}
+                currentLevel={effectiveLevel}
                 size="lg"
               />
             </CardContent>
