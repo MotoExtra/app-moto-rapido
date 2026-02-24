@@ -46,7 +46,7 @@ interface XPHistoryTimelineProps {
   userId: string;
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 5;
 
 const getEventIcon = (eventType: string, xpAmount: number) => {
   switch (eventType) {
