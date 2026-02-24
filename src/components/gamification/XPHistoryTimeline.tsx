@@ -44,7 +44,6 @@ interface XPHistoryRecord {
 
 interface XPHistoryTimelineProps {
   userId: string;
-  totalXp?: number;
 }
 
 const PAGE_SIZE = 20;
@@ -91,45 +90,28 @@ const getEventStyles = (xpAmount: number) => {
   }
 };
 
-export function XPHistoryTimeline({ userId, totalXp }: XPHistoryTimelineProps) {
+export function XPHistoryTimeline({ userId }: XPHistoryTimelineProps) {
   const [history, setHistory] = useState<XPHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<"all" | "gains" | "losses">("all");
-  const [aggregateTotals, setAggregateTotals] = useState<{ gains: number; losses: number } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [historyResult, gainsResult, lossesResult] = await Promise.all([
-          supabase
+        const historyResult = await supabase
             .from("xp_history")
             .select("*")
             .eq("user_id", userId)
             .order("created_at", { ascending: false })
-            .limit(PAGE_SIZE),
-          supabase
-            .from("xp_history")
-            .select("xp_amount")
-            .eq("user_id", userId)
-            .gt("xp_amount", 0),
-          supabase
-            .from("xp_history")
-            .select("xp_amount")
-            .eq("user_id", userId)
-            .lt("xp_amount", 0),
-        ]);
+            .limit(PAGE_SIZE);
 
         if (historyResult.error) throw historyResult.error;
         const data = (historyResult.data as XPHistoryRecord[]) || [];
         setHistory(data);
         setHasMore(data.length === PAGE_SIZE);
-
-        const tGains = (gainsResult.data || []).reduce((acc, h) => acc + h.xp_amount, 0);
-        const tLosses = Math.abs((lossesResult.data || []).reduce((acc, h) => acc + h.xp_amount, 0));
-        setAggregateTotals({ gains: tGains, losses: tLosses });
       } catch (error) {
         console.error("Erro ao carregar histórico de XP:", error);
       } finally {
@@ -153,14 +135,6 @@ export function XPHistoryTimeline({ userId, totalXp }: XPHistoryTimelineProps) {
           if (payload.new) {
             const newRecord = payload.new as XPHistoryRecord;
             setHistory((prev) => [newRecord, ...prev]);
-            setAggregateTotals((prev) => {
-              if (!prev) return prev;
-              if (newRecord.xp_amount > 0) {
-                return { ...prev, gains: prev.gains + newRecord.xp_amount };
-              } else {
-                return { ...prev, losses: prev.losses + Math.abs(newRecord.xp_amount) };
-              }
-            });
           }
         }
       )
@@ -202,9 +176,6 @@ export function XPHistoryTimeline({ userId, totalXp }: XPHistoryTimelineProps) {
       ? history.filter((h) => h.xp_amount > 0)
       : history.filter((h) => h.xp_amount < 0);
 
-  const totalGains = aggregateTotals?.gains ?? 0;
-  const totalLosses = aggregateTotals?.losses ?? 0;
-  const netBalance = totalXp ?? (totalGains - totalLosses);
 
   if (isLoading) {
     return (
@@ -260,63 +231,6 @@ export function XPHistoryTimeline({ userId, totalXp }: XPHistoryTimelineProps) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-2">
-          <motion.div
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center"
-          >
-            <div className="flex items-center justify-center gap-1">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-              <span className="font-bold text-green-700">+{totalGains}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Ganhos</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-center"
-          >
-            <div className="flex items-center justify-center gap-1">
-              <TrendingDown className="w-4 h-4 text-destructive" />
-              <span className="font-bold text-destructive">-{totalLosses}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Perdas</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className={`p-3 rounded-lg text-center ${
-              netBalance >= 0
-                ? "bg-primary/10 border border-primary/20"
-                : "bg-orange-500/10 border border-orange-500/20"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <Zap
-                className={`w-4 h-4 ${
-                  netBalance >= 0 ? "text-primary" : "text-orange-600"
-                }`}
-              />
-              <span
-                className={`font-bold ${
-                  netBalance >= 0 ? "text-primary" : "text-orange-600"
-                }`}
-              >
-                {netBalance >= 0 ? "+" : ""}
-                {netBalance}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Saldo</p>
-          </motion.div>
-        </div>
-
         {/* Filter Buttons */}
         <div className="flex gap-2">
           <Button
