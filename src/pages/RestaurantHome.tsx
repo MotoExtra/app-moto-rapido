@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import {
   Plus, 
   LogOut, 
   Store, 
@@ -26,7 +26,8 @@ import {
   Navigation,
   Clock,
   Bike,
-  Archive
+  Archive,
+  RotateCcw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -161,6 +162,7 @@ const RestaurantHome = () => {
   const [chatOffer, setChatOffer] = useState<Offer | null>(null);
   const [activeTab, setActiveTab] = useState("available");
   const [archivedOffers, setArchivedOffers] = useState<ArchivedOffer[]>([]);
+  const [lastCreatedOffer, setLastCreatedOffer] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   // Timer to update categorization every minute
@@ -330,6 +332,20 @@ const RestaurantHome = () => {
 
       if (archivedData) {
         setArchivedOffers(archivedData as ArchivedOffer[]);
+      }
+
+      // Fetch last created offer for "repeat" feature
+      const { data: lastOfferData } = await supabase
+        .from("offers")
+        .select("description, address, time_start, time_end, delivery_range, delivery_quantity, needs_bag, can_become_permanent, includes_meal, payment, observations")
+        .eq("created_by", session.user.id)
+        .eq("offer_type", "restaurant")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastOfferData) {
+        setLastCreatedOffer(lastOfferData);
       }
 
       setLoading(false);
@@ -657,13 +673,48 @@ const RestaurantHome = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex items-center justify-between"
+            className="space-y-3"
           >
-            <h2 className="text-lg font-semibold">Meus Extras</h2>
-            <Button onClick={() => navigate("/restaurante/criar-extra")} size="sm" className="shadow-lg shadow-primary/20">
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Extra
-            </Button>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Meus Extras</h2>
+              <Button onClick={() => navigate("/restaurante/criar-extra")} size="sm" className="shadow-lg shadow-primary/20">
+                <Plus className="w-4 h-4 mr-2" />
+                Criar Extra
+              </Button>
+            </div>
+
+            {lastCreatedOffer && (
+              <div 
+                className="flex items-center gap-3 p-3 rounded-xl border-2 border-primary/30 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all"
+                onClick={() => navigate("/restaurante/criar-extra", { 
+                  state: { 
+                    duplicate: {
+                      description: lastCreatedOffer.description,
+                      address: lastCreatedOffer.address,
+                      time_start: lastCreatedOffer.time_start,
+                      time_end: lastCreatedOffer.time_end,
+                      delivery_range: lastCreatedOffer.delivery_range,
+                      delivery_quantity: lastCreatedOffer.delivery_quantity,
+                      needs_bag: lastCreatedOffer.needs_bag,
+                      can_become_permanent: lastCreatedOffer.can_become_permanent,
+                      includes_meal: lastCreatedOffer.includes_meal,
+                      payment: lastCreatedOffer.payment,
+                      observations: lastCreatedOffer.observations,
+                    }
+                  }
+                })}
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <RotateCcw className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-foreground">Repetir último extra</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {lastCreatedOffer.time_start?.slice(0, 5)} - {lastCreatedOffer.time_end?.slice(0, 5)} • {lastCreatedOffer.delivery_range}
+                  </p>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {offers.length === 0 && archivedOffers.length === 0 ? (
