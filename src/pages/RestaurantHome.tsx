@@ -164,12 +164,14 @@ const RestaurantHome = () => {
   const [archivedOffers, setArchivedOffers] = useState<ArchivedOffer[]>([]);
   const [lastCreatedOffer, setLastCreatedOffer] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [previouslyAvailableIds, setPreviouslyAvailableIds] = useState<Set<string>>(new Set());
+  const [notifiedExpiredIds, setNotifiedExpiredIds] = useState<Set<string>>(new Set());
 
-  // Timer to update categorization every minute
+  // Timer to update categorization every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 60000); // Update every minute
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -213,6 +215,42 @@ const RestaurantHome = () => {
       uniqueMotoboys: motoboyIds.size
     };
   }, [offers, currentTime]);
+
+  // Detect newly expired offers and notify the restaurant
+  useEffect(() => {
+    if (!restaurant || offers.length === 0) return;
+
+    const currentAvailableIds = new Set(availableOffers.map(o => o.id));
+    const currentExpiredIds = new Set(expiredOffers.map(o => o.id));
+
+    // Find offers that were previously available but are now expired
+    const newlyExpired = expiredOffers.filter(
+      o => previouslyAvailableIds.has(o.id) && !notifiedExpiredIds.has(o.id)
+    );
+
+    if (newlyExpired.length > 0) {
+      // Play alert sound
+      playAlert();
+
+      newlyExpired.forEach(offer => {
+        toast({
+          title: "⏰ Extra expirado sem aceite",
+          description: `"${offer.description}" (${offer.time_start.slice(0, 5)} - ${offer.time_end.slice(0, 5)}) expirou sem nenhum motoboy aceitar.`,
+          duration: 15000,
+        });
+      });
+
+      // Mark as notified
+      setNotifiedExpiredIds(prev => {
+        const next = new Set(prev);
+        newlyExpired.forEach(o => next.add(o.id));
+        return next;
+      });
+    }
+
+    // Update previously available IDs for next comparison
+    setPreviouslyAvailableIds(currentAvailableIds);
+  }, [availableOffers, expiredOffers, restaurant, previouslyAvailableIds, notifiedExpiredIds, playAlert, toast]);
 
   // Get unread counts for all accepted offers
   const acceptedOfferIds = useMemo(() => 
