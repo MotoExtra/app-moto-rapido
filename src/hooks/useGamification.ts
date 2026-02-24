@@ -105,23 +105,32 @@ export function useGamification(userId?: string) {
         if (unlockedError) throw unlockedError;
         setUnlockedAchievements(unlockedData || []);
 
-        // Fetch rating stats for achievement progress
-        const { data: ratingsData } = await supabase
-          .from("ratings")
-          .select("rating")
-          .eq("motoboy_id", userId)
-          .eq("rating_type", "restaurant_to_motoboy");
+        // Fetch rating stats from xp_history (motoboy can read this table)
+        // since ratings table is not accessible to motoboys via RLS
+        const { data: ratingEvents } = await supabase
+          .from("xp_history")
+          .select("event_type, xp_amount, created_at")
+          .eq("user_id", userId)
+          .in("event_type", ["rating", "rating_5", "rating_4", "rating_bad"])
+          .order("created_at", { ascending: true });
 
-        if (ratingsData && ratingsData.length > 0) {
-          const ratings = ratingsData.map(r => r.rating);
-          const rating5Count = ratings.filter(r => r === 5).length;
-          const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-          const totalRatings = ratings.length;
+        if (ratingEvents && ratingEvents.length > 0) {
+          // Derive rating values from event_type and xp_amount
+          const ratingValues = ratingEvents.map(e => {
+            if (e.event_type === "rating_5" || (e.event_type === "rating" && e.xp_amount === 15)) return 5;
+            if (e.event_type === "rating_4" || (e.event_type === "rating" && e.xp_amount === 8)) return 4;
+            if (e.event_type === "rating_bad") return 2; // bad rating
+            return 3; // fallback
+          });
+
+          const rating5Count = ratingValues.filter(r => r === 5).length;
+          const avgRating = ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length;
+          const totalRatings = ratingValues.length;
           
-          // Calculate streak of good ratings (4 or 5 stars)
+          // Calculate streak of good ratings (4 or 5 stars) from most recent
           let streakGoodRating = 0;
-          for (let i = ratings.length - 1; i >= 0; i--) {
-            if (ratings[i] >= 4) {
+          for (let i = ratingValues.length - 1; i >= 0; i--) {
+            if (ratingValues[i] >= 4) {
               streakGoodRating++;
             } else {
               break;
@@ -130,7 +139,7 @@ export function useGamification(userId?: string) {
 
           setRatingStats({
             rating_5_count: rating5Count,
-            avg_rating: avgRating,
+            avg_rating: parseFloat(avgRating.toFixed(2)),
             total_ratings: totalRatings,
             streak_good_rating: streakGoodRating
           });
