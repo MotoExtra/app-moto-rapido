@@ -353,22 +353,9 @@ const Home = () => {
         // Excluir extras criados pelo próprio usuário (motoboy não vê seus próprios extras)
         validOffers = validOffers.filter(offer => offer.created_by !== user?.id);
 
-        // Filter out offers that conflict with accepted offers (same date and overlapping time)
-        if (acceptedData && acceptedData.length > 0) {
-          validOffers = validOffers.filter(offer => {
-            return !acceptedData.some((accepted: any) => {
-              const acceptedOffer = accepted.offers;
-              if (!acceptedOffer) return false;
-
-              // Only check same day
-              if (acceptedOffer.offer_date !== offer.offer_date) return false;
-
-              // Check if time ranges overlap
-              // Overlap occurs if: newStart < existingEnd AND newEnd > existingStart
-              return offer.time_start < acceptedOffer.time_end && 
-                     offer.time_end > acceptedOffer.time_start;
-            });
-          });
+        // Hide ALL offers when motoboy has any active extra (pending/arrived/in_progress)
+        if (activeAccepted.length > 0) {
+          validOffers = [];
         }
 
         // Count offers per city (before filtering by preferences)
