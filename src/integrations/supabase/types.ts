@@ -1379,6 +1379,10 @@ export type Database = {
           milestone_days: number
         }[]
       }
+      check_and_unlock_achievements: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       cleanup_expired_offers: { Args: never; Returns: number }
       complete_extra_with_peak_bonus: {
         Args: { p_city?: string; p_offer_id: string; p_user_id: string }
