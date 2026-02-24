@@ -9,6 +9,17 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Clock, MapPin, Package, Star, AlertCircle, LogOut, User as UserIcon, Plus, Bike, Pencil, Trash2, Menu, Trophy, CheckCircle, Bell, CalendarDays, X, ChevronRight, Filter, Check, Shield, Navigation } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { ES_CITIES } from "@/lib/cities";
 import { RestaurantRatingsModal } from "@/components/RestaurantRatingsModal";
@@ -794,14 +805,31 @@ const Home = () => {
                   </div>
                   
                   <div className="absolute bottom-6 left-6 right-6">
-                    <Button
-                      variant="outline"
-                      onClick={() => { setMenuOpen(false); handleLogout(); }}
-                      className="w-full rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sair da conta
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+                        >
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Sair da conta
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmar saída</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => { setMenuOpen(false); handleLogout(); }} className="bg-destructive hover:bg-destructive/90">
+                            Sair
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </SheetContent>
               </Sheet>

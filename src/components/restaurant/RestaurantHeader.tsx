@@ -21,6 +21,17 @@ import {
   BarChart3,
   RefreshCw,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import logo from "@/assets/logo.png";
 
 interface RestaurantHeaderProps {
@@ -127,14 +138,31 @@ export const RestaurantHeader = ({
             >
               <Settings className="w-5 h-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-primary-foreground/90 hover:text-primary-foreground hover:bg-white/10"
-              onClick={onLogout}
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-primary-foreground/90 hover:text-primary-foreground hover:bg-white/10"
+                >
+                  <LogOut className="w-5 h-5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar saída</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente para acessar o painel.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={onLogout} className="bg-destructive hover:bg-destructive/90">
+                    Sair
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
 
@@ -236,14 +264,28 @@ export const RestaurantHeader = ({
               </div>
 
               <div className="absolute bottom-6 left-6 right-6">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={onLogout}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sair da conta
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sair da conta
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar saída</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente para acessar o painel.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={onLogout} className="bg-destructive hover:bg-destructive/90">
+                        Sair
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </SheetContent>
           </Sheet>
