@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, TrendingUp, Trophy, Zap } from "lucide-react";
 import { useGamification } from "@/hooks/useGamification";
 import { useRanking } from "@/hooks/useRanking";
-import { getXpProgress, getLevelInfo } from "@/lib/gamification";
+import { getXpProgress, getLevelInfo, getLevelForXp } from "@/lib/gamification";
 
 interface HomeStatsCardProps {
   userId?: string;
@@ -15,8 +15,9 @@ export const HomeStatsCard = ({ userId }: HomeStatsCardProps) => {
   const isLoading = gamificationLoading || rankingLoading;
   
   const completedThisWeek = stats?.completed_extras ?? 0;
-  const currentLevel = stats?.current_level ?? 1;
   const totalXp = stats?.total_xp ?? 0;
+  const correctedLevel = getLevelForXp(totalXp).level;
+  const currentLevel = Math.max(stats?.current_level ?? 1, correctedLevel);
   const xpProgress = getXpProgress(totalXp, currentLevel);
   const levelInfo = getLevelInfo(currentLevel);
 
