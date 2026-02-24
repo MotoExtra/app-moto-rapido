@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { AchievementProgress } from "@/lib/achievementProgress";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface AchievementCardProps {
   code: string;
@@ -26,10 +28,10 @@ export function AchievementCard({
   category,
   xpReward,
   isUnlocked,
+  unlockedAt,
   progress,
   className,
 }: AchievementCardProps) {
-  // Get the icon component dynamically
   const IconComponent = (LucideIcons as any)[icon] || LucideIcons.Award;
 
   return (
@@ -37,45 +39,68 @@ export function AchievementCard({
       initial={isUnlocked ? { scale: 0.9, opacity: 0 } : false}
       animate={{ scale: 1, opacity: 1 }}
       className={cn(
-        "relative rounded-xl border p-4 transition-all",
+        "relative rounded-xl border p-4 transition-all overflow-hidden",
         isUnlocked
-          ? "bg-card border-primary/30 shadow-sm"
+          ? "bg-gradient-to-br from-primary/5 via-card to-amber-500/5 border-primary/40 shadow-md"
           : "bg-muted/30 border-border",
         className
       )}
     >
-      <div className="flex items-start gap-3">
-        <div
+      {/* Subtle glow effect for unlocked */}
+      {isUnlocked && (
+        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -translate-y-8 translate-x-8 pointer-events-none" />
+      )}
+
+      <div className="relative flex items-start gap-3">
+        <motion.div
           className={cn(
             "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
             isUnlocked
-              ? "bg-primary/10 text-primary"
+              ? "bg-gradient-to-br from-primary/20 to-amber-500/20 text-primary ring-2 ring-primary/20"
               : "bg-muted text-muted-foreground"
           )}
+          animate={isUnlocked ? { rotate: [0, -5, 5, 0] } : undefined}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
           <IconComponent className="w-6 h-6" />
-        </div>
+        </motion.div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-0.5">
             <h4 className={cn(
-              "font-semibold truncate",
+              "font-bold truncate",
               isUnlocked ? "text-foreground" : "text-muted-foreground"
             )}>{name}</h4>
             {isUnlocked && (
-              <LucideIcons.Check className="w-4 h-4 text-primary flex-shrink-0" />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 400, delay: 0.3 }}
+              >
+                <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <LucideIcons.Check className="w-3 h-3 text-primary-foreground" />
+                </div>
+              </motion.div>
             )}
           </div>
           <p className={cn(
-            "text-xs line-clamp-2 mb-2",
+            "text-xs line-clamp-2",
             isUnlocked ? "text-muted-foreground" : "text-muted-foreground/70"
           )}>
             {description}
           </p>
+
+          {/* Unlocked date */}
+          {isUnlocked && unlockedAt && (
+            <p className="text-[10px] text-primary/70 mt-1 flex items-center gap-1">
+              <LucideIcons.CalendarCheck className="w-3 h-3" />
+              Conquistada em {format(new Date(unlockedAt), "dd MMM yyyy", { locale: ptBR })}
+            </p>
+          )}
           
           {/* Progress bar for locked achievements */}
           {!isUnlocked && progress && (
-            <div className="mb-2">
+            <div className="mt-2">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] text-muted-foreground">
                   {progress.label}
@@ -91,12 +116,12 @@ export function AchievementCard({
             </div>
           )}
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mt-2">
             <Badge variant="outline" className={cn("text-[10px]", getCategoryColor(category))}>
               {getCategoryLabel(category)}
             </Badge>
             <span className={cn(
-              "text-xs font-medium",
+              "text-xs font-semibold",
               isUnlocked ? "text-primary" : "text-muted-foreground"
             )}>+{xpReward} XP</span>
           </div>
