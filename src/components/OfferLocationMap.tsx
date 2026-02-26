@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Navigation, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { geocodeAddress } from "@/lib/geocoding";
-import "leaflet/dist/leaflet.css";
+
 
 interface OfferLocationMapProps {
   address: string;

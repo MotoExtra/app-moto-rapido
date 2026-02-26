@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { MapPin, Loader2, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { geocodeStructured } from "@/lib/geocoding";
-import "leaflet/dist/leaflet.css";
+
 
 interface AddressMapPreviewProps {
   rua: string;

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useEffect, useState, useMemo, forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
+import { APIProvider, Map, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
+
+const GOOGLE_MAPS_API_KEY = "AIzaSyBXfRcuKCrNHDYY3cJL9JKMa8gaSV3LVes";
 
 interface LocationPoint {
   lat: number;
@@ -24,49 +25,8 @@ export interface LiveMotoboyMapRef {
   centerOnMotoboy: () => void;
 }
 
-// Custom motorcycle icon for motoboy
-const motoboyIcon = L.divIcon({
-  html: `
-    <div class="relative">
-      <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full shadow-lg shadow-emerald-500/50 flex items-center justify-center animate-pulse border-3 border-white">
-        <span class="text-2xl">🏍️</span>
-      </div>
-      <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-emerald-500 rotate-45"></div>
-    </div>
-  `,
-  className: 'custom-motoboy-marker',
-  iconSize: [48, 56],
-  iconAnchor: [24, 56],
-});
-
-// Restaurant marker icon
-const restaurantIcon = L.divIcon({
-  html: `
-    <div class="relative">
-      <div class="w-10 h-10 bg-gradient-to-br from-primary to-orange-600 rounded-full shadow-lg flex items-center justify-center border-2 border-white">
-        <span class="text-xl">🏪</span>
-      </div>
-      <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-primary rotate-45"></div>
-    </div>
-  `,
-  className: 'custom-restaurant-marker',
-  iconSize: [40, 48],
-  iconAnchor: [20, 48],
-});
-
-// Start point icon
-const startIcon = L.divIcon({
-  html: `
-    <div class="w-6 h-6 bg-blue-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
-      <span class="text-xs">▶</span>
-    </div>
-  `,
-  className: 'custom-start-marker',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-});
-
-const LiveMotoboyMap = forwardRef<LiveMotoboyMapRef, LiveMotoboyMapProps>(({
+// Inner component that has access to map instance
+const MapInner = forwardRef<LiveMotoboyMapRef, LiveMotoboyMapProps>(({
   motoboyLat,
   motoboyLng,
   restaurantLat,
@@ -77,188 +37,145 @@ const LiveMotoboyMap = forwardRef<LiveMotoboyMapRef, LiveMotoboyMapProps>(({
   showRouteHistory = true,
   hasMotoboyLocation = true
 }, ref) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const motoboyMarkerRef = useRef<L.Marker | null>(null);
-  const polylineRef = useRef<L.Polyline | null>(null);
-  const routePolylineRef = useRef<L.Polyline | null>(null);
-  const startMarkerRef = useRef<L.Marker | null>(null);
-  const [mapReady, setMapReady] = useState(false);
+  const map = useMap();
+  const directLineRef = useRef<google.maps.Polyline | null>(null);
+  const routeLineRef = useRef<google.maps.Polyline | null>(null);
 
-  // Expose centerOnMotoboy method via ref
+  // Center on motoboy
   useImperativeHandle(ref, () => ({
     centerOnMotoboy: () => {
-      if (mapInstanceRef.current && hasMotoboyLocation) {
-        mapInstanceRef.current.setView([motoboyLat, motoboyLng], 17, { animate: true });
+      if (map && hasMotoboyLocation) {
+        map.panTo({ lat: motoboyLat, lng: motoboyLng });
+        map.setZoom(17);
       }
     }
-  }), [motoboyLat, motoboyLng, hasMotoboyLocation]);
+  }), [map, motoboyLat, motoboyLng, hasMotoboyLocation]);
 
-  // Initialize map
+  // Fit bounds on initial load
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
-
-    const map = L.map(mapRef.current, {
-      zoomControl: true,
-      attributionControl: false,
-    }).setView([motoboyLat, motoboyLng], 15);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-    }).addTo(map);
-
-    mapInstanceRef.current = map;
-    setMapReady(true);
-
-    return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-    };
-  }, []);
-
-  // Add/update markers and polyline
-  useEffect(() => {
-    if (!mapInstanceRef.current || !mapReady) return;
-
-    const map = mapInstanceRef.current;
-
-    // Add restaurant marker (static)
-    const restaurantMarker = L.marker([restaurantLat, restaurantLng], {
-      icon: restaurantIcon,
-    }).addTo(map);
-    restaurantMarker.bindPopup(`<strong>${restaurantName}</strong><br/>📍 Local do extra`);
-
-    // Only add motoboy marker if we have their location
+    if (!map) return;
+    
     if (hasMotoboyLocation) {
-      // Add motoboy marker (will be updated)
-      if (motoboyMarkerRef.current) {
-        motoboyMarkerRef.current.remove();
-      }
-      motoboyMarkerRef.current = L.marker([motoboyLat, motoboyLng], {
-        icon: motoboyIcon,
-      }).addTo(map);
-      motoboyMarkerRef.current.bindPopup(`<strong>${motoboyName}</strong><br/>🏍️ Em movimento`);
-
-      // Add polyline between motoboy and restaurant (direct line)
-      if (polylineRef.current) {
-        polylineRef.current.remove();
-      }
-      polylineRef.current = L.polyline(
-        [
-          [motoboyLat, motoboyLng],
-          [restaurantLat, restaurantLng],
-        ],
-        {
-          color: '#10b981',
-          weight: 3,
-          opacity: 0.5,
-          dashArray: '10, 10',
-        }
-      ).addTo(map);
-
-      // Fit bounds to show both markers
-      const bounds = L.latLngBounds(
-        [motoboyLat, motoboyLng],
-        [restaurantLat, restaurantLng]
-      );
-      map.fitBounds(bounds, { padding: [50, 50] });
+      const bounds = new google.maps.LatLngBounds();
+      bounds.extend({ lat: motoboyLat, lng: motoboyLng });
+      bounds.extend({ lat: restaurantLat, lng: restaurantLng });
+      map.fitBounds(bounds, 50);
     } else {
-      // Just center on restaurant when no motoboy location
-      map.setView([restaurantLat, restaurantLng], 15);
+      map.setCenter({ lat: restaurantLat, lng: restaurantLng });
+      map.setZoom(15);
     }
+  }, [map, hasMotoboyLocation]);
+
+  // Direct line between motoboy and restaurant
+  useEffect(() => {
+    if (!map || !hasMotoboyLocation) return;
+
+    if (!directLineRef.current) {
+      directLineRef.current = new google.maps.Polyline({
+        map,
+        strokeColor: '#10b981',
+        strokeWeight: 3,
+        strokeOpacity: 0.5,
+        geodesic: true,
+      });
+      directLineRef.current.set('icons', [{
+        icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
+        offset: '0',
+        repeat: '15px'
+      }]);
+    }
+
+    directLineRef.current.setPath([
+      { lat: motoboyLat, lng: motoboyLng },
+      { lat: restaurantLat, lng: restaurantLng },
+    ]);
 
     return () => {
-      restaurantMarker.remove();
+      directLineRef.current?.setMap(null);
+      directLineRef.current = null;
     };
-  }, [mapReady, restaurantLat, restaurantLng, restaurantName, hasMotoboyLocation]);
+  }, [map, motoboyLat, motoboyLng, restaurantLat, restaurantLng, hasMotoboyLocation]);
 
-  // Update motoboy position with smooth animation
+  // Route history polyline
   useEffect(() => {
-    if (!motoboyMarkerRef.current || !polylineRef.current) return;
+    if (!map) return;
 
-    // Animate marker to new position
-    const currentLatLng = motoboyMarkerRef.current.getLatLng();
-    const newLatLng = L.latLng(motoboyLat, motoboyLng);
-
-    // Only update if position changed significantly (more than 5 meters)
-    const distance = currentLatLng.distanceTo(newLatLng);
-    if (distance > 5) {
-      motoboyMarkerRef.current.setLatLng(newLatLng);
-      
-      // Update direct line polyline
-      polylineRef.current.setLatLngs([
-        [motoboyLat, motoboyLng],
-        [restaurantLat, restaurantLng],
-      ]);
-    }
-  }, [motoboyLat, motoboyLng, restaurantLat, restaurantLng]);
-
-  // Draw route history
-  useEffect(() => {
-    if (!mapInstanceRef.current || !mapReady || !showRouteHistory) return;
-
-    const map = mapInstanceRef.current;
-
-    // Remove previous route polyline and start marker
-    if (routePolylineRef.current) {
-      routePolylineRef.current.remove();
-      routePolylineRef.current = null;
-    }
-    if (startMarkerRef.current) {
-      startMarkerRef.current.remove();
-      startMarkerRef.current = null;
+    if (routeLineRef.current) {
+      routeLineRef.current.setMap(null);
+      routeLineRef.current = null;
     }
 
-    if (routeHistory.length < 2) return;
+    if (!showRouteHistory || routeHistory.length < 2) return;
 
-    // Create route polyline from history
-    const routePoints: [number, number][] = routeHistory.map(point => [point.lat, point.lng]);
-    
-    // Add current position as the last point
-    routePoints.push([motoboyLat, motoboyLng]);
+    const path = routeHistory.map(p => ({ lat: p.lat, lng: p.lng }));
+    if (hasMotoboyLocation) {
+      path.push({ lat: motoboyLat, lng: motoboyLng });
+    }
 
-    routePolylineRef.current = L.polyline(routePoints, {
-      color: '#3b82f6', // Blue color for route history
-      weight: 4,
-      opacity: 0.8,
-      lineCap: 'round',
-      lineJoin: 'round',
-    }).addTo(map);
-
-    // Add start point marker
-    const firstPoint = routeHistory[0];
-    startMarkerRef.current = L.marker([firstPoint.lat, firstPoint.lng], {
-      icon: startIcon,
-    }).addTo(map);
-    
-    const startTime = new Date(firstPoint.recorded_at).toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit'
+    routeLineRef.current = new google.maps.Polyline({
+      map,
+      path,
+      strokeColor: '#3b82f6',
+      strokeWeight: 4,
+      strokeOpacity: 0.8,
     });
-    startMarkerRef.current.bindPopup(`<strong>Início do expediente</strong><br/>⏰ ${startTime}`);
 
-  }, [routeHistory, motoboyLat, motoboyLng, mapReady, showRouteHistory]);
+    return () => {
+      routeLineRef.current?.setMap(null);
+      routeLineRef.current = null;
+    };
+  }, [map, routeHistory, motoboyLat, motoboyLng, showRouteHistory, hasMotoboyLocation]);
 
-  // Calculate total distance traveled
-  const totalDistance = routeHistory.length > 1 
-    ? routeHistory.reduce((acc, point, index) => {
-        if (index === 0) return 0;
-        const prevPoint = routeHistory[index - 1];
-        const p1 = L.latLng(prevPoint.lat, prevPoint.lng);
-        const p2 = L.latLng(point.lat, point.lng);
-        return acc + p1.distanceTo(p2);
-      }, 0)
-    : 0;
+  // Calculate total distance
+  const totalDistance = useMemo(() => {
+    if (routeHistory.length < 2) return 0;
+    let total = 0;
+    for (let i = 1; i < routeHistory.length; i++) {
+      const p1 = new google.maps.LatLng(routeHistory[i - 1].lat, routeHistory[i - 1].lng);
+      const p2 = new google.maps.LatLng(routeHistory[i].lat, routeHistory[i].lng);
+      total += google.maps.geometry?.spherical?.computeDistanceBetween?.(p1, p2) || 0;
+    }
+    return total;
+  }, [routeHistory]);
 
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden shadow-2xl border border-border/50">
-      <div ref={mapRef} className="w-full h-full" />
-      
-      {/* Gradient overlay at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
-      
-      {/* Live indicator or waiting indicator */}
-      <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/95 backdrop-blur-sm border border-border shadow-lg">
+    <>
+      {/* Restaurant marker */}
+      <AdvancedMarker position={{ lat: restaurantLat, lng: restaurantLng }} title={restaurantName}>
+        <div className="relative">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary to-orange-600 rounded-full shadow-lg flex items-center justify-center border-2 border-background">
+            <span className="text-xl">🏪</span>
+          </div>
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-primary rotate-45" />
+        </div>
+      </AdvancedMarker>
+
+      {/* Motoboy marker */}
+      {hasMotoboyLocation && (
+        <AdvancedMarker position={{ lat: motoboyLat, lng: motoboyLng }} title={motoboyName}>
+          <div className="relative">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full shadow-lg shadow-emerald-500/50 flex items-center justify-center animate-pulse border-[3px] border-background">
+              <span className="text-2xl">🏍️</span>
+            </div>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-emerald-500 rotate-45" />
+          </div>
+        </AdvancedMarker>
+      )}
+
+      {/* Start point marker */}
+      {showRouteHistory && routeHistory.length > 1 && (
+        <AdvancedMarker 
+          position={{ lat: routeHistory[0].lat, lng: routeHistory[0].lng }} 
+          title={`Início: ${new Date(routeHistory[0].recorded_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
+        >
+          <div className="w-6 h-6 bg-blue-500 rounded-full border-2 border-background shadow-lg flex items-center justify-center">
+            <span className="text-xs text-white font-bold">▶</span>
+          </div>
+        </AdvancedMarker>
+      )}
+
+      {/* Live/Waiting indicator overlay */}
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/95 backdrop-blur-sm border border-border shadow-lg">
         {hasMotoboyLocation ? (
           <>
             <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
@@ -272,9 +189,9 @@ const LiveMotoboyMap = forwardRef<LiveMotoboyMapRef, LiveMotoboyMapProps>(({
         )}
       </div>
 
-      {/* Route stats */}
+      {/* Route stats overlay */}
       {showRouteHistory && routeHistory.length > 1 && hasMotoboyLocation && (
-        <div className="absolute top-4 right-4 flex flex-col gap-1 px-3 py-2 rounded-lg bg-background/95 backdrop-blur-sm border border-border shadow-lg">
+        <div className="absolute top-4 right-4 z-10 flex flex-col gap-1 px-3 py-2 rounded-lg bg-background/95 backdrop-blur-sm border border-border shadow-lg">
           <div className="flex items-center gap-2">
             <div className="w-3 h-0.5 bg-blue-500 rounded" />
             <span className="text-xs font-medium text-foreground">Rota percorrida</span>
@@ -284,6 +201,32 @@ const LiveMotoboyMap = forwardRef<LiveMotoboyMapRef, LiveMotoboyMapProps>(({
           </div>
         </div>
       )}
+
+      {/* Bottom gradient */}
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background/80 to-transparent pointer-events-none z-10" />
+    </>
+  );
+});
+
+MapInner.displayName = 'MapInner';
+
+const LiveMotoboyMap = forwardRef<LiveMotoboyMapRef, LiveMotoboyMapProps>((props, ref) => {
+  const defaultCenter = { lat: props.motoboyLat, lng: props.motoboyLng };
+
+  return (
+    <div className="relative w-full h-full rounded-xl overflow-hidden shadow-2xl border border-border/50">
+      <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+        <Map
+          defaultCenter={defaultCenter}
+          defaultZoom={15}
+          gestureHandling="greedy"
+          disableDefaultUI={false}
+          mapId="live-motoboy-map"
+          style={{ width: "100%", height: "100%" }}
+        >
+          <MapInner ref={ref} {...props} />
+        </Map>
+      </APIProvider>
     </div>
   );
 });
