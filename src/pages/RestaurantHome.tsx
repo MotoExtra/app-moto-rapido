@@ -221,7 +221,6 @@ const RestaurantHome = () => {
     if (!restaurant || offers.length === 0) return;
 
     const currentAvailableIds = new Set(availableOffers.map(o => o.id));
-    const currentExpiredIds = new Set(expiredOffers.map(o => o.id));
 
     // Find offers that were previously available but are now expired
     const newlyExpired = expiredOffers.filter(
@@ -249,8 +248,13 @@ const RestaurantHome = () => {
     }
 
     // Update previously available IDs for next comparison
-    setPreviouslyAvailableIds(currentAvailableIds);
-  }, [availableOffers, expiredOffers, restaurant, previouslyAvailableIds, notifiedExpiredIds, playAlert, toast]);
+    // Only update if the set actually changed to avoid re-triggering
+    const availableIdsArray = Array.from(currentAvailableIds).sort();
+    const prevIdsArray = Array.from(previouslyAvailableIds).sort();
+    if (JSON.stringify(availableIdsArray) !== JSON.stringify(prevIdsArray)) {
+      setPreviouslyAvailableIds(currentAvailableIds);
+    }
+  }, [availableOffers, expiredOffers, restaurant, playAlert, toast]);
 
   // Get unread counts for all accepted offers
   const acceptedOfferIds = useMemo(() => 
