@@ -398,9 +398,41 @@ const RestaurantHome = () => {
       }
     });
 
-    // Set up realtime listener for offer updates (when motoboy accepts)
+    // Set up realtime listener for offer updates (INSERT + UPDATE)
     const offersChannel = supabase
       .channel('restaurant-offers-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'offers'
+        },
+        async (payload) => {
+          const newOffer = payload.new as any;
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session && newOffer.created_by === session.user.id) {
+            // Add new offer to list immediately
+            setOffers(current => {
+              // Avoid duplicates
+              if (current.some(o => o.id === newOffer.id)) return current;
+              return [{
+                ...newOffer,
+                has_rating: false,
+                motoboy_name: undefined,
+                motoboy_phone: undefined,
+                motoboy_avatar_url: null,
+                motoboy_rating: undefined,
+                motoboy_review_count: 0,
+                motoboy_status: "pending"
+              }, ...current];
+            });
+            
+            // Switch to available tab to show the new offer
+            setActiveTab("available");
+          }
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -413,7 +445,6 @@ const RestaurantHome = () => {
           
           // Check if this offer belongs to this restaurant and was just accepted
           if (updatedOffer.is_accepted && payload.old && !(payload.old as any).is_accepted) {
-            // Check if this offer belongs to the current restaurant
             const { data: { session } } = await supabase.auth.getSession();
             if (session && updatedOffer.created_by === session.user.id) {
               playAlert();
