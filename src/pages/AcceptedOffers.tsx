@@ -67,9 +67,15 @@ const isOfferExpired = (offer: AcceptedOffer['offer']): boolean => {
   const now = new Date();
   const offerDate = offer.offer_date ? new Date(offer.offer_date + 'T00:00:00') : new Date();
   const [endHours, endMinutes] = offer.time_end.split(':').map(Number);
+  const [startHours, startMinutes] = offer.time_start.split(':').map(Number);
   
   const offerEndTime = new Date(offerDate);
   offerEndTime.setHours(endHours, endMinutes, 0, 0);
+  
+  // Handle midnight crossing: if end time is before start time, end is next day
+  if (endHours < startHours || (endHours === startHours && endMinutes < startMinutes)) {
+    offerEndTime.setDate(offerEndTime.getDate() + 1);
+  }
   
   return now > offerEndTime;
 };
