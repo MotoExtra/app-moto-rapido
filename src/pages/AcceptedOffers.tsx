@@ -1159,12 +1159,39 @@ const AcceptedOffers = () => {
           restaurantId={selectedOffer.offer.created_by || ""}
           restaurantName={selectedOffer.offer.restaurant_name}
           motoboyId={userId}
-          onRatingComplete={() => {
-            setAcceptedOffers(current =>
-              current.map(ao =>
-                ao.id === selectedOffer.id ? { ...ao, has_rating: true } : ao
-              )
-            );
+          onRatingComplete={async () => {
+            // Refetch the offer to get updated rating/review_count from trigger
+            const restaurantId = selectedOffer.offer.created_by;
+            if (restaurantId) {
+              const { data: updatedOffer } = await supabase
+                .from("offers")
+                .select("rating, review_count")
+                .eq("id", selectedOffer.offer.id)
+                .single();
+              
+              setAcceptedOffers(current =>
+                current.map(ao => {
+                  if (ao.offer.created_by === restaurantId) {
+                    return {
+                      ...ao,
+                      has_rating: ao.id === selectedOffer.id ? true : ao.has_rating,
+                      offer: {
+                        ...ao.offer,
+                        rating: updatedOffer?.rating ?? ao.offer.rating,
+                        review_count: updatedOffer?.review_count ?? ao.offer.review_count,
+                      },
+                    };
+                  }
+                  return ao.id === selectedOffer.id ? { ...ao, has_rating: true } : ao;
+                })
+              );
+            } else {
+              setAcceptedOffers(current =>
+                current.map(ao =>
+                  ao.id === selectedOffer.id ? { ...ao, has_rating: true } : ao
+                )
+              );
+            }
             setSelectedOffer(null);
           }}
         />
