@@ -78,13 +78,15 @@ export function calculateAchievementProgress(
     }
 
     case "streak": {
+      const best = stats?.best_streak || 0;
       const current = stats?.current_streak || 0;
+      const displayValue = Math.max(best, current);
       const target = criteria.value || 1;
       return {
-        current,
+        current: displayValue,
         target,
-        percentage: Math.min((current / target) * 100, 100),
-        label: `${current}/${target} dias seguidos`
+        percentage: Math.min((displayValue / target) * 100, 100),
+        label: `${displayValue}/${target} dias seguidos`
       };
     }
 
