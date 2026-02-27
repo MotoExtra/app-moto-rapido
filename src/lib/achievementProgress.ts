@@ -5,6 +5,8 @@ export interface AchievementProgress {
   target: number;
   percentage: number;
   label: string;
+  streakCurrent?: number;
+  streakBest?: number;
 }
 
 interface UnlockCriteria {
@@ -86,7 +88,9 @@ export function calculateAchievementProgress(
         current: displayValue,
         target,
         percentage: Math.min((displayValue / target) * 100, 100),
-        label: `${displayValue}/${target} dias seguidos`
+        label: `${displayValue}/${target} dias seguidos`,
+        streakCurrent: current,
+        streakBest: best,
       };
     }
 

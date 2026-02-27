@@ -109,10 +109,39 @@ export function AchievementCard({
                   {Math.round(progress.percentage)}%
                 </span>
               </div>
-              <Progress 
-                value={progress.percentage} 
-                className="h-1.5 bg-muted"
-              />
+              {/* Dual bar for streak: best (orange) + current (green overlay) */}
+              {progress.streakBest !== undefined && progress.streakCurrent !== undefined ? (
+                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  {/* Best streak bar (orange/primary) */}
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-primary/40 transition-all"
+                    style={{ width: `${Math.min((progress.streakBest / progress.target) * 100, 100)}%` }}
+                  />
+                  {/* Current streak bar (green, on top) */}
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-emerald-500 transition-all"
+                    style={{ width: `${Math.min((progress.streakCurrent / progress.target) * 100, 100)}%` }}
+                  />
+                </div>
+              ) : (
+                <Progress 
+                  value={progress.percentage} 
+                  className="h-1.5 bg-muted"
+                />
+              )}
+              {/* Legend for streak dual bar */}
+              {progress.streakBest !== undefined && progress.streakCurrent !== undefined && progress.streakBest !== progress.streakCurrent && (
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="flex items-center gap-1 text-[9px] text-emerald-600">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                    Atual: {progress.streakCurrent}d
+                  </span>
+                  <span className="flex items-center gap-1 text-[9px] text-primary/70">
+                    <span className="w-2 h-2 rounded-full bg-primary/40 inline-block" />
+                    Melhor: {progress.streakBest}d
+                  </span>
+                </div>
+              )}
             </div>
           )}
           
