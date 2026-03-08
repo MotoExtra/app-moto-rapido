@@ -317,6 +317,11 @@ const AcceptedOffers = () => {
           !hasShownRatingPrompt(ao.offer.id, 'motoboy');
       }
       
+      // Motoboy offers without external restaurant: executing motoboy should NOT rate
+      if (isMotoboyOffer) {
+        return false;
+      }
+      
       // For restaurant offers
       return ao.offer.created_by &&
         !ao.has_rating &&
