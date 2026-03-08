@@ -317,6 +317,11 @@ const AcceptedOffers = () => {
           !hasShownRatingPrompt(ao.offer.id, 'motoboy');
       }
       
+      // Motoboy offers without external restaurant: executing motoboy should NOT rate
+      if (isMotoboyOffer) {
+        return false;
+      }
+      
       // For restaurant offers
       return ao.offer.created_by &&
         !ao.has_rating &&
@@ -336,6 +341,9 @@ const AcceptedOffers = () => {
     if (!userId) return;
 
     completedOffers.forEach(async (ao) => {
+      // Skip motoboy offers without external restaurant (executing motoboy shouldn't rate)
+      if (ao.offer.offer_type === 'motoboy' && !ao.offer.external_restaurant_id) return;
+      
       if (
         ao.offer.created_by &&
         !ao.has_rating &&
