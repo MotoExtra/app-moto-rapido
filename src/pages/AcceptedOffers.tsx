@@ -341,6 +341,9 @@ const AcceptedOffers = () => {
     if (!userId) return;
 
     completedOffers.forEach(async (ao) => {
+      // Skip motoboy offers without external restaurant (executing motoboy shouldn't rate)
+      if (ao.offer.offer_type === 'motoboy' && !ao.offer.external_restaurant_id) return;
+      
       if (
         ao.offer.created_by &&
         !ao.has_rating &&
