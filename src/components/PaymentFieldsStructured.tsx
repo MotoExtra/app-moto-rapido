@@ -20,13 +20,19 @@ const parsePaymentString = (payment: string): PaymentData => {
   if (!payment) return data;
   
   // Try to extract "XX fixo"
-  const fixoMatch = payment.match(/(\d+(?:[.,]\d+)?)\s*fixo/i);
+  const fixoMatch = payment.match(/R?\$?\s*(\d+(?:[.,]\d+)?)\s*fixo/i);
   if (fixoMatch) {
     data.fixo = fixoMatch[1].replace(",", ".");
   }
   
   // Extract everything after "fixo + " or just the values if no fixo
-  const afterFixo = payment.replace(/(\d+(?:[.,]\d+)?)\s*fixo\s*\+?\s*/i, "").trim();
+  let afterFixo = payment.replace(/R?\$?\s*(\d+(?:[.,]\d+)?)\s*fixo\s*\+?\s*/i, "").trim();
+  
+  // Clean up any standalone "R$" without numbers
+  afterFixo = afterFixo.replace(/R\$\s*(?!\d)/g, "").trim();
+  // Remove leading/trailing "+"
+  afterFixo = afterFixo.replace(/^\+\s*|\s*\+$/g, "").trim();
+  
   if (afterFixo) {
     data.porEntrega = afterFixo;
   }
@@ -78,25 +84,38 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
   
   const fixoOptions = ["80", "90", "100", "110", "120"];
   
-  // Sync with external value changes
+  // Only sync from external value on initial mount or when value is completely reset
+  const lastExternalValue = useState({ current: value })[0];
   useEffect(() => {
-    const parsed = parsePaymentString(value);
-    setPaymentData(parsed);
-    // Check if current value is custom (not in predefined options)
-    if (parsed.fixo && !fixoOptions.includes(parsed.fixo)) {
-      setShowCustomFixo(true);
+    // Only re-parse if the external value changed AND it wasn't caused by our own onChange
+    if (value !== lastExternalValue.current) {
+      const built = buildPaymentString(paymentData);
+      if (value !== built) {
+        // External change (e.g., "repeat last offer") - re-parse
+        const parsed = parsePaymentString(value);
+        setPaymentData(parsed);
+        if (parsed.fixo && !fixoOptions.includes(parsed.fixo)) {
+          setShowCustomFixo(true);
+        }
+      }
+      lastExternalValue.current = value;
     }
   }, [value]);
   
+  const updateParent = (newData: PaymentData) => {
+    setPaymentData(newData);
+    const built = buildPaymentString(newData);
+    lastExternalValue.current = built;
+    onChange(built);
+  };
+
   // Update parent when data changes
   const handleFixoChange = (fieldValue: string) => {
-    // Only allow numbers and dots/commas
     const sanitized = fieldValue.replace(/[^0-9.,]/g, "").replace(",", ".");
     setCustomFixoError("");
     
     const newData = { ...paymentData, fixo: sanitized };
-    setPaymentData(newData);
-    onChange(buildPaymentString(newData));
+    updateParent(newData);
   };
 
   const handleFixoButtonClick = (val: string) => {
@@ -116,14 +135,12 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
     }
     
     const newData = { ...paymentData, fixo: sanitized };
-    setPaymentData(newData);
-    onChange(buildPaymentString(newData));
+    updateParent(newData);
   };
 
   const handlePorEntregaChange = (fieldValue: string) => {
     const newData = { ...paymentData, porEntrega: fieldValue };
-    setPaymentData(newData);
-    onChange(buildPaymentString(newData));
+    updateParent(newData);
   };
   
   const previewString = buildPreviewString(paymentData);
