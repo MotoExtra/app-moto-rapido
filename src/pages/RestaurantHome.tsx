@@ -388,6 +388,32 @@ const RestaurantHome = () => {
 
       if (lastOfferData) {
         setLastCreatedOffer(lastOfferData);
+      } else {
+        // Fallback: check archived offers
+        const { data: archivedData } = await supabase
+          .from("expired_offers_archive")
+          .select("restaurant_name, time_start, time_end, payment")
+          .eq("created_by", session.user.id)
+          .eq("offer_type", "restaurant")
+          .order("archived_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (archivedData) {
+          setLastCreatedOffer({
+            description: archivedData.restaurant_name || "",
+            address: "",
+            time_start: archivedData.time_start,
+            time_end: archivedData.time_end,
+            delivery_range: "Até 5km",
+            delivery_quantity: null,
+            needs_bag: false,
+            can_become_permanent: false,
+            includes_meal: false,
+            payment: archivedData.payment,
+            observations: null,
+          });
+        }
       }
 
       setLoading(false);
