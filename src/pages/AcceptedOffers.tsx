@@ -1174,6 +1174,9 @@ const AcceptedOffers = () => {
           restaurantName={selectedOffer.offer.restaurant_name}
           motoboyId={userId}
           onRatingComplete={async () => {
+            // Small delay to let the DB trigger update rating stats
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             // Refetch the offer to get updated rating/review_count from trigger
             const restaurantId = selectedOffer.offer.created_by;
             if (restaurantId) {
