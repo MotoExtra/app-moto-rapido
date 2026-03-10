@@ -965,7 +965,7 @@ export type Database = {
           offer_id: string
           rating: number
           rating_type: string
-          restaurant_id: string
+          restaurant_id: string | null
         }
         Insert: {
           comment?: string | null
@@ -975,7 +975,7 @@ export type Database = {
           offer_id: string
           rating: number
           rating_type?: string
-          restaurant_id: string
+          restaurant_id?: string | null
         }
         Update: {
           comment?: string | null
@@ -985,7 +985,7 @@ export type Database = {
           offer_id?: string
           rating?: number
           rating_type?: string
-          restaurant_id?: string
+          restaurant_id?: string | null
         }
         Relationships: [
           {
