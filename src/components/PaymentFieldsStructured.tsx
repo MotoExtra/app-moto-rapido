@@ -20,13 +20,19 @@ const parsePaymentString = (payment: string): PaymentData => {
   if (!payment) return data;
   
   // Try to extract "XX fixo"
-  const fixoMatch = payment.match(/(\d+(?:[.,]\d+)?)\s*fixo/i);
+  const fixoMatch = payment.match(/R?\$?\s*(\d+(?:[.,]\d+)?)\s*fixo/i);
   if (fixoMatch) {
     data.fixo = fixoMatch[1].replace(",", ".");
   }
   
   // Extract everything after "fixo + " or just the values if no fixo
-  const afterFixo = payment.replace(/(\d+(?:[.,]\d+)?)\s*fixo\s*\+?\s*/i, "").trim();
+  let afterFixo = payment.replace(/R?\$?\s*(\d+(?:[.,]\d+)?)\s*fixo\s*\+?\s*/i, "").trim();
+  
+  // Clean up any standalone "R$" without numbers
+  afterFixo = afterFixo.replace(/R\$\s*(?!\d)/g, "").trim();
+  // Remove leading/trailing "+"
+  afterFixo = afterFixo.replace(/^\+\s*|\s*\+$/g, "").trim();
+  
   if (afterFixo) {
     data.porEntrega = afterFixo;
   }
