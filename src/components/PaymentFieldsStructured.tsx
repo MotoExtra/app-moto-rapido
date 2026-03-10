@@ -34,7 +34,7 @@ const parsePaymentString = (payment: string): PaymentData => {
   return data;
 };
 
-// Build payment string from structured data
+// Build payment string from structured data (for display/parent)
 const buildPaymentString = (data: PaymentData): string => {
   const parts: string[] = [];
   
@@ -43,23 +43,31 @@ const buildPaymentString = (data: PaymentData): string => {
   }
   
   if (data.porEntrega) {
-    // Add R$ to numbers that don't already have it
-    const formattedEntrega = data.porEntrega
-      .split('+')
-      .map(part => {
-        const trimmed = part.trim();
-        // If it already has R$, keep as is; otherwise add R$ before numbers
-        if (trimmed.toLowerCase().includes('r$')) {
-          return trimmed;
-        }
-        // Extract number and format with R$
-        const num = trimmed.replace(/[^0-9.,]/g, '');
-        return num ? `R$ ${num}` : trimmed;
-      })
-      .join(' + ');
-    parts.push(formattedEntrega);
+    parts.push(data.porEntrega);
   }
   
+  return parts.join(" + ");
+};
+
+// Format por entrega for preview only
+const formatPorEntregaPreview = (raw: string): string => {
+  if (!raw) return "";
+  return raw
+    .split('+')
+    .map(part => {
+      const trimmed = part.trim();
+      if (trimmed.toLowerCase().includes('r$')) return trimmed;
+      const num = trimmed.replace(/[^0-9.,]/g, '');
+      return num ? `R$ ${num}` : trimmed;
+    })
+    .join(' + ');
+};
+
+// Build preview string with R$ formatting
+const buildPreviewString = (data: PaymentData): string => {
+  const parts: string[] = [];
+  if (data.fixo) parts.push(`R$ ${data.fixo} fixo`);
+  if (data.porEntrega) parts.push(formatPorEntregaPreview(data.porEntrega));
   return parts.join(" + ");
 };
 
