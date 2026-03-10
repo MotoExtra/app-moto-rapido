@@ -58,12 +58,12 @@ const RateMotoboyModal = ({
         .from("ratings")
         .insert({
           offer_id: offerId,
-          restaurant_id: ratingUserId,
+          restaurant_id: null as any,
           motoboy_id: motoboyId,
           rating,
           comment: comment.trim() || null,
           rating_type: "restaurant_to_motoboy",
-        })
+        } as any)
         .select("id")
         .single();
 
