@@ -126,7 +126,7 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
     onChange(buildPaymentString(newData));
   };
   
-  const previewString = buildPaymentString(paymentData);
+  const previewString = buildPreviewString(paymentData);
   const hasAnyValue = paymentData.fixo || paymentData.porEntrega;
   const isCustomValue = showCustomFixo || (paymentData.fixo && !fixoOptions.includes(paymentData.fixo));
 
