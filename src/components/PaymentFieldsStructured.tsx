@@ -135,14 +135,12 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
     }
     
     const newData = { ...paymentData, fixo: sanitized };
-    setPaymentData(newData);
-    onChange(buildPaymentString(newData));
+    updateParent(newData);
   };
 
   const handlePorEntregaChange = (fieldValue: string) => {
     const newData = { ...paymentData, porEntrega: fieldValue };
-    setPaymentData(newData);
-    onChange(buildPaymentString(newData));
+    updateParent(newData);
   };
   
   const previewString = buildPreviewString(paymentData);
