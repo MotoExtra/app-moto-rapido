@@ -98,12 +98,14 @@ const MyExtras = () => {
           .map(a => a.offer_id) || [];
 
         if (completedOfferIds.length > 0) {
+          // For motoboy-to-motoboy ratings, restaurant_id is null
+          // Check by offer_id + motoboy_id match via the offer creator
           const { data: existingRatings } = await supabase
             .from("ratings")
             .select("offer_id")
             .in("offer_id", completedOfferIds)
-            .eq("restaurant_id", userId)
-            .eq("rating_type", "restaurant_to_motoboy");
+            .eq("rating_type", "restaurant_to_motoboy")
+            .is("restaurant_id", null);
 
           if (existingRatings) {
             setRatedOffers(new Set(existingRatings.map(r => r.offer_id)));
