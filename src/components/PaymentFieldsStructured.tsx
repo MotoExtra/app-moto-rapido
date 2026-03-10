@@ -102,15 +102,20 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
     }
   }, [value]);
   
+  const updateParent = (newData: PaymentData) => {
+    setPaymentData(newData);
+    const built = buildPaymentString(newData);
+    lastExternalValue.current = built;
+    onChange(built);
+  };
+
   // Update parent when data changes
   const handleFixoChange = (fieldValue: string) => {
-    // Only allow numbers and dots/commas
     const sanitized = fieldValue.replace(/[^0-9.,]/g, "").replace(",", ".");
     setCustomFixoError("");
     
     const newData = { ...paymentData, fixo: sanitized };
-    setPaymentData(newData);
-    onChange(buildPaymentString(newData));
+    updateParent(newData);
   };
 
   const handleFixoButtonClick = (val: string) => {
