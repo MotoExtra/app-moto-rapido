@@ -84,13 +84,21 @@ const PaymentFieldsStructured = ({ value, onChange }: PaymentFieldsStructuredPro
   
   const fixoOptions = ["80", "90", "100", "110", "120"];
   
-  // Sync with external value changes
+  // Only sync from external value on initial mount or when value is completely reset
+  const lastExternalValue = useState({ current: value })[0];
   useEffect(() => {
-    const parsed = parsePaymentString(value);
-    setPaymentData(parsed);
-    // Check if current value is custom (not in predefined options)
-    if (parsed.fixo && !fixoOptions.includes(parsed.fixo)) {
-      setShowCustomFixo(true);
+    // Only re-parse if the external value changed AND it wasn't caused by our own onChange
+    if (value !== lastExternalValue.current) {
+      const built = buildPaymentString(paymentData);
+      if (value !== built) {
+        // External change (e.g., "repeat last offer") - re-parse
+        const parsed = parsePaymentString(value);
+        setPaymentData(parsed);
+        if (parsed.fixo && !fixoOptions.includes(parsed.fixo)) {
+          setShowCustomFixo(true);
+        }
+      }
+      lastExternalValue.current = value;
     }
   }, [value]);
   
