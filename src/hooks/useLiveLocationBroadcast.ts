@@ -32,7 +32,7 @@ export function useLiveLocationBroadcast({
   longitude,
   accuracy
 }: UseLiveLocationBroadcastOptions) {
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastUpdateRef = useRef<number>(0);
   const lastHistoryPositionRef = useRef<{ lat: number; lng: number } | null>(null);
 

@@ -38,8 +38,8 @@ const MapInner = forwardRef<LiveMotoboyMapRef, LiveMotoboyMapProps>(({
   hasMotoboyLocation = true
 }, ref) => {
   const map = useMap();
-  const directLineRef = useRef<google.maps.Polyline | null>(null);
-  const routeLineRef = useRef<google.maps.Polyline | null>(null);
+  const directLineRef = useRef<any>(null);
+  const routeLineRef = useRef<any>(null);
 
   // Center on motoboy
   useImperativeHandle(ref, () => ({
