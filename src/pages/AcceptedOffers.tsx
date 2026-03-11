@@ -250,6 +250,7 @@ const AcceptedOffers = () => {
               external_restaurant_id
             )
           `)
+          .eq("user_id", user.id)
           .order("accepted_at", { ascending: false });
 
         if (error) throw error;
