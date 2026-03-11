@@ -272,7 +272,10 @@ const AcceptedOffers = () => {
 
         const externalRatedOfferIds = new Set(externalRatingsData?.map(r => r.offer_id) || []);
 
-        const enrichedOffers = (data as AcceptedOffer[]).map(ao => ({
+        // Filter out offers created by the current user (motoboy should only see extras they ACCEPTED, not created)
+        const filteredData = (data as AcceptedOffer[]).filter(ao => ao.offer.created_by !== user.id);
+
+        const enrichedOffers = filteredData.map(ao => ({
           ...ao,
           has_rating: ratedOfferIds.has(ao.offer.id),
           has_external_rating: externalRatedOfferIds.has(ao.offer.id),
