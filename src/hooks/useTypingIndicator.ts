@@ -9,7 +9,7 @@ interface UseTypingIndicatorOptions {
 
 export function useTypingIndicator({ offerId, userId, contactName }: UseTypingIndicatorOptions) {
   const [isContactTyping, setIsContactTyping] = useState(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastBroadcastRef = useRef<number>(0);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 

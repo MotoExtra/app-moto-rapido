@@ -1,3 +1,4 @@
+/// <reference types="google.maps" />
 import { useEffect, useState, useMemo, forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
 import { APIProvider, Map, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
 
@@ -38,8 +39,8 @@ const MapInner = forwardRef<LiveMotoboyMapRef, LiveMotoboyMapProps>(({
   hasMotoboyLocation = true
 }, ref) => {
   const map = useMap();
-  const directLineRef = useRef<google.maps.Polyline | null>(null);
-  const routeLineRef = useRef<google.maps.Polyline | null>(null);
+  const directLineRef = useRef<any>(null);
+  const routeLineRef = useRef<any>(null);
 
   // Center on motoboy
   useImperativeHandle(ref, () => ({
