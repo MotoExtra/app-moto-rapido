@@ -106,6 +106,35 @@ const OfferExtra = () => {
 
       if (data) {
         setLastOffer(data);
+      } else {
+        // Fallback: check archived offers for when original was cleaned up
+        const { data: archivedData } = await supabase
+          .from("expired_offers_archive")
+          .select("restaurant_name, time_start, time_end, payment")
+          .eq("created_by", user.id)
+          .eq("offer_type", "motoboy")
+          .order("archived_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (archivedData) {
+          setLastOffer({
+            restaurant_name: archivedData.restaurant_name,
+            description: "",
+            address: "",
+            time_start: archivedData.time_start?.slice(0, 5) || "",
+            time_end: archivedData.time_end?.slice(0, 5) || "",
+            radius: 5,
+            needs_bag: false,
+            can_become_permanent: false,
+            includes_meal: false,
+            delivery_range: "",
+            experience: null,
+            payment: archivedData.payment,
+            phone: profile?.phone || null,
+            observations: null,
+          });
+        }
       }
     };
 
