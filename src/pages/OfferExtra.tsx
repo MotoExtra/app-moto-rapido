@@ -155,7 +155,7 @@ const OfferExtra = () => {
       rua: parsedAddress.rua,
       numero: parsedAddress.numero,
       bairro: parsedAddress.bairro,
-      city: "",
+      city: lastOffer.city || "",
       time_start: lastOffer.time_start,
       time_end: lastOffer.time_end,
       radius: lastOffer.radius,
