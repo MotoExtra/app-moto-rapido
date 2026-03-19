@@ -111,7 +111,7 @@ const OfferExtra = () => {
         // Fallback: check archived offers for when original was cleaned up
         const { data: archivedData } = await supabase
           .from("expired_offers_archive")
-          .select("restaurant_name, time_start, time_end, payment")
+          .select("restaurant_name, time_start, time_end, payment, city")
           .eq("created_by", user.id)
           .eq("offer_type", "motoboy")
           .order("archived_at", { ascending: false })
