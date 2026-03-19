@@ -98,7 +98,7 @@ const OfferExtra = () => {
       // Fetch last offer
       const { data } = await supabase
         .from("offers")
-        .select("restaurant_name, description, address, time_start, time_end, radius, needs_bag, can_become_permanent, includes_meal, delivery_range, experience, payment, phone, observations")
+        .select("restaurant_name, description, address, city, time_start, time_end, radius, needs_bag, can_become_permanent, includes_meal, delivery_range, experience, payment, phone, observations")
         .eq("created_by", user.id)
         .eq("offer_type", "motoboy")
         .order("created_at", { ascending: false })
