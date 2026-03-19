@@ -24,6 +24,7 @@ import PaymentFieldsStructured from "@/components/PaymentFieldsStructured";
 
 interface LastOffer {
   restaurant_name: string;
+  city: string | null;
   description: string;
   address: string;
   time_start: string;
@@ -97,7 +98,7 @@ const OfferExtra = () => {
       // Fetch last offer
       const { data } = await supabase
         .from("offers")
-        .select("restaurant_name, description, address, time_start, time_end, radius, needs_bag, can_become_permanent, includes_meal, delivery_range, experience, payment, phone, observations")
+        .select("restaurant_name, description, address, city, time_start, time_end, radius, needs_bag, can_become_permanent, includes_meal, delivery_range, experience, payment, phone, observations")
         .eq("created_by", user.id)
         .eq("offer_type", "motoboy")
         .order("created_at", { ascending: false })
@@ -110,7 +111,7 @@ const OfferExtra = () => {
         // Fallback: check archived offers for when original was cleaned up
         const { data: archivedData } = await supabase
           .from("expired_offers_archive")
-          .select("restaurant_name, time_start, time_end, payment")
+          .select("restaurant_name, time_start, time_end, payment, city")
           .eq("created_by", user.id)
           .eq("offer_type", "motoboy")
           .order("archived_at", { ascending: false })
@@ -120,6 +121,7 @@ const OfferExtra = () => {
         if (archivedData) {
           setLastOffer({
             restaurant_name: archivedData.restaurant_name,
+            city: archivedData.city || null,
             description: "",
             address: "",
             time_start: archivedData.time_start?.slice(0, 5) || "",
@@ -153,7 +155,7 @@ const OfferExtra = () => {
       rua: parsedAddress.rua,
       numero: parsedAddress.numero,
       bairro: parsedAddress.bairro,
-      city: "",
+      city: lastOffer.city || "",
       time_start: lastOffer.time_start,
       time_end: lastOffer.time_end,
       radius: lastOffer.radius,
