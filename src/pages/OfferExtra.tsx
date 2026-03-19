@@ -24,6 +24,7 @@ import PaymentFieldsStructured from "@/components/PaymentFieldsStructured";
 
 interface LastOffer {
   restaurant_name: string;
+  city: string | null;
   description: string;
   address: string;
   time_start: string;
