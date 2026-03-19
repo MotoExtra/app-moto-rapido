@@ -121,6 +121,7 @@ const OfferExtra = () => {
         if (archivedData) {
           setLastOffer({
             restaurant_name: archivedData.restaurant_name,
+            city: archivedData.city || null,
             description: "",
             address: "",
             time_start: archivedData.time_start?.slice(0, 5) || "",
