@@ -34,7 +34,7 @@ import { useGamification } from "@/hooks/useGamification";
 import { LevelBadge } from "@/components/gamification/LevelBadge";
 import { LevelUpModal } from "@/components/gamification/LevelUpModal";
 import { MotoboyAssistant } from "@/components/MotoboyAssistant";
-import { HomeStatsCard } from "@/components/home/HomeStatsCard";
+import { BentoDashboard } from "@/components/home/BentoDashboard";
 import { EmptyFeedState } from "@/components/home/EmptyFeedState";
 import { OfferSkeleton } from "@/components/home/OfferSkeleton";
 import PeakHourBanner from "@/components/home/PeakHourBanner";
