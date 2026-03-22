@@ -129,6 +129,15 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error("Erro no login:", error);
+      if (error.message === "Email not confirmed") {
+        toast({
+          title: "E-mail não confirmado",
+          description: "Verifique sua caixa de entrada e clique no link de confirmação.",
+          variant: "destructive",
+        });
+        navigate(`/confirmar-email?email=${encodeURIComponent(email)}&type=motoboy`);
+        return;
+      }
       toast({
         title: "Erro no login",
         description: error.message === "Invalid login credentials" 

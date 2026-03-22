@@ -115,12 +115,11 @@ const SignupRestaurant = () => {
           return;
         }
 
-        toast({
-          title: "Cadastro realizado!",
-          description: "Bem-vindo ao Moto Rápido",
-        });
-        
-        navigate("/restaurante/home");
+        // Fazer logout imediato
+        await supabase.auth.signOut();
+
+        // Redirecionar para tela de confirmação de e-mail
+        navigate(`/confirmar-email?email=${encodeURIComponent(formData.email)}&type=restaurant`);
       }
     } catch (error) {
       toast({

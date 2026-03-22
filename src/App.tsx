@@ -84,6 +84,7 @@ const App = () => {
                 <Route path="/login/restaurante" element={<LoginRestaurant />} />
                 <Route path="/cadastro/motoboy" element={<SignupMotoboy />} />
                 <Route path="/cadastro/restaurante" element={<SignupRestaurant />} />
+                <Route path="/confirmar-email" element={<EmailConfirmation />} />
                 
                 {/* Rotas protegidas de motoboy */}
                 <Route path="/home" element={<ProtectedRoute allowedUserType="motoboy"><Home /></ProtectedRoute>} />
