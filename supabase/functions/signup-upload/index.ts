@@ -37,8 +37,8 @@ serve(async (req) => {
     );
 
     // Verify the user exists in auth
-    const { data: user, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
-    if (userError || !user) {
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (userError || !userData?.user) {
       return new Response(
         JSON.stringify({ error: "User not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
