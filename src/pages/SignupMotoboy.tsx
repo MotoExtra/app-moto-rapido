@@ -128,59 +128,73 @@ const SignupMotoboy = () => {
       }
 
       let avatarUrl = null;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      // Upload avatar if provided
+      // Upload avatar via edge function (bypasses RLS for unconfirmed users)
       if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${authData.user.id}/avatar.${fileExt}`;
+        const avatarFormData = new FormData();
+        avatarFormData.append("user_id", authData.user.id);
+        avatarFormData.append("file_type", "avatar");
+        avatarFormData.append("file", avatarFile);
 
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, avatarFile, { upsert: true });
+        const avatarRes = await fetch(`${supabaseUrl}/functions/v1/signup-upload`, {
+          method: "POST",
+          headers: { apikey: supabaseKey },
+          body: avatarFormData,
+        });
 
-        if (uploadError) {
-          console.error("Erro ao fazer upload da foto:", uploadError);
+        const avatarResult = await avatarRes.json();
+        if (!avatarRes.ok) {
+          console.error("Erro ao fazer upload da foto:", avatarResult.error);
         } else {
-          const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(fileName);
-          avatarUrl = publicUrl;
+          avatarUrl = avatarResult.public_url;
         }
       }
 
-      // Upload CNH document - salva apenas o path, não a URL pública
+      // Upload CNH document via edge function
       let cnhPath = null;
       if (cnhFile) {
-        const cnhExt = cnhFile.name.split('.').pop();
-        const cnhFileName = `${authData.user.id}/cnh.${cnhExt}`;
+        const cnhFormData = new FormData();
+        cnhFormData.append("user_id", authData.user.id);
+        cnhFormData.append("file_type", "cnh");
+        cnhFormData.append("file", cnhFile);
 
-        const { error: cnhUploadError } = await supabase.storage
-          .from('cnh-documents')
-          .upload(cnhFileName, cnhFile, { upsert: true });
+        const cnhRes = await fetch(`${supabaseUrl}/functions/v1/signup-upload`, {
+          method: "POST",
+          headers: { apikey: supabaseKey },
+          body: cnhFormData,
+        });
 
-        if (cnhUploadError) {
-          console.error("Erro ao fazer upload da CNH:", cnhUploadError);
+        const cnhResult = await cnhRes.json();
+        if (!cnhRes.ok) {
+          console.error("Erro ao fazer upload da CNH:", cnhResult.error);
           throw new Error("Erro ao enviar documento da CNH. Tente novamente.");
         } else {
-          // Salva apenas o path (ex: userId/cnh.pdf) em vez da URL pública
-          cnhPath = cnhFileName;
+          cnhPath = cnhResult.path;
         }
       }
 
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
+      // Create profile via edge function (bypasses RLS for unconfirmed users)
+      const profileRes = await fetch(`${supabaseUrl}/functions/v1/signup-complete`, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: authData.user.id,
           name: formData.name,
           phone: formData.phone,
           city: formData.city,
           cnh: cnhPath,
           avatar_url: avatarUrl,
-          user_type: 'motoboy',
-        });
+          user_type: "motoboy",
+        }),
+      });
 
-      if (profileError) throw profileError;
+      const profileResult = await profileRes.json();
+      if (!profileRes.ok) throw new Error(profileResult.error || "Erro ao criar perfil");
 
       // Fazer logout imediato
       await supabase.auth.signOut();
