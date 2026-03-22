@@ -175,20 +175,26 @@ const SignupMotoboy = () => {
         }
       }
 
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
+      // Create profile via edge function (bypasses RLS for unconfirmed users)
+      const profileRes = await fetch(`${supabaseUrl}/functions/v1/signup-complete`, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: authData.user.id,
           name: formData.name,
           phone: formData.phone,
           city: formData.city,
           cnh: cnhPath,
           avatar_url: avatarUrl,
-          user_type: 'motoboy',
-        });
+          user_type: "motoboy",
+        }),
+      });
 
-      if (profileError) throw profileError;
+      const profileResult = await profileRes.json();
+      if (!profileRes.ok) throw new Error(profileResult.error || "Erro ao criar perfil");
 
       // Fazer logout imediato
       await supabase.auth.signOut();
