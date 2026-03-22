@@ -33,6 +33,7 @@ const AdminCNHReview = lazy(() => import("./pages/AdminCNHReview"));
 const RestaurantInsights = lazy(() => import("./pages/RestaurantInsights"));
 const RecurringOffers = lazy(() => import("./pages/RecurringOffers"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const EmailConfirmation = lazy(() => import("./pages/EmailConfirmation"));
 
 
 const queryClient = new QueryClient();
