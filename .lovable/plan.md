@@ -1,39 +1,71 @@
 
 
-## Análise: Tempo de expiração dos extras
+## Plano: Confirmação de E-mail no Cadastro de Motoboy
 
-Você tem razão em questionar os 30 minutos. Vamos analisar:
+### O que será feito
 
-### Por que 30 minutos é problemático
+Após clicar em "Concluir cadastro", o motoboy será redirecionado para uma **tela de confirmação de e-mail** com instruções claras para verificar sua caixa de entrada e clicar no link enviado. O sistema de autenticação já envia o e-mail automaticamente (via `signUp` com `emailRedirectTo`), mas atualmente o auto-confirm está ativado, então precisamos desativá-lo.
 
-- O motoboy pode ter terminado o trabalho mas esqueceu de clicar "Finalizar"
-- O restaurante fica bloqueado sem poder ver a avaliação
-- O motoboy fica bloqueado sem poder aceitar outro extra
-- 30 minutos é tempo demais de espera para algo que já acabou
+### Etapas
 
-### Sugestão: **5 minutos** após o horário final
+1. **Desativar auto-confirmação de e-mail**
+   - Usar a ferramenta `configure_auth` para garantir que e-mails precisam ser confirmados antes do login
+   - Isso faz o sistema enviar automaticamente um e-mail de verificação no `signUp`
 
-Um buffer de 5 minutos é o ideal porque:
+2. **Criar página `EmailConfirmation`** (`src/pages/EmailConfirmation.tsx`)
+   - Tela profissional com logo do app, ícone de e-mail animado
+   - Mensagem clara: "Verifique seu e-mail"
+   - Exibe o e-mail do usuário cadastrado
+   - Instruções passo a passo (abrir e-mail, clicar no link, verificar spam)
+   - Botão "Reenviar e-mail" com cooldown de 60 segundos
+   - Botão "Voltar para Login" no final
+   - Visual alinhado com a identidade do app (laranja/azul escuro)
 
-1. **Dá margem** para o motoboy finalizar manualmente se ainda estiver no local
-2. **É curto o suficiente** para não bloquear ninguém desnecessariamente
-3. **A avaliação aparece rápido** — tanto para o restaurante quanto para o motoboy
-4. **Extras "pendentes/arrived"** (motoboy não apareceu) são cancelados rapidamente, liberando o sistema
+3. **Adicionar rota `/confirmar-email`** no `App.tsx`
 
-### O que será alterado
+4. **Atualizar `SignupMotoboy.tsx`**
+   - Após cadastro bem-sucedido, redirecionar para `/confirmar-email?email=xxx` em vez de `/login/motoboy`
+   - Manter o logout imediato após cadastro
 
-- **Função `auto_complete_expired_extras`**: Trocar `INTERVAL '30 minutes'` por `INTERVAL '5 minutes'` em todas as 3 queries (cancel pending, release offer, complete in_progress)
-- Nenhuma alteração no frontend — o cron job já roda a cada 15 minutos, então na prática o extra será processado entre 5 e 20 minutos após o término
+5. **Atualizar `SignupRestaurant.tsx`**
+   - Aplicar o mesmo fluxo para restaurantes (consistência)
 
-### Consideração sobre o cron job
+6. **Atualizar `Login.tsx` e `LoginRestaurant.tsx`**
+   - Tratar o erro de e-mail não confirmado, exibindo mensagem amigável com opção de reenviar
 
-O cron job que chama essa função roda **a cada 15 minutos**. Isso significa que mesmo com o buffer de 5 minutos, pode levar até ~20 minutos no pior caso. Se quiser mais agilidade, podemos também reduzir o intervalo do cron para **cada 5 minutos**.
+### Tela de Confirmação — Layout
 
-### Resumo das mudanças
+```text
+┌──────────────────────────┐
+│        [Logo]            │
+│                          │
+│     ✉️ (ícone animado)   │
+│                          │
+│  Verifique seu e-mail    │
+│                          │
+│  Enviamos um link de     │
+│  confirmação para:       │
+│  usuario@email.com       │
+│                          │
+│  ┌────────────────────┐  │
+│  │ 1. Abra seu email  │  │
+│  │ 2. Clique no link  │  │
+│  │ 3. Volte e faça    │  │
+│  │    login            │  │
+│  └────────────────────┘  │
+│                          │
+│  ⚠️ Verifique a pasta   │
+│     de spam              │
+│                          │
+│  [Reenviar e-mail (58s)] │
+│  [Ir para Login]         │
+└──────────────────────────┘
+```
 
-| Item | Antes | Depois |
-|------|-------|--------|
-| Buffer de expiração | 30 min | 5 min |
-| Cron job (opcional) | 15 min | 5 min |
-| Arquivos alterados | 1 migration SQL | 1 migration SQL |
+### Detalhes Técnicos
+
+- O `emailRedirectTo` no signup será atualizado para `${window.location.origin}/login/motoboy` para que após confirmar, o usuário vá direto para o login
+- Reenvio usa `supabase.auth.resend({ type: 'signup', email })`
+- O e-mail é passado via query param na URL para exibir na tela
+- Nenhuma migração de banco necessária
 
