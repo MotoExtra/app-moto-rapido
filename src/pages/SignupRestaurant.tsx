@@ -64,13 +64,11 @@ const SignupRestaurant = () => {
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: redirectUrl,
+          emailRedirectTo: `${window.location.origin}/login/restaurante`,
         },
       });
 
@@ -117,12 +115,11 @@ const SignupRestaurant = () => {
           return;
         }
 
-        toast({
-          title: "Cadastro realizado!",
-          description: "Bem-vindo ao Moto Rápido",
-        });
-        
-        navigate("/restaurante/home");
+        // Fazer logout imediato
+        await supabase.auth.signOut();
+
+        // Redirecionar para tela de confirmação de e-mail
+        navigate(`/confirmar-email?email=${encodeURIComponent(formData.email)}&type=restaurant`);
       }
     } catch (error) {
       toast({

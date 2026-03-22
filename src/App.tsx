@@ -33,6 +33,7 @@ const AdminCNHReview = lazy(() => import("./pages/AdminCNHReview"));
 const RestaurantInsights = lazy(() => import("./pages/RestaurantInsights"));
 const RecurringOffers = lazy(() => import("./pages/RecurringOffers"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const EmailConfirmation = lazy(() => import("./pages/EmailConfirmation"));
 
 
 const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ const App = () => {
                 <Route path="/login/restaurante" element={<LoginRestaurant />} />
                 <Route path="/cadastro/motoboy" element={<SignupMotoboy />} />
                 <Route path="/cadastro/restaurante" element={<SignupRestaurant />} />
+                <Route path="/confirmar-email" element={<EmailConfirmation />} />
                 
                 {/* Rotas protegidas de motoboy */}
                 <Route path="/home" element={<ProtectedRoute allowedUserType="motoboy"><Home /></ProtectedRoute>} />

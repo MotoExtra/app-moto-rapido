@@ -117,7 +117,7 @@ const SignupMotoboy = () => {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/login/motoboy`,
         },
       });
 
@@ -182,17 +182,11 @@ const SignupMotoboy = () => {
 
       if (profileError) throw profileError;
 
-      // Fazer logout imediato - conta só pode ser usada após 15 minutos
+      // Fazer logout imediato
       await supabase.auth.signOut();
 
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Sua conta está em análise. Você poderá fazer login em 15 minutos.",
-        duration: 10000,
-      });
-      
-      // Redirecionar para a tela de login onde mostrará o status de análise
-      navigate("/login/motoboy");
+      // Redirecionar para tela de confirmação de e-mail
+      navigate(`/confirmar-email?email=${encodeURIComponent(formData.email)}&type=motoboy`);
     } catch (error: any) {
       console.error("Erro no cadastro:", error);
       toast({

@@ -57,6 +57,16 @@ const LoginRestaurant = () => {
       });
 
       if (error) {
+        if (error.message === "Email not confirmed") {
+          toast({
+            title: "E-mail não confirmado",
+            description: "Verifique sua caixa de entrada e clique no link de confirmação.",
+            variant: "destructive",
+          });
+          navigate(`/confirmar-email?email=${encodeURIComponent(email)}&type=restaurant`);
+          setLoading(false);
+          return;
+        }
         toast({
           title: "Erro no login",
           description: error.message === "Invalid login credentials" 
